@@ -87,6 +87,7 @@ Put `gc_icons/` and `ps2_icons/` beside the exe. Never commit them: they're made
 ## Documentation
 
 - [`docs/MVP05-HANDOFF.md`](docs/MVP05-HANDOFF.md): how everything works, with code references and the full change history.
+- [`docs/RELEASING.md`](docs/RELEASING.md): putting a release together on GitHub.
 - `START-HERE.txt`, `SOURCE-MAP.txt`: Mad Dog's guides to the base project.
 
 ## Credits

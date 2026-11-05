@@ -1,0 +1,232 @@
+"""MVP-Installer: puts your own discs' game files where the game looks for them, in the folder the installer is in.
+
+  Xbox disc (required)        every file, into assets/ (as Mad Dog's original asks for by hand)
+  GameCube disc (optional)    only the 11 files the button art needs, read into a temporary folder, made into
+                              gc_icons/ (tools/gc_layout/make_icons.py), then deleted
+  PS2 disc (optional)         the same for ps2_icons/ (tools/ps2_layout/make_ps2_icons.py)
+
+Nothing is written anywhere else: no registry, no shortcuts, no Program Files. Deleting the folder removes it all.
+
+  MVP-Installer.exe                       the window
+  MVP-Installer.exe --xbox X [--gamecube G] [--ps2 P] [--dir D]   the same without it
+"""
+import argparse
+import contextlib
+import io
+import os
+import shutil
+import sys
+import tempfile
+import threading
+import traceback
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+for sub in ("gc_layout", "ps2_layout"):  # the art builders (bundled beside this when frozen)
+    for base in (os.path.join(HERE, "..", sub), os.path.join(getattr(sys, "_MEIPASS", HERE), sub)):
+        if os.path.isdir(base) and base not in sys.path:
+            sys.path.insert(0, base)
+
+import discs  # noqa: E402
+
+VERSION = "Beta 1"
+GAME = "MVP05-Plus"
+
+
+def game_dir():
+    """The folder with MVP05.exe: the installer's own (frozen), else the repository's root."""
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(sys.executable)
+    return os.path.abspath(os.path.join(HERE, "..", ".."))
+
+
+class Log:
+    def __init__(self, say=print, progress=None):
+        self.say, self.progress = say, progress
+
+
+def need_space(folder, nbytes):
+    free = shutil.disk_usage(folder).free
+    if free < nbytes + (64 << 20):
+        raise discs.DiscError(f"not enough room: {nbytes / 2**30:.1f} GB needed, {free / 2**30:.1f} GB free")
+
+
+def install_xbox(src, root, log):
+    assets = os.path.join(root, "assets")
+    with discs.open_xbox(src) as d:
+        files = d.files()
+        todo = {}
+        for p, (_, n) in files.items():
+            dest = os.path.join(assets, *p.split("/"))
+            if not (os.path.isfile(dest) and os.path.getsize(dest) == n):
+                todo[p] = (dest, n)
+        total = sum(n for _, n in todo.values())
+        log.say(f"Xbox disc: MVP Baseball 2005, {len(files)} files"
+                + (f", copying {len(todo)} ({total / 2**20:.0f} MB)" if todo else ", already in assets"))
+        if not todo:
+            return
+        need_space(root, total)
+        done = [0]
+
+        def step(n):
+            done[0] += n
+            if log.progress:
+                log.progress(done[0] / total)
+
+        for p, (dest, _) in sorted(todo.items()):
+            d.copy(p, dest, step)
+    log.say("Xbox files are in assets.")
+
+
+def build_art(kind, src, root, log):
+    """gc_icons or ps2_icons from a disc; only the art's files are read, into a temporary folder that's deleted."""
+    gc = kind == "gamecube"
+    opener, names = (discs.open_gamecube, discs.GC_ART_FILES) if gc else (discs.open_ps2, discs.PS2_ART_FILES)
+    out_name = "gc_icons" if gc else "ps2_icons"
+    xbox_data = os.path.join(root, "assets", "data")
+    if not os.path.isfile(os.path.join(xbox_data, "frontend", "shared.big")):
+        raise discs.DiscError("the Xbox files aren't in assets yet: the art is made from them too")
+    tmp = tempfile.mkdtemp(prefix="mvp-installer-")
+    try:
+        with opener(src) as d:
+            log.say(f"{'GameCube' if gc else 'PS2'} disc: reading the {len(names)} files the button art needs")
+            discs.extract(d, names, tmp, upper=not gc)
+        disc_data = os.path.join(tmp, "data" if gc else "DATA")
+        built = os.path.join(tmp, out_name)
+        if gc:
+            import make_icons as builder
+        else:
+            import make_ps2_icons as builder
+        argv, sys.argv = sys.argv, [builder.__file__, xbox_data, disc_data, built]
+        words = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(words):
+                builder.main()
+        except SystemExit as e:
+            raise discs.DiscError(f"making {out_name} stopped: {e}")
+        finally:
+            sys.argv = argv
+        dest = os.path.join(root, out_name)
+        old = dest + ".old"
+        shutil.rmtree(old, ignore_errors=True)
+        if os.path.exists(dest):
+            os.replace(dest, old)
+        shutil.copytree(built, dest)
+        shutil.rmtree(old, ignore_errors=True)
+        log.say(f"{out_name} made ({sum(len(f) for _, _, f in os.walk(dest))} files).")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def run(root, xbox=None, gamecube=None, ps2=None, log=None):
+    log = log or Log()
+    if xbox:
+        install_xbox(xbox, root, log)
+    elif not os.path.isfile(os.path.join(root, "assets", "default.xbe")):
+        raise discs.DiscError("choose your Xbox disc: the game needs it")
+    for kind, src in (("gamecube", gamecube), ("ps2", ps2)):
+        if src:
+            build_art(kind, src, root, log)
+    log.say("Done. Run MVP05.exe.")
+
+
+# ---------------------------------------------------------------- the window
+
+def gui(root):
+    import tkinter as tk
+    from tkinter import filedialog, ttk
+
+    w = tk.Tk()
+    w.title(f"{GAME} Installer ({VERSION})")
+    w.resizable(False, False)
+    pad = {"padx": 10, "pady": 4}
+    frm = ttk.Frame(w, padding=12)
+    frm.grid()
+    ttk.Label(frm, text=f"{GAME} installs into this folder:", font=("Segoe UI", 10, "bold")).grid(
+        row=0, column=0, columnspan=3, sticky="w")
+    ttk.Label(frm, text=root, foreground="#555").grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 10))
+
+    kinds = [
+        ("xbox", "Xbox disc (required)", [("Xbox image", "*.iso *.xiso"), ("All files", "*.*")], True),
+        ("gamecube", "GameCube disc (optional, button art)",
+         [("GameCube image", "*.iso *.gcm *.rvz *.gcz *.ciso *.wia"), ("All files", "*.*")], False),
+        ("ps2", "PS2 disc (optional, button art)", [("PS2 image", "*.iso *.chd"), ("All files", "*.*")], False),
+    ]
+    vars_ = {}
+    for i, (k, label, types, folder_ok) in enumerate(kinds):
+        v = tk.StringVar()
+        vars_[k] = v
+        ttk.Label(frm, text=label).grid(row=2 + 2 * i, column=0, columnspan=3, sticky="w")
+        ttk.Entry(frm, textvariable=v, width=60).grid(row=3 + 2 * i, column=0, sticky="we", pady=(0, 6))
+
+        def pick(v=v, types=types):
+            p = filedialog.askopenfilename(filetypes=types)
+            if p:
+                v.set(os.path.normpath(p))
+
+        ttk.Button(frm, text="Image…", command=pick).grid(row=3 + 2 * i, column=1, padx=(6, 0), pady=(0, 6))
+        if folder_ok:
+            def pickdir(v=v):
+                p = filedialog.askdirectory(title="The folder with default.xbe")
+                if p:
+                    v.set(os.path.normpath(p))
+            ttk.Button(frm, text="Folder…", command=pickdir).grid(row=3 + 2 * i, column=2, padx=(6, 0), pady=(0, 6))
+
+    bar = ttk.Progressbar(frm, length=440, mode="determinate", maximum=1.0)
+    bar.grid(row=8, column=0, columnspan=3, sticky="we", pady=(8, 4))
+    out = tk.Text(frm, width=72, height=9, state="disabled", wrap="word", relief="flat", background="#f4f4f4")
+    out.grid(row=9, column=0, columnspan=3, **{"pady": 4})
+    go = ttk.Button(frm, text="Install")
+    go.grid(row=10, column=2, sticky="e", pady=(6, 0))
+
+    def say(t):
+        def f():
+            out.configure(state="normal")
+            out.insert("end", t + "\n")
+            out.see("end")
+            out.configure(state="disabled")
+        w.after(0, f)
+
+    def progress(x):
+        w.after(0, lambda: bar.configure(value=x))
+
+    def work():
+        try:
+            run(root, **{k: (v.get().strip() or None) for k, v in vars_.items()}, log=Log(say, progress))
+            w.after(0, lambda: bar.configure(value=1.0))
+        except discs.DiscError as e:
+            say(f"Stopped: {e}")
+        except Exception:
+            say("Something went wrong:\n" + traceback.format_exc(limit=4))
+        finally:
+            w.after(0, lambda: go.configure(state="normal"))
+
+    def start():
+        go.configure(state="disabled")
+        bar.configure(value=0)
+        threading.Thread(target=work, daemon=True).start()
+
+    go.configure(command=start)
+    if os.path.isfile(os.path.join(root, "assets", "default.xbe")):
+        say("The Xbox files are already in assets: choose only the discs you want button art from.")
+    if not os.path.isfile(os.path.join(root, "MVP05.exe")):
+        say("Note: MVP05.exe isn't in this folder. Put the installer in the game's folder first.")
+    w.mainloop()
+
+
+def main():
+    a = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    a.add_argument("--xbox")
+    a.add_argument("--gamecube")
+    a.add_argument("--ps2")
+    a.add_argument("--dir", default=game_dir())
+    o = a.parse_args()
+    if not (o.xbox or o.gamecube or o.ps2):
+        return gui(o.dir)
+    try:
+        run(o.dir, o.xbox, o.gamecube, o.ps2)
+    except discs.DiscError as e:
+        raise SystemExit(f"stopped: {e}")
+
+
+if __name__ == "__main__":
+    main()

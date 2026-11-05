@@ -1,9 +1,12 @@
 {
+  ".github/workflows/release-tools.yml": "c00186ce75965b0ed3f98f76713f5dcf3064b9e357ee68cbac349e914ea85552",
   ".gitignore": "b1a4242bec074853f1ebafae4e6998e94639199a87806e03e58d612512846b0e",
   "Build-Source.cmd": "414921d6f61ed2c8c31da22a9192843377fb5638adad886ac03840197b40a63f",
   "CMakeLists.txt": "bcf0a21e9a6a474f2c541bc1aeb4e4a0a7cd828ec4a4e2e572f864601d4e05a7",
   "CMakePresets.json": "fc11db4b2e539a17a9cc90871bb91a2b0652fddb6b21c11fc4e1191ad49bca91",
-  "README.md": "30dc4370fa045a47ecfae803efc0aa347f0416176dfe8babe9e15e30073d59e2",
+  "MICROSOFT-RUNTIME-NOTICE.txt": "3cddbd68dbb2301dc48d162b6b6aba2fcb8df7c8d3bd7ebd00c541f00c3b44b3",
+  "README.md": "4caa89531673e9958784a69d347a85d3c55059a74eedf3d8c73ae232ad0296b9",
+  "RELEASE-NOTES.md": "f7e84122b23a62f2d9e3e8ab737d2b35a03db73514e2640fd65182898b1c9461",
   "SDK-LICENSE.txt": "b61d0b216ea6b3a6be922ef85f6348568069fb3c5fc816d021ee66ec43de8157",
   "SOURCE-MAP.txt": "211a6826cdd1cc8c139ae3204c39fd9e7a721997e8583696b65019e31f9e83cc",
   "START-HERE.txt": "8e4ea1b96780ee3b16f06ba7fb3038c77d1e48cc894e3ca4fb90f5ac3505f8e5",
@@ -11,6 +14,7 @@
   "assets/PUT-GAME-FILES-HERE.txt": "d9339854f2725ab7cf2367a2ed6375defc4a134d6d4b6bfa95cce261f17683f5",
   "config/game.toml": "0f60edabd0d3131ce8fdcbcefac2533f24722af4d5b26eea693a8e414de18309",
   "docs/MVP05-HANDOFF.md": "13e868dc6133a1f26d5f2ecec03c0867b4e21c36f0d26db6dde0620de65edecf",
+  "docs/RELEASING.md": "ad5e2fcf72aeb7c80f312ab37638135eae4ad808407f34d25eec53ccbbaa1313",
   "mvp05-settings.toml": "1bfcf229fb56c0e4d87cd4a20b0f2cb2c9aac35ba74cac2551e0f262ef7f4e8d",
   "sdk/.gitattributes": "02c4d9e006deb91568beb1433f0bca183721862a180af4d6159759f21ec27b0d",
   "sdk/.gitignore": "d6b19c0d568aed60d87970570e713911a505b418bd91904925a6ebd75cb9eb9d",
@@ -138,6 +142,11 @@
   "tools/gc_layout/xbox_emu.py": "8dbf5630e08432bc1caef8b73b66bfef1e791f748a733d8c26ad52bf67a01ce7",
   "tools/gc_layout/xbox_tables.json": "71b9104bffafdf48b915ecada09e4762ce1d0f7b68f84b5561c9293208b1c989",
   "tools/gcbridge/gcbridge.c": "23297365fb6b9915fb9607dc3c0e9aa774337e2e86c8d68c3b4684c53dac5bb1",
+  "tools/installer/discs.py": "9b52078ff830371ff767854b101a35443c2fe943332cf51bdfeb3b3660a539d7",
+  "tools/installer/install.py": "a7312f69eecbea864581d9db88186552d1903465375a96e8bb94872d76a61285",
+  "tools/installer/requirements.txt": "7061e8b52209928fbbf4c5f3e6d0ce1d3924ce81c603a3b5d024f3a4665ed074",
+  "tools/installer/tests/test_discs.py": "bb2c9c41d7cb29c3fe3b0b1735e93a93033c602c8e1f5d1d0e59cbaef6007f5b",
+  "tools/make_release.py": "1022d6552880683aa64b56c01ac2e16eca9cca6658f3b32838da05e84dc38ef4",
   "tools/ps2_layout/gen_ps2_table.py": "85359c54c254e74e6cabfd973671eaf16e0ea40b4343f875f3d7be15f9d6d0fb",
   "tools/ps2_layout/make_ps2_icons.py": "1d201124231e09eb18d1cb16ec756e1925c7633d4c1019e8815707fdc9c0af63",
   "tools/ps2_layout/ps2_extract.py": "228339e8a2b60d46a3abd9e71b171fc64d969134675d7a8b955f798cdbd4ce39",
@@ -3368,6 +3377,5 @@
   "vendor/zydis/tools/ZydisTestEncoderAbsolute.c": "6b4cd0e5e99d0ffc6eb308c7c92c3f5fdd12456e8a901dbdc5e3239331493d7a",
   "vendor/zydis/tools/ZydisToolsShared.c": "da0f6be31cd7f5bc0154d5aff2f4889969b9aa3463cc7ab11e848cc3e55f42ad",
   "vendor/zydis/tools/ZydisToolsShared.h": "dd176c6c9af13540021fe4f82b4ad8b4a7897d486d08d9b751ac354203630d01",
-  "vendor/zydis/tools/meson.build": "24da8fd2dbde013383dc39b6d6bfaeed8dce775e17d6ae823284f4a4ec160025",
-  "RELEASE-NOTES.md": "f7e84122b23a62f2d9e3e8ab737d2b35a03db73514e2640fd65182898b1c9461"
+  "vendor/zydis/tools/meson.build": "24da8fd2dbde013383dc39b6d6bfaeed8dce775e17d6ae823284f4a4ec160025"
 }
