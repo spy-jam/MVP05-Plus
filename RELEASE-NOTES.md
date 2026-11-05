@@ -3,7 +3,7 @@
 First release of MVP05-Plus, built on Mad Dog's MVP05 Public Beta 3 recompilation.
 
 ## New
-- **GameCube controllers** through the Wii U GameCube adapter, all 4 ports, with rumble. Stick, C-stick and triggers handled as the GameCube release does. Hold X + Y + Start for 3 seconds to recentre.
+- **GameCube controllers** through a Wii U / Switch GameCube adapter (official or compatible, in Wii U mode), all 4 ports, with rumble. Stick, C-stick and triggers handled as the GameCube release does. Hold X + Y + Start for 3 seconds to recentre.
 - **PlayStation pads** with the PS2 release's stick handling, analog button pressure and rumble.
 - **Native control layouts:** GameCube controllers use the GameCube release's layout, PlayStation pads the PS2 release's.
 - **Button art:** GameCube or PS2 button pictures in menus, help bars and in-game, picked from the controller connected at start. Built by the installer from your own discs (optional).

@@ -9,7 +9,7 @@ MVP Baseball 2005 on Windows and SteamOS, from [Mad Dog's](#credits) static reco
 ## What Plus adds
 
 **Controllers**
-- **GameCube controllers** through the Wii U GameCube adapter (official or compatible), all 4 ports, with rumble.
+- **GameCube controllers** through a Wii U / Switch GameCube adapter (official or compatible), all 4 ports, with rumble.
 - GameCube stick, C-stick and trigger handling as the GameCube release does it. Hold X + Y + Start for 3 seconds to recentre.
 - **PlayStation pads** with the PS2 release's stick handling, analog button pressure and rumble.
 
@@ -42,7 +42,7 @@ MVP Baseball 2005 on Windows and SteamOS, from [Mad Dog's](#credits) static reco
 
 ## Controllers
 
-- **GameCube adapter on Windows:** give the adapter the WinUSB driver with [Zadig](https://zadig.akeo.ie/), the same as for Dolphin (select *WUP-028*, choose *WinUSB*, *Replace Driver*). Plug controllers into any port.
+- **GameCube adapter (Wii U / Switch):** the official adapter, or a compatible one set to its *Wii U* mode if it has a switch (not *PC*). On Windows, give the adapter the WinUSB driver with [Zadig](https://zadig.akeo.ie/), the same as for Dolphin (select *WUP-028*, choose *WinUSB*, *Replace Driver*). Plug controllers into any port.
 - **PlayStation pads:** connect them as usual (USB or Bluetooth).
 - **Xbox-style pads:** work as in Mad Dog's original.
 

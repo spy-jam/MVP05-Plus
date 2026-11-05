@@ -3,7 +3,7 @@
   "Build-Source.cmd": "414921d6f61ed2c8c31da22a9192843377fb5638adad886ac03840197b40a63f",
   "CMakeLists.txt": "bcf0a21e9a6a474f2c541bc1aeb4e4a0a7cd828ec4a4e2e572f864601d4e05a7",
   "CMakePresets.json": "fc11db4b2e539a17a9cc90871bb91a2b0652fddb6b21c11fc4e1191ad49bca91",
-  "README.md": "8a865fbc904953d383539d2ae01703a1e12f15fe29aa15357e5802eaf00ef568",
+  "README.md": "30dc4370fa045a47ecfae803efc0aa347f0416176dfe8babe9e15e30073d59e2",
   "SDK-LICENSE.txt": "b61d0b216ea6b3a6be922ef85f6348568069fb3c5fc816d021ee66ec43de8157",
   "SOURCE-MAP.txt": "211a6826cdd1cc8c139ae3204c39fd9e7a721997e8583696b65019e31f9e83cc",
   "START-HERE.txt": "8e4ea1b96780ee3b16f06ba7fb3038c77d1e48cc894e3ca4fb90f5ac3505f8e5",
@@ -3368,5 +3368,6 @@
   "vendor/zydis/tools/ZydisTestEncoderAbsolute.c": "6b4cd0e5e99d0ffc6eb308c7c92c3f5fdd12456e8a901dbdc5e3239331493d7a",
   "vendor/zydis/tools/ZydisToolsShared.c": "da0f6be31cd7f5bc0154d5aff2f4889969b9aa3463cc7ab11e848cc3e55f42ad",
   "vendor/zydis/tools/ZydisToolsShared.h": "dd176c6c9af13540021fe4f82b4ad8b4a7897d486d08d9b751ac354203630d01",
-  "vendor/zydis/tools/meson.build": "24da8fd2dbde013383dc39b6d6bfaeed8dce775e17d6ae823284f4a4ec160025"
+  "vendor/zydis/tools/meson.build": "24da8fd2dbde013383dc39b6d6bfaeed8dce775e17d6ae823284f4a4ec160025",
+  "RELEASE-NOTES.md": "f7e84122b23a62f2d9e3e8ab737d2b35a03db73514e2640fd65182898b1c9461"
 }
