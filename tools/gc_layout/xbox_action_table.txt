@@ -1,0 +1,269 @@
+# Xbox MVP Baseball 2005 action table (defaults 0x195670 + Xbox layout 0x2BF960)
+# virtual buttons named for the Xbox alias table; mode: per-button read mode (meaning still to be pinned down)
+idx   a            b            modeA modeB op
+0x000 v0           v0               2     2 
+0x001 A            -                0    -1 
+0x002 B            -                0     0    (Xbox override)
+0x003 X            -                0    -1 
+0x004 Y            -                0    -1    (Xbox override)
+0x005 Start        -                0    -1 
+0x006 DUp          LY+              4     4 OR
+0x007 DUp          LY+              1     1 OR
+0x008 DDown        LY-              4     4 OR
+0x009 DDown        LY-              1     1 OR
+0x00a DLeft        LX-              4     4 OR
+0x00b DLeft        LX-              1     1 OR
+0x00c DRight       LX+              4     4 OR
+0x00d DRight       LX+              1     1 OR
+0x00e LT           -                4    -1 
+0x00f LT           -                1    -1 
+0x010 RT           -                4    -1 
+0x011 RT           -                1    -1 
+0x012 White        -                4    -1 
+0x013 White        -                1    -1 
+0x014 Black        -                4    -1 
+0x015 Black        -                1    -1 
+0x016 RThumb       -                4    -1 
+0x017 RThumb       -                1    -1 
+0x018 LThumb       -                1    -1 
+0x019 Back         -                0     0 
+0x01a none         none            -1    -1 
+0x01b LThumb       RThumb           0    -1 AND
+0x01c LThumb       RThumb           0    -1 AND
+0x01d LThumb       RThumb           0    -1 AND
+0x01e LThumb       RThumb           0    -1 AND
+0x01f LThumb       RThumb           0    -1 AND
+0x020 LThumb       RThumb           0    -1 AND
+0x021 A            -                1    -1 
+0x022 DUp          -                4    -1 
+0x023 DDown        -                4    -1 
+0x024 DLeft        -                4    -1 
+0x025 DRight       -                4    -1 
+0x026 White        -                4    -1 
+0x027 Black        -                4    -1 
+0x028 X            -                0    -1 
+0x029 RT           -                0    -1 
+0x02a B            -                0    -1 
+0x02b Y            -                0    -1 
+0x02c LT           DLeft            2     4 AND
+0x02d LT           DRight           2     4 AND
+0x02e LT           -                5    -1 
+0x02f RT           -                5    -1 
+0x030 X            -                5    -1 
+0x031 B            -                5    -1 
+0x032 LY-          LY+              5     5 A-B axis
+0x033 LX+          LX-              5     5 A-B axis
+0x034 RY-          RY+              5     5 A-B axis
+0x035 RX+          RX-              5     5 A-B axis
+0x036 DUp          -                5    -1 
+0x037 DDown        -                5    -1 
+0x038 A            -                0    -1 
+0x039 Y            -                0    -1 
+0x03a action 0xb9  -                5    -1 
+0x03b action 0xb5  -                5    -1 
+0x03c DDown        DUp              5     5 A-B axis
+0x03d DRight       DLeft            5     5 A-B axis
+0x03e B            -                2    -1 
+0x03f Y            -                2    -1 
+0x040 X            -                2    -1 
+0x041 LT           action 0xb9      2     5 B-IF-NOT-A
+0x042 LT           action 0xb5      2     5 B-IF-NOT-A
+0x043 LT           action 0xbf      2     5 B-IF-NOT-A
+0x044 LT           action 0xba      2     5 B-IF-A
+0x045 LT           action 0xbf      2     5 B-IF-A
+0x046 DRight       LT               2     2 A-NOT-B
+0x047 DLeft        LT               2     2 A-NOT-B
+0x048 Y            -                2    -1 
+0x049 RT           -                5    -1 
+0x04a Back         -                2    -1 
+0x04b LT           action 0xbc      2     5 B-IF-A
+0x04c LThumb       -                0    -1 
+0x04d RThumb       -                0    -1 
+0x04e LT           -                0    -1 
+0x04f RT           -                0    -1 
+0x050 White        -                0    -1 
+0x051 Black        -                0    -1 
+0x052 LT           -                1    -1 
+0x053 RT           -                1    -1 
+0x054 White        -                1    -1 
+0x055 Black        -                1    -1 
+0x056 LT           -                2    -1 
+0x057 RT           -                2    -1 
+0x058 White        -                2    -1 
+0x059 Black        -                2    -1 
+0x05a A            -                0    -1 
+0x05b Y            -                0    -1 
+0x05c Y            -                0    -1 
+0x05d Y            -                2    -1 
+0x05e Back         Start            0     0 OR
+0x05f RX+          RX-              5     5 A-B axis
+0x060 RY+          RY-              5     5 A-B axis
+0x061 LT           -                5    -1 
+0x062 A            -                2    -1 
+0x063 RT           -                5    -1 
+0x064 DDown        DUp              5     5 A-B axis
+0x065 White        -                0    -1 
+0x066 Black        -                0    -1 
+0x067 A            -                2    -1 
+0x068 B            -                2    -1 
+0x069 X            -                2    -1 
+0x06a Y            -                2    -1 
+0x06b Black        -                2    -1    (Xbox override)
+0x06c A            -                5    -1 
+0x06d B            -                5    -1 
+0x06e X            -                5    -1 
+0x06f Y            -                5    -1 
+0x070 Black        -                5    -1    (Xbox override)
+0x071 LThumb       -                1    -1 
+0x072 LT           -                4    -1 
+0x073 RT           -                4    -1 
+0x074 action 0xb5  -                5    -1 
+0x075 LT           LThumb           2     2 A-NOT-B
+0x076 Back         -                0    -1 
+0x077 White        -                2    -1    (Xbox override)
+0x078 White        -                1    -1    (Xbox override)
+0x079 White        DUp              2     4 AND   (Xbox override)
+0x07a White        DDown            2     4 AND   (Xbox override)
+0x07b White        DLeft            2     4 AND   (Xbox override)
+0x07c White        DLeft            2     1 AND   (Xbox override)
+0x07d White        DRight           2     4 AND   (Xbox override)
+0x07e White        DRight           2     1 AND   (Xbox override)
+0x07f White        LT               2     4 AND   (Xbox override)
+0x080 White        LT               2     1 AND   (Xbox override)
+0x081 White        RT               2     4 AND   (Xbox override)
+0x082 White        RT               2     1 AND   (Xbox override)
+0x083 none         none             2    -1 
+0x084 none         none             2    -1 
+0x085 none         none             2    -1 
+0x086 none         none             2    -1 
+0x087 none         none             2    -1 
+0x088 none         none             2    -1 
+0x089 none         none             2    -1 
+0x08a none         none             2    -1 
+0x08b none         none             2    -1 
+0x08c none         none             2    -1 
+0x08d none         none             2    -1 
+0x08e none         none             2    -1 
+0x08f none         none             2    -1 
+0x090 none         none             2    -1 
+0x091 none         none             2    -1 
+0x092 none         none             2    -1 
+0x093 none         none             2    -1 
+0x094 none         none             2    -1 
+0x095 none         none             2    -1 
+0x096 none         none             2    -1 
+0x097 none         none             2    -1 
+0x098 none         none             2    -1 
+0x099 none         none             2    -1 
+0x09a none         none             2    -1 
+0x09b none         none             2    -1 
+0x09c none         none             2    -1 
+0x09d none         none             2    -1 
+0x09e none         none             2    -1 
+0x09f none         none             2    -1 
+0x0a0 none         none             2    -1 
+0x0a1 none         none            -1    -1 
+0x0a2 A            -                0    -1 
+0x0a3 B            -                0    -1 
+0x0a4 X            -                0    -1 
+0x0a5 Y            -                0    -1 
+0x0a6 Black        -                0    -1    (Xbox override)
+0x0a7 B            LT               0     2 AND
+0x0a8 Y            LT               0     2 AND
+0x0a9 X            LT               0     2 AND
+0x0aa A            LT               0     2 AND
+0x0ab none         none            -1    -1 
+0x0ac LT           RThumb           2     2 AND
+0x0ad LT           LThumb           2     2 AND
+0x0ae LThumb       RThumb           2     5 A-NOT-B
+0x0af none         none            -1    -1 
+0x0b0 B            RT               0     2 AND   (Xbox override)
+0x0b1 Y            RT               0     2 AND   (Xbox override)
+0x0b2 X            RT               0     2 AND   (Xbox override)
+0x0b3 action 0xb5  -                5    -1 
+0x0b4 A            -                1    -1 
+0x0b5 Black        LX-              2     0 AND   (Xbox override)
+0x0b6 Black        LX+              2     0 AND   (Xbox override)
+0x0b7 none         none            -1    -1 
+0x0b8 A            -                0    -1 
+0x0b9 RThumb       LThumb           2    -1 A-NOT-B
+0x0ba Y            -                0    -1 
+0x0bb none         none            -1    -1 
+0x0bc action 0xb5  -                5    -1 
+0x0bd action 0xb9  -                5    -1 
+0x0be RT           -                5    -1 
+0x0bf none         none            -1    -1 
+0x0c0 B            -                5    -1 
+0x0c1 Y            -                5    -1 
+0x0c2 X            -                5    -1 
+0x0c3 A            -                5    -1 
+0x0c4 LT           -                0    -1 
+0x0c5 Black        -                5    -1 
+0x0c6 Black        -                5    -1 
+0x0c7 RT           -                0    -1 
+0x0c8 none         none            -1    -1 
+0x0c9 action 0xb9  -                5    -1 
+0x0ca action 0xb9  -                5    -1 
+0x0cb none         none            -1    -1 
+0x0cc B            -                2    -1 
+0x0cd Y            -                2    -1 
+0x0ce X            -                2    -1 
+0x0cf DRight       White            2     2 A-NOT-B
+0x0d0 DUp          White            2     2 A-NOT-B
+0x0d1 DLeft        White            2     2 A-NOT-B
+0x0d2 DDown        White            2     2 A-NOT-B
+0x0d3 LT           -                5    -1 
+0x0d4 RT           -                5    -1 
+0x0d5 White        -                2    -1 
+0x0d6 Black        -                2    -1 
+0x0d7 none         none            -1    -1 
+0x0d8 action 0xbc  -                5    -1 
+0x0d9 action 0xbb  -                5    -1 
+0x0da action 0xb8  -                5    -1 
+0x0db action 0xb7  -                5    -1 
+0x0dc DUp          -                4    -1 
+0x0dd DDown        -                4    -1 
+0x0de DLeft        -                4    -1 
+0x0df DRight       -                4    -1 
+0x0e0 LT           -                5    -1 
+0x0e1 RT           -                5    -1 
+0x0e2 A            -                2    -1 
+0x0e3 B            -                2    -1 
+0x0e4 X            -                2    -1 
+0x0e5 Y            -                2    -1 
+0x0e6 White        -                2    -1 
+0x0e7 Black        -                2    -1 
+0x0e8 LThumb       -                2    -1 
+0x0e9 RThumb       -                2    -1 
+0x0ea Back         -                2    -1 
+0x0eb Start        -                2    -1 
+0x0ec none         none            -1    -1 
+0x0ed alias v1 -> channel 5
+0x0ee alias v2 -> channel 6
+0x0ef alias v3 -> channel 9
+0x0f0 alias v4 -> channel 10
+0x0f1 alias v5 -> channel 11
+0x0f2 alias v6 -> channel 12
+0x0f3 alias v7 -> channel 15
+0x0f4 alias v8 -> channel 16
+0x0f5 alias v9 -> channel 14
+0x0f6 alias v10 -> channel 13
+0x0f7 alias v11 -> channel 7
+0x0f8 alias v12 -> channel 8
+0x0f9 alias v13 -> channel 1
+0x0fa alias v14 -> channel 2
+0x0fb alias v15 -> channel 3
+0x0fc alias v16 -> channel 4
+0x0fd alias v17 -> channel 17
+0x0fe alias v18 -> channel 18
+0x0ff alias v19 -> channel 19
+0x100 alias v20 -> channel 20
+0x101 alias v21 -> channel 21
+0x102 alias v22 -> channel 22
+0x103 alias v23 -> channel 23
+0x104 alias v24 -> channel 24
+0x105 none         none            -1    -1 
+0x106 LT           none             1    -1 
+0x107 DUp          none             1    -1 
+0x108 DDown        none             1    -1 
+0x109 none         none            -1    -1 

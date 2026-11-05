@@ -1,0 +1,138 @@
+MVP Baseball 2005: every action the GameCube release binds differently from the Xbox release
+Each action names virtual buttons; each release maps those to its own physical buttons.
+
+Stick = Xbox left stick / GameCube control stick; C = Xbox right stick / GameCube C stick.
+Modes: press, release, hold, repeat (menu auto-repeat), analog. "nothing" never fires.
+
+Virtual button   Xbox            GameCube
+  v1             Start           Start
+  v2             Back            Z
+  v3             A               A
+  v4             B               X
+  v5             X               B
+  v6             Y               Y
+  v7             L/LT            L/LT
+  v8             R/RT            R/RT
+  v9             White           nothing
+  v10            Black           nothing
+  v11            LS click        nothing
+  v12            RS click        nothing
+  v13            D-Up            D-Up
+  v14            D-Down          D-Down
+  v15            D-Left          D-Left
+  v16            D-Right         D-Right
+  v17            Stick right     Stick right
+  v18            Stick left      Stick left
+  v19            Stick up        Stick up
+  v20            Stick down      Stick down
+  v21            C right         C right
+  v22            C left          C left
+  v23            C up            C up
+  v24            C down          C down
+
+Action  Xbox                                           GameCube
+0x003   X [press]                                      Y [press]
+0x004   Y [press]                                      X [press]
+0x012   White [repeat]                                 C left [repeat] (without Z [hold])
+0x013   White [release]                                C left [release] (without Z [hold])
+0x014   Black [repeat]                                 C right [repeat] (without Z [hold])
+0x015   Black [release]                                C right [release] (without Z [hold])
+0x016   RS click [repeat]                              C up [repeat] (without Z [hold])
+0x017   RS click [release]                             C up [release] (without Z [hold])
+0x018   LS click [release]                             nothing [release]
+0x019   Back [press]                                   Z [press]
+0x01A   unbound                                        Z [hold]
+0x01B   LS click [press] + RS click [-1]               Z [hold] + Start [press]
+0x01C   LS click [press] + RS click [-1]               Z [hold] + Start [press]
+0x01D   LS click [press] + RS click [-1]               Z [hold] + Start [press]
+0x01E   LS click [press] + RS click [-1]               Z [hold] + Start [press]
+0x01F   LS click [press] + RS click [-1]               unbound
+0x020   LS click [press] + RS click [-1]               unbound
+0x026   White [repeat]                                 C left [repeat]
+0x027   Black [repeat]                                 C right [repeat]
+0x028   X [press]                                      B [press]
+0x02A   B [press]                                      X [press]
+0x030   X [analog]                                     B [analog]
+0x031   B [analog]                                     X [analog]
+0x039   Y [press]                                      Z [press]
+0x03E   B [hold]                                       X [hold]
+0x040   X [hold]                                       B [hold]
+0x04A   Back [hold]                                    Z [hold]
+0x04C   LS click [press]                               unbound
+0x04D   RS click [press]                               unbound
+0x050   White [press]                                  C left [press]
+0x051   Black [press]                                  C right [press]
+0x054   White [release]                                nothing [release]
+0x055   Black [release]                                nothing [release]
+0x058   White [hold]                                   C left [hold]
+0x059   Black [hold]                                   C right [hold]
+0x05B   Y [press]                                      B [press]
+0x05C   Y [press]                                      B [press]
+0x05D   Y [hold]                                       B [hold]
+0x05E   Back [press] or Start [press]                  Z [press] or Start [press]
+0x065   White [press]                                  nothing [press]
+0x066   Black [press]                                  nothing [press]
+0x068   B [hold]                                       X [hold]
+0x069   X [hold]                                       B [hold]
+0x06B   Black [hold]                                   R/RT [hold]
+0x06D   B [analog]                                     X [analog]
+0x06E   X [analog]                                     B [analog]
+0x070   Black [analog]                                 R/RT [analog]
+0x071   LS click [release]                             Z [release]
+0x072   L/LT [repeat]                                  C left [press]
+0x073   R/RT [repeat]                                  C right [press]
+0x075   L/LT [hold] (without LS click [hold])          L/LT [hold]
+0x076   Back [press]                                   Z [hold] + X [press]
+0x077   White [hold]                                   while Z [hold]: action 0xBD
+0x078   White [release]                                Z [release]
+0x079   White [hold] + D-Up [repeat]                   Z [hold] + D-Up [repeat]
+0x07A   White [hold] + D-Down [repeat]                 Z [hold] + D-Down [repeat]
+0x07B   White [hold] + D-Left [repeat]                 Z [hold] + D-Left [repeat]
+0x07C   White [hold] + D-Left [release]                Z [hold] + D-Left [release]
+0x07D   White [hold] + D-Right [repeat]                Z [hold] + D-Right [repeat]
+0x07E   White [hold] + D-Right [release]               Z [hold] + D-Right [release]
+0x07F   White [hold] + L/LT [repeat]                   Z [hold] + L/LT [repeat]
+0x080   White [hold] + L/LT [release]                  Z [hold] + L/LT [release]
+0x081   White [hold] + R/RT [repeat]                   Z [hold] + R/RT [repeat]
+0x082   White [hold] + R/RT [release]                  Z [hold] + R/RT [release]
+0x0A3   B [press]                                      X [press]
+0x0A4   X [press]                                      B [press]
+0x0A6   Black [press]                                  R/RT [press]
+0x0A7   B [press] + L/LT [hold]                        L/LT [hold] + X [press]
+0x0A8   Y [press] + L/LT [hold]                        L/LT [hold] + Y [press]
+0x0A9   X [press] + L/LT [hold]                        L/LT [hold] + B [press]
+0x0AC   L/LT [hold] + RS click [hold]                  L/LT [hold] + D-Up [press]
+0x0AD   L/LT [hold] + LS click [hold]                  L/LT [hold] + D-Down [press]
+0x0AE   LS click [hold] (without RS click [analog])    Z [hold] + action 0xB9
+0x0B0   B [press] + R/RT [hold]                        X [press] + nothing [hold]
+0x0B1   Y [press] + R/RT [hold]                        Y [press] + nothing [hold]
+0x0B2   X [press] + R/RT [hold]                        B [press] + nothing [hold]
+0x0B4   A [release]                                    A [release] (without nothing)
+0x0B5   Black [hold] + Stick left [press]              Z [hold] + Stick left [press]
+0x0B6   Black [hold] + Stick right [press]             Z [hold] + Stick right [press]
+0x0B8   A [press]                                      A [press] (without Z [hold])
+0x0B9   RS click [hold] (without LS click [-1])        Z [hold] + A [hold]
+0x0BA   Y [press]                                      B [press]
+0x0BE   R/RT [analog]                                  Z [press]
+0x0C0   B [analog]                                     X [analog]
+0x0C2   X [analog]                                     B [analog]
+0x0C5   Black [analog]                                 R/RT [hold]
+0x0C6   Black [analog]                                 R/RT [press]
+0x0C7   R/RT [press]                                   Z [press]
+0x0CC   B [hold]                                       X [hold]
+0x0CE   X [hold]                                       B [hold] (without Z [hold])
+0x0CF   D-Right [hold] (without White [hold])          D-Right [hold] (without Z [hold])
+0x0D0   D-Up [hold] (without White [hold])             D-Up [hold] (without Z [hold])
+0x0D1   D-Left [hold] (without White [hold])           D-Left [hold] (without Z [hold])
+0x0D2   D-Down [hold] (without White [hold])           D-Down [hold] (without Z [hold])
+0x0D3   L/LT [analog]                                  L/LT [hold]
+0x0D4   R/RT [analog]                                  R/RT [hold]
+0x0D5   White [hold]                                   unbound
+0x0D6   Black [hold]                                   Z [hold] + B [hold]
+0x0E3   B [hold]                                       X [hold]
+0x0E4   X [hold]                                       B [hold]
+0x0E6   White [hold]                                   nothing [hold]
+0x0E7   Black [hold]                                   nothing [hold]
+0x0E8   LS click [hold]                                nothing [hold]
+0x0E9   RS click [hold]                                nothing [hold]
+0x0EA   Back [hold]                                    Z [hold]

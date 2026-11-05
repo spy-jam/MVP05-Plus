@@ -1,0 +1,18 @@
+display_mode = "windowed"
+width = 1920
+height = 1080
+render_percent = 100
+fps_cap = 60
+vsync = true
+anisotropic_filtering = 16
+# Advertise Xbox 720p and HDTV AV pack on widescreen output. Restart after changing.
+xbox_720p = true
+
+# MVP05-Plus: GameCube controllers and PlayStation pads play as on their own releases, with their button art
+# (gc_icons / ps2_icons beside the exe, made by the installer from your own discs).
+gamecube_layout = true
+gamecube_icons = true
+playstation_layout = true
+playstation_icons = true
+# How many save backups to keep in "save backups" (0: off).
+save_backups = 10
