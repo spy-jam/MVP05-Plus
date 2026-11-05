@@ -11,6 +11,7 @@ tested), after copying that folder into "save backups". Xbox -> GameCube writes 
 template you pick (another GameCube dynasty .gci), for Dolphin's Memory Card Manager to import.
 """
 import datetime
+import struct
 import os
 import shutil
 import subprocess
@@ -184,3 +185,102 @@ def export_gamecube(root, folder, gc_template, out_dir, name=None, say=print):
     say(f"Done: {dst}\nIn Dolphin: Tools > Memory Card Manager > Import. A dynasty takes 197 of a 251-block card's "
         f"blocks, so it needs a card with no other dynasty on it.")
     return dst
+
+
+# ---------------------------------------------------------------- standings for short seasons
+#
+# The standings are the first of the three per-team tables after the rosters (docs/SAVE-CONVERSION.md 3.2): the
+# post-roster key 6ABC3D69 (Xbox), then 126 teams x [W][L][0][0], the 30 MLB teams first in the patcher's order.
+# The same table the memory patcher writes in the running game; here it's written into the save, so it's done
+# with the game closed and the save is backed up first. The game has no stored date: the season is over when the
+# MLB schedule (the first of the four after marker 2) has no unplayed game.
+
+MLB_TEAMS = ["ANA", "OAK", "SEA", "TEX", "CWS", "CLE", "DET", "KC", "MIN", "BAL", "BOS", "NYY", "TB", "TOR", "ARI",
+             "COL", "LAD", "SD", "SF", "CHC", "CIN", "HOU", "MIL", "PIT", "STL", "ATL", "FLA", "WAS", "NYM", "PHI"]
+POST_ROSTER_KEY = b"\x6a\xbc\x3d\x69"
+MARKER = b"\x0d\xf0\xef\xbe"
+MLB_SCHEDULE_CAP = 2442
+
+
+def project(w, l, games=162):
+    """The memory patcher's projection: the same winning percentage over a full season."""
+    gp = w + l
+    if gp == 0:
+        return games // 2, games - games // 2
+    pw = max(0, min(games, round(w / gp * games)))
+    return pw, games - pw
+
+
+def _standings_at(payload):
+    q = payload.find(POST_ROSTER_KEY, 0x12000)
+    if q < 0:
+        raise SaveError("couldn't find the standings in this save (no post-roster table)")
+    t = q + 4
+    recs = [(payload[t + 4 * i], payload[t + 4 * i + 1]) for i in range(30)]
+    if any(payload[t + 4 * i + 2] or payload[t + 4 * i + 3] for i in range(30)):
+        raise SaveError("the standings table isn't laid out as expected ([W][L][0][0] per team); nothing written")
+    return t, recs
+
+
+def _schedule_progress(payload):
+    """(played, scheduled) games in the MLB schedule."""
+    marks = []
+    i = payload.find(MARKER)
+    while i >= 0 and len(marks) < 7:
+        marks.append(i)
+        i = payload.find(MARKER, i + 4)
+    if len(marks) < 4:
+        return None
+    p = marks[2] + 4
+    n = struct.unpack_from("<I", payload, p)[0]
+    if n > MLB_SCHEDULE_CAP:
+        return None
+    played = sum(1 for k in range(n) if (struct.unpack_from("<H", payload, p + 4 + 28 * k + 2)[0] >> 11) & 0x1F)
+    return played, n
+
+
+def read_standings(folder):
+    """{name, records [(team, W, L)], played, scheduled} of a dynasty save."""
+    C, _ = _lib()
+    with open(os.path.join(folder, "data.dat"), "rb") as f:
+        xf = f.read()
+    m = C.parse_xbox(xf)
+    if m.get("typ") != "Dynasty":
+        raise SaveError(f"that's a {m.get('typ')} save: standings are in Dynasty saves")
+    _, recs = _standings_at(m["payload"])
+    prog = _schedule_progress(m["payload"]) or (None, None)
+    return dict(name=m["name"], records=[(t, w, l) for t, (w, l) in zip(MLB_TEAMS, recs)],
+                played=prog[0], scheduled=prog[1])
+
+
+def patch_standings(root, folder, games=162, say=print):
+    """Every MLB team's record projected to `games` games in the save (backed up first)."""
+    _check_not_running()
+    C, _ = _lib()
+    dat = os.path.join(folder, "data.dat")
+    with open(dat, "rb") as f:
+        xf = f.read()
+    m = C.parse_xbox(xf)
+    if m.get("typ") != "Dynasty":
+        raise SaveError(f"that's a {m.get('typ')} save: pick a Dynasty save")
+    if not C.verify_xbox(xf):
+        raise SaveError("that save's signature doesn't check out; it's left as it is")
+    payload = bytearray(m["payload"])
+    t, recs = _standings_at(payload)
+    if not any(w + l for w, l in recs):
+        raise SaveError("no MLB team has played a game in this save yet")
+    if all(w + l == games for w, l in recs):
+        raise SaveError(f"every team already has {games} games: this save's standings are already projected")
+    for i, (w, l) in enumerate(recs):
+        pw, pl = project(w, l, games)
+        payload[t + 4 * i], payload[t + 4 * i + 1] = pw, pl
+    out = C.build_xbox(xf, dict(name=m["name"], typ="Dynasty", flags=m["flags"], payload=bytes(payload)))
+    if not C.verify_xbox(out):
+        raise SaveError("the patched save didn't pass its signature check; nothing written")
+    b = backup_folder(root, folder, "standings patch")
+    say(f"Backed up the save to {os.path.relpath(b, root)}")
+    with open(dat + ".part", "wb") as f:
+        f.write(out)
+    os.replace(dat + ".part", dat)
+    say(f"Done: {m['name']}'s standings are projected to {games} games. Load it in the game and advance to the "
+        f"playoffs, then save.")

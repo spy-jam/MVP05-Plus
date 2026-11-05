@@ -324,9 +324,121 @@ def saves_tab(tabs, root, tk, ttk, filedialog):
     bar.grid(row=3, column=0, columnspan=3, sticky="we", pady=(8, 0))
     ttk.Button(bar, text="Import GameCube dynasty…", command=do_import).pack(side="left")
     ttk.Button(bar, text="Export to GameCube…", command=do_export).pack(side="left", padx=6)
+    ttk.Button(bar, text="Standings…", command=lambda: standings_window(frm, root, S, chosen, say, refresh)).pack(
+        side="left")
     ttk.Button(bar, text="Saves folder", command=open_folder).pack(side="right")
     ttk.Button(bar, text="Refresh", command=refresh).pack(side="right", padx=6)
     refresh()
+
+
+def standings_window(parent, root, S, chosen, say, refresh):
+    """Short seasons: every MLB team's record projected to 162 games, in the save file or in the running game."""
+    import tkinter as tk
+    from tkinter import messagebox, ttk
+
+    w = tk.Toplevel(parent)
+    w.title("Standings for short seasons")
+    w.resizable(False, False)
+    f = ttk.Frame(w, padding=12)
+    f.grid()
+    ttk.Label(f, wraplength=470, justify="left", text=(
+        "Projects every MLB team's record to a 162-game season (the same winning percentage), for dynasties "
+        "played with a short schedule. Do it after the last regular-season game, before the playoffs.")).grid(
+        row=0, column=0, columnspan=2, sticky="w")
+    how = tk.StringVar(value="file")
+    ttk.Radiobutton(f, variable=how, value="file", text=(
+        "In the save file (experimental): save the dynasty, close the game, patch the save picked in the list, "
+        "load it again")).grid(row=1, column=0, columnspan=2, sticky="w", pady=(8, 0))
+    ttk.Radiobutton(f, variable=how, value="memory", text=(
+        "In the running game (the patcher's method): save the dynasty and stay on the season screen")).grid(
+        row=2, column=0, columnspan=2, sticky="w")
+    row = ttk.Frame(f)
+    row.grid(row=3, column=0, columnspan=2, sticky="w", pady=6)
+    ttk.Label(row, text="Games in your season schedule:").pack(side="left")
+    games = tk.StringVar(value="")
+    ttk.Entry(row, textvariable=games, width=6).pack(side="left", padx=6)
+    ttk.Label(row, text="(the running game's search needs it)", foreground="#666").pack(side="left")
+    tree = ttk.Treeview(f, columns=("t", "w", "l", "pw", "pl"), show="headings", height=10)
+    for c, t in zip(("t", "w", "l", "pw", "pl"), ("Team", "W", "L", "162: W", "162: L")):
+        tree.heading(c, text=t)
+        tree.column(c, width=80, anchor="center")
+    tree.grid(row=4, column=0, columnspan=2)
+    note = ttk.Label(f, text="", wraplength=470, justify="left")
+    note.grid(row=5, column=0, columnspan=2, sticky="w", pady=4)
+    state = {}
+
+    def show(recs, text):
+        tree.delete(*tree.get_children())
+        for t, wn, ls in recs:
+            pw, pl = S.project(wn, ls)
+            tree.insert("", "end", values=(t, wn, ls, pw, pl))
+        note.configure(text=text)
+
+    def season_games():
+        try:
+            n = int(games.get())
+            assert 1 <= n <= 162
+            return n
+        except (ValueError, AssertionError):
+            messagebox.showinfo("Standings", "Enter how many games your season schedule has (1-162).", parent=w)
+            return None
+
+    def find():
+        state.clear()
+        try:
+            if how.get() == "file":
+                s = chosen()
+                if not s:
+                    return
+                r = S.read_standings(s["folder"])
+                text = f"{r['name']}"
+                if r["scheduled"]:
+                    left = r["scheduled"] - r["played"]
+                    text += (f": all {r['scheduled']} scheduled games played." if not left else
+                             f": {left} of {r['scheduled']} scheduled games not played yet. Patch after the last one.")
+                state.update(kind="file", save=s)
+                show(r["records"], text)
+            else:
+                n = season_games()
+                if not n:
+                    return
+                import standings_mem as M
+                h, addr, fmt, recs = M.find(n, root, lambda t: note.configure(text=t))
+                state.update(kind="memory", h=h, addr=addr, fmt=fmt, n=n)
+                show([(t, a, b) for t, (a, b) in zip(S.MLB_TEAMS, recs)],
+                     f"Found in the running game at {addr:#x} ({'[W][L]' if fmt == 'A' else 'split halves'}).")
+        except Exception as e:
+            show([], f"Stopped: {e}")
+
+    def apply():
+        if not state:
+            messagebox.showinfo("Standings", "Press Find first and check the records.", parent=w)
+            return
+        try:
+            if state["kind"] == "file":
+                S.patch_standings(root, state["save"]["folder"], say=say)
+                note.configure(text="Patched. Load the dynasty and advance to the playoffs, then save.")
+                refresh()
+            else:
+                import standings_mem as M
+                ok = M.apply(state["h"], state["addr"], state["fmt"], state["n"])
+                note.configure(text="Written. In the game: advance to the playoffs, then save the dynasty." if ok else
+                               "The write failed: try running the Tools as administrator.")
+        except Exception as e:
+            note.configure(text=f"Stopped: {e}")
+        state.clear()
+
+    def closing():
+        if state.get("kind") == "memory":
+            import standings_mem as M
+            M.close(state["h"])
+        w.destroy()
+
+    b = ttk.Frame(f)
+    b.grid(row=6, column=0, columnspan=2, sticky="e")
+    ttk.Button(b, text="Find", command=find).pack(side="left")
+    ttk.Button(b, text="Patch", command=apply).pack(side="left", padx=6)
+    w.protocol("WM_DELETE_WINDOW", closing)
 
 
 def main():

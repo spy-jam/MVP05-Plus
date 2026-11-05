@@ -49,7 +49,9 @@ The *Saves* tab of `MVP05-Plus-Tools.exe` converts **dynasty saves** between the
 
 Tested on mid-season dynasties, loaded and played both ways. Playoff saves are untested. Close the game before converting. How it works: [`docs/SAVE-CONVERSION.md`](docs/SAVE-CONVERSION.md).
 
-`tools/saves/standings_patcher.py` (Windows, Python) projects a short season's standings to 162 games in the running game's memory, for dynasties played with short schedules.
+**Standings for short seasons:** *Standings…* projects every MLB team's record to 162 games (the same winning percentage), for dynasties played with a short schedule, after the last regular-season game and before the playoffs. Two ways:
+- **In the save file** (experimental): save the dynasty, close the game, pick the save and patch it (it's backed up first), then load it and advance to the playoffs.
+- **In the running game** (the original patcher's method): save the dynasty, stay on the season screen, enter your season's length, *Find*, *Patch*, then advance to the playoffs and save. The standalone script is still there too: `tools/saves/standings_patcher.py`.
 
 ## Controllers
 

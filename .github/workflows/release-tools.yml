@@ -24,7 +24,8 @@ jobs:
           --paths tools/installer --paths tools/gc_layout --paths tools/ps2_layout
           --paths tools/saves --paths tools/saves/mvp05/lib
           --hidden-import make_icons --hidden-import make_ps2_icons
-          --hidden-import saves05 --hidden-import gc2xb_v0 --hidden-import xb2gc
+          --hidden-import saves05 --hidden-import standings_mem --hidden-import standings_patcher
+          --hidden-import gc2xb_v0 --hidden-import xb2gc
           --hidden-import containers --hidden-import gc_checksums
           --add-data "tools/saves/mvp05/lib/*.json;."
           --collect-submodules iconlib

@@ -9,6 +9,7 @@ First release of MVP05-Plus, built on Mad Dog's MVP05 Public Beta 3 recompilatio
 - **Button art:** GameCube or PS2 button pictures in menus, help bars and in-game, picked from the controller connected at start. Built by the installer from your own discs (optional).
 - **MVP05-Plus Tools** (`MVP05-Plus-Tools.exe`), the installer: copies your Xbox game into `assets/` and builds the button art from only the files it needs on your GameCube and PS2 discs. Portable: everything stays in the game folder.
 - **Save conversion (experimental):** GameCube dynasty saves (Dolphin `.gci`) into this game and back, in the Tools' *Saves* tab. Tested on mid-season dynasties.
+- **Standings for short seasons:** project the standings to 162 games in the running game (the original patcher's method) or, experimental, in the save file with the game closed.
 - **Shader cache** in `shader_cache/`, so shaders compile once instead of every run.
 - **Save backups** at startup, in `save backups/` (10 kept by default).
 
