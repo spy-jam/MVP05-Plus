@@ -6,9 +6,9 @@
    git push -u origin main
    ```
    If you'd rather show it as a fork of Mad Dog's repository, fork his on GitHub first and push to your fork instead.
-2. **Build the release tools:** on GitHub, open *Actions → release tools → Run workflow*. When it finishes, download its two artifacts, `MVP-Installer` and `gcbridge`, and unzip them.
+2. **Build the release tools:** on GitHub, open *Actions → release tools → Run workflow*. When it finishes, download its two artifacts, `MVP05-Plus-Tools` and `gcbridge`, and unzip them.
 3. **Build the game** on your PC as the README says (`Build-Source.cmd`), and copy Mad Dog's three VC runtime DLLs (`msvcp140.dll`, `vcruntime140.dll`, `vcruntime140_1.dll`) from his Public Beta package.
-4. **Put the zip together:** gather those files in one folder (`MVP05.exe`, `d3dcompiler_ms.dll`, the three DLLs, `MVP-Installer.exe`, `gcbridge`), then:
+4. **Put the zip together:** gather those files in one folder (`MVP05.exe`, `d3dcompiler_ms.dll`, the three DLLs, `MVP05-Plus-Tools.exe`, `gcbridge`), then:
    ```
    python tools/make_release.py <that folder> "Beta 1"
    ```

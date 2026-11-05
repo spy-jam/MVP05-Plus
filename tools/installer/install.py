@@ -1,4 +1,4 @@
-"""MVP-Installer: puts your own discs' game files where the game looks for them, in the folder the installer is in.
+"""MVP05-Plus Tools. Install: puts your own discs' game files where the game looks for them, in the folder the installer is in.
 
   Xbox disc (required)        every file, into assets/ (as Mad Dog's original asks for by hand)
   GameCube disc (optional)    only the 11 files the button art needs, read into a temporary folder, made into
@@ -7,8 +7,10 @@
 
 Nothing is written anywhere else: no registry, no shortcuts, no Program Files. Deleting the folder removes it all.
 
-  MVP-Installer.exe                       the window
-  MVP-Installer.exe --xbox X [--gamecube G] [--ps2 P] [--dir D]   the same without it
+Saves (experimental): dynasty saves between the GameCube release (Dolphin .gci) and this game (tools/saves).
+
+  MVP05-Plus-Tools.exe                       the window
+  MVP05-Plus-Tools.exe --xbox X [--gamecube G] [--ps2 P] [--dir D]   installing without it
 """
 import argparse
 import contextlib
@@ -21,7 +23,7 @@ import threading
 import traceback
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-for sub in ("gc_layout", "ps2_layout"):  # the art builders (bundled beside this when frozen)
+for sub in ("gc_layout", "ps2_layout", "saves"):  # the art builders (bundled beside this when frozen)
     for base in (os.path.join(HERE, "..", sub), os.path.join(getattr(sys, "_MEIPASS", HERE), sub)):
         if os.path.isdir(base) and base not in sys.path:
             sys.path.insert(0, base)
@@ -136,11 +138,13 @@ def gui(root):
     from tkinter import filedialog, ttk
 
     w = tk.Tk()
-    w.title(f"{GAME} Installer ({VERSION})")
+    w.title(f"{GAME} Tools ({VERSION})")
     w.resizable(False, False)
-    pad = {"padx": 10, "pady": 4}
-    frm = ttk.Frame(w, padding=12)
-    frm.grid()
+    tabs = ttk.Notebook(w)
+    tabs.grid(padx=8, pady=8)
+    frm = ttk.Frame(tabs, padding=12)
+    tabs.add(frm, text="Install")
+    saves_tab(tabs, root, tk, ttk, filedialog)
     ttk.Label(frm, text=f"{GAME} installs into this folder:", font=("Segoe UI", 10, "bold")).grid(
         row=0, column=0, columnspan=3, sticky="w")
     ttk.Label(frm, text=root, foreground="#555").grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 10))
@@ -211,6 +215,118 @@ def gui(root):
     if not os.path.isfile(os.path.join(root, "MVP05.exe")):
         say("Note: MVP05.exe isn't in this folder. Put the installer in the game's folder first.")
     w.mainloop()
+
+
+def saves_tab(tabs, root, tk, ttk, filedialog):
+    from tkinter import messagebox, simpledialog
+    import saves05 as S
+
+    frm = ttk.Frame(tabs, padding=12)
+    tabs.add(frm, text="Saves (experimental)")
+    ttk.Label(frm, text="Dynasty saves between the GameCube release (Dolphin) and this game",
+              font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=3, sticky="w")
+    ttk.Label(frm, foreground="#8a5a00", wraplength=520, justify="left", text=(
+        "Experimental: tested on mid-season dynasties; playoff saves untested. A GameCube dynasty replaces one of "
+        "your dynasties here, which is copied into \"save backups\" first. Close the game before converting.")).grid(
+        row=1, column=0, columnspan=3, sticky="w", pady=(2, 8))
+    cols = ("name", "type", "when")
+    tree = ttk.Treeview(frm, columns=cols, show="headings", height=7, selectmode="browse")
+    for c, t, wd in zip(cols, ("Save", "Type", "Saved"), (250, 90, 150)):
+        tree.heading(c, text=t)
+        tree.column(c, width=wd, anchor="w")
+    tree.grid(row=2, column=0, columnspan=3, sticky="we")
+    out = tk.Text(frm, width=72, height=6, state="disabled", wrap="word", relief="flat", background="#f4f4f4")
+    out.grid(row=4, column=0, columnspan=3, pady=(8, 0))
+    saves = {}
+
+    def say(t):
+        def f():
+            out.configure(state="normal")
+            out.insert("end", t + "\n")
+            out.see("end")
+            out.configure(state="disabled")
+        frm.after(0, f)
+
+    def refresh():
+        tree.delete(*tree.get_children())
+        saves.clear()
+        try:
+            for s in S.list_saves(root):
+                iid = tree.insert("", "end", values=(s["name"], s["type"], s["when"].strftime("%Y-%m-%d %H:%M")))
+                saves[iid] = s
+        except Exception as e:
+            say(f"Couldn't read the saves: {e}")
+        if not saves:
+            say(f"No saves in {os.path.relpath(S.udata(root), root)} yet. Start a dynasty in the game and save "
+                f"it once: a GameCube dynasty is converted over one of yours.")
+
+    def chosen(dynasty=True):
+        sel = tree.selection()
+        if not sel:
+            messagebox.showinfo("Saves", "Pick one of your saves in the list first.")
+            return None
+        s = saves[sel[0]]
+        if dynasty and s["type"] != "Dynasty":
+            messagebox.showinfo("Saves", f"\"{s['name']}\" is a {s['type']} save: pick a Dynasty save.")
+            return None
+        return s
+
+    def background(fn):
+        def work():
+            try:
+                fn()
+            except S.SaveError as e:
+                say(f"Stopped: {e}")
+            except Exception:
+                say("Something went wrong (nothing was written):\n" + traceback.format_exc(limit=4))
+            frm.after(0, refresh)
+        threading.Thread(target=work, daemon=True).start()
+
+    def do_import():
+        s = chosen()
+        if not s:
+            return
+        gci = filedialog.askopenfilename(title="Your GameCube dynasty (.gci from Dolphin's Memory Card Manager)",
+                                         filetypes=[("GameCube save", "*.gci"), ("All files", "*.*")])
+        if not gci:
+            return
+        if not messagebox.askyesno("Replace this dynasty?", (
+                f"\"{s['name']}\" will be replaced by the GameCube dynasty.\n\nIt's copied into \"save backups\" "
+                f"first, so you can put it back.\n\nGo ahead?")):
+            return
+        background(lambda: S.import_gamecube(root, gci, s["folder"], say=say))
+
+    def do_export():
+        s = chosen()
+        if not s:
+            return
+        tpl = filedialog.askopenfilename(title="Any GameCube MVP 2005 dynasty .gci (a template for the card's "
+                                               "header and icons)",
+                                         filetypes=[("GameCube save", "*.gci"), ("All files", "*.*")])
+        if not tpl:
+            return
+        dest = filedialog.askdirectory(title="Where to put the GameCube save")
+        if not dest:
+            return
+        name = simpledialog.askstring("Name", "Dynasty name on the GameCube (up to 10 letters or digits):",
+                                      initialvalue="".join(c for c in s["name"] if c.isalnum())[:10])
+        if name is None:
+            return
+        background(lambda: S.export_gamecube(root, s["folder"], tpl, dest, name or None, say=say))
+
+    def open_folder():
+        d = S.udata(root)
+        os.makedirs(d, exist_ok=True)
+        if os.name == "nt":
+            os.startfile(d)
+
+    bar = ttk.Frame(frm)
+    bar.grid(row=3, column=0, columnspan=3, sticky="we", pady=(8, 0))
+    ttk.Button(bar, text="Import GameCube dynasty…", command=do_import).pack(side="left")
+    ttk.Button(bar, text="Export to GameCube…", command=do_export).pack(side="left", padx=6)
+    ttk.Button(bar, text="Saves folder", command=open_folder).pack(side="right")
+    ttk.Button(bar, text="Refresh", command=refresh).pack(side="right", padx=6)
+    refresh()
 
 
 def main():

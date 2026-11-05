@@ -4,7 +4,7 @@ usage: python tools/make_release.py <folder with the built files> [version]
   e.g. python tools/make_release.py build\\release "Beta 1"
 
 The folder needs: MVP05.exe, d3dcompiler_ms.dll, msvcp140.dll, vcruntime140.dll, vcruntime140_1.dll (as in
-Mad Dog's package), MVP-Installer.exe and gcbridge (from the "release tools" workflow's artifacts).
+Mad Dog's package), MVP05-Plus-Tools.exe and gcbridge (from the "release tools" workflow's artifacts).
 Writes MVP05-Plus-<version>.zip here, with a SHA256-MANIFEST.json of everything in it.
 """
 import hashlib
@@ -15,7 +15,7 @@ import zipfile
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 BUILT = ["MVP05.exe", "d3dcompiler_ms.dll", "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll",
-         "MVP-Installer.exe", "gcbridge"]
+         "MVP05-Plus-Tools.exe", "gcbridge"]
 FROM_REPO = ["README.md", "RELEASE-NOTES.md", "START-HERE.txt", "mvp05-settings.toml", "SDK-LICENSE.txt",
              "THIRD_PARTY.txt", "MICROSOFT-RUNTIME-NOTICE.txt", "assets/PUT-GAME-FILES-HERE.txt"]
 NEVER = ("gc_icons", "ps2_icons", "shader_cache", "save backups")

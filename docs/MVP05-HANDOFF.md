@@ -316,3 +316,10 @@ Each pad's player index is set to its port number:
 - **PS2 pad poll:** 0x103670; channel = byte/255 (0x107E10); stick mode flag 0x7DD48C; rumble wrapper 0x4428A8.
 - **Xbox analog dead-zone table:** 0x63EDAC, filled by 0x4405B0.
 - **Layout files (`.fel`)** are refpack-compressed inside `.big` archives. Elements carry per-platform visibility flags, and the "adopt" approach copies a platform group's position and contents onto the Xbox group.
+
+## Release work (Beta 1)
+
+- **MVP05-Plus Tools** (`tools/installer/install.py`, built as `MVP05-Plus-Tools.exe` by `.github/workflows/release-tools.yml`): one window with two tabs.
+  - *Install*: `tools/installer/discs.py` reads the discs with plain Python. Xbox XDVDFS (Redump images at the XGD1/2/3 game partition offsets 0x18300000 / 0xFD90000 / 0x2080000, xiso at 0, or a folder, also one level up), title check 0x45410056 from `default.xbe`'s certificate. GameCube GCM/FST, game ID GV4E69 (RVZ/GCZ/CISO/WIA through DolphinTool). PS2 ISO 9660, serial SLUS_211.35 from `SYSTEM.CNF` (CHD through `chdman extractdvd`). Only the 11 art files are read from the GameCube and PS2 discs, into a temporary folder that's deleted; the art builders run in-process (`main()` with `sys.argv` set). Tests on synthetic images: `tools/installer/tests/test_discs.py`.
+  - *Saves (experimental)*: `tools/saves/saves05.py` around the GameCube <-> Xbox dynasty converters from the conversion handoff (`tools/saves/mvp05/`, written up in `docs/SAVE-CONVERSION.md`). Saves are in `hdd/E/UDATA/45410056/<12-hex>/` (`data.dat`, `SaveMeta.xbx` UTF-16LE with BOM, `saveimage.xbx`). Import replaces a chosen Xbox dynasty (it's the template; new folders are untested) after copying it into `save backups/<time> before GameCube import/`. Refuses while MVP05.exe runs. The three library files that opened their .json tables from the working folder now open them beside the module. Regression test with the user's reference saves: `python tools/saves/tests/run_tests.py <folder>` (3 MVP 2005 cases).
+- `tools/make_release.py` packs the release zip like Mad Dog's Public Beta; `docs/RELEASING.md` has the GitHub steps.

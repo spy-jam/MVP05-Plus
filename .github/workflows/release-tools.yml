@@ -1,5 +1,5 @@
 # Builds what a release needs besides MVP05.exe (which needs your own game files, so it's built on your PC):
-#   MVP-Installer.exe  (Windows, PyInstaller)      gcbridge  (Linux, static, for SteamOS)
+#   MVP05-Plus-Tools.exe  (Windows, PyInstaller)      gcbridge  (Linux, static, for SteamOS)
 # Run it from the Actions tab (Run workflow), or it runs on a pushed tag; the files are under the run's Artifacts.
 name: release tools
 on:
@@ -18,17 +18,24 @@ jobs:
       - run: pip install -r tools/installer/requirements.txt
       - name: Test the disc readers
         run: python tools/installer/tests/test_discs.py tools/installer
-      - name: Build MVP-Installer.exe
+      - name: Build MVP05-Plus-Tools.exe
         run: >
-          pyinstaller --onefile --windowed --name MVP-Installer
+          pyinstaller --onefile --windowed --name MVP05-Plus-Tools
           --paths tools/installer --paths tools/gc_layout --paths tools/ps2_layout
+          --paths tools/saves --paths tools/saves/mvp05/lib
           --hidden-import make_icons --hidden-import make_ps2_icons
+          --hidden-import saves05 --hidden-import gc2xb_v0 --hidden-import xb2gc
+          --hidden-import containers --hidden-import gc_checksums
+          --add-data "tools/saves/mvp05/lib/*.json;."
           --collect-submodules iconlib
           tools/installer/install.py
+      - name: Check the save converter's tables are bundled
+        shell: bash
+        run: ls tools/saves/mvp05/lib/*.json
       - uses: actions/upload-artifact@v4
         with:
-          name: MVP-Installer
-          path: dist/MVP-Installer.exe
+          name: MVP05-Plus-Tools
+          path: dist/MVP05-Plus-Tools.exe
 
   gcbridge:
     runs-on: ubuntu-latest

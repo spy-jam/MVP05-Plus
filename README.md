@@ -30,7 +30,7 @@ MVP Baseball 2005 on Windows and SteamOS, from [Mad Dog's](#credits) static reco
 ## Install
 
 1. Download `MVP05-Plus-Beta-1.zip` from [Releases](../../releases) and unzip it wherever you like. The game stays in that folder: nothing goes into Program Files, the registry or the Start menu, and deleting the folder removes it.
-2. Run `MVP-Installer.exe` and point it at:
+2. Run `MVP05-Plus-Tools.exe` and, on its *Install* tab, point it at:
    - **your Xbox disc image** (required): `.iso` (Redump), `.xiso`, or a folder of already extracted files (the one with `default.xbe`, or the folder just above it);
    - **your GameCube disc image** (optional, for GameCube button art): `.iso` / `.gcm`, or `.rvz` / `.gcz` / `.ciso` if Dolphin is installed;
    - **your PS2 disc image** (optional, for PS2 button art): `.iso`, or `.chd` if `chdman` is installed.
@@ -39,6 +39,17 @@ MVP Baseball 2005 on Windows and SteamOS, from [Mad Dog's](#credits) static reco
 3. Run `MVP05.exe`.
 
 **By hand, without the installer:** copy your extracted Xbox game files into `assets/`, with `default.xbe` directly inside it. To build button art by hand, see [Button art](#button-art-by-hand).
+
+## Saves (experimental)
+
+The *Saves* tab of `MVP05-Plus-Tools.exe` converts **dynasty saves** between the GameCube release and this game:
+
+- **Import GameCube dynasty:** your `.gci` (exported from Dolphin's *Memory Card Manager*) replaces one of your dynasties here. The one it replaces is copied into `save backups` first. Start a dynasty in the game and save it once if you don't have one yet.
+- **Export to GameCube:** one of your dynasties as a `.gci` for Dolphin to import. It needs any GameCube MVP 2005 dynasty `.gci` as a template, and a memory card with no other dynasty on it (a dynasty takes 197 of 251 blocks).
+
+Tested on mid-season dynasties, loaded and played both ways. Playoff saves are untested. Close the game before converting. How it works: [`docs/SAVE-CONVERSION.md`](docs/SAVE-CONVERSION.md).
+
+`tools/saves/standings_patcher.py` (Windows, Python) projects a short season's standings to 162 games in the running game's memory, for dynasties played with short schedules.
 
 ## Controllers
 
