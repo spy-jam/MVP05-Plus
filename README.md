@@ -31,7 +31,7 @@ MVP Baseball 2005 on Windows and SteamOS, from [Mad Dog's](#credits) static reco
 
 1. Download `MVP05-Plus-Beta-1.zip` from [Releases](../../releases) and unzip it wherever you like. The game stays in that folder: nothing goes into Program Files, the registry or the Start menu, and deleting the folder removes it.
 2. Run `MVP-Installer.exe` and point it at:
-   - **your Xbox disc image** (required): `.iso` (Redump), `.xiso`, or a folder of already extracted files;
+   - **your Xbox disc image** (required): `.iso` (Redump), `.xiso`, or a folder of already extracted files (the one with `default.xbe`, or the folder just above it);
    - **your GameCube disc image** (optional, for GameCube button art): `.iso` / `.gcm`, or `.rvz` / `.gcz` / `.ciso` if Dolphin is installed;
    - **your PS2 disc image** (optional, for PS2 button art): `.iso`, or `.chd` if `chdman` is installed.
 

@@ -142,6 +142,11 @@ class XboxFolder:
     """Already extracted files, with default.xbe directly inside the folder."""
 
     def __init__(self, path):
+        if not os.path.isfile(os.path.join(path, "default.xbe")):  # the folder that holds it, picked one level up
+            subs = [os.path.join(path, s) for s in os.listdir(path)
+                    if os.path.isfile(os.path.join(path, s, "default.xbe"))]
+            if len(subs) == 1:
+                path = subs[0]
         self.path = path
         self.entries = {}
         for d, _, fs in os.walk(path):
