@@ -35,6 +35,8 @@ MVP Baseball 2005 on Windows and SteamOS, from [Mad Dog's](#credits) static reco
    - **your GameCube disc image** (optional, for GameCube button art): `.iso` / `.gcm`, or `.rvz` / `.gcz` / `.ciso` if Dolphin is installed;
    - **your PS2 disc image** (optional, for PS2 button art): `.iso`, or `.chd` if `chdman` is installed.
 
+   Already have a `gc_icons` or `ps2_icons` set? Give it instead of the disc: the folder itself, the folder it's in, or a `.zip` with it inside. It's copied as it is.
+
    The installer checks each disc is MVP Baseball 2005. It copies the Xbox game into `assets/`, and reads only the files the art needs from the GameCube and PS2 discs (it never copies those discs).
 3. Run `MVP05.exe`.
 

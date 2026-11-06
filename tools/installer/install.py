@@ -107,28 +107,113 @@ def build_art(kind, src, root, log):
             raise discs.DiscError(f"making {out_name} stopped: {e}")
         finally:
             sys.argv = argv
-        dest = os.path.join(root, out_name)
-        old = dest + ".old"
-        shutil.rmtree(old, ignore_errors=True)
-        if os.path.exists(dest):
-            os.replace(dest, old)
-        shutil.copytree(built, dest)
-        shutil.rmtree(old, ignore_errors=True)
-        log.say(f"{out_name} made ({sum(len(f) for _, _, f in os.walk(dest))} files).")
+        put_icons(built, os.path.join(root, out_name))
+        log.say(f"{out_name} made ({count_files(os.path.join(root, out_name))} files).")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def count_files(d):
+    return sum(len(f) for _, _, f in os.walk(d))
+
+
+def put_icons(src, dest):
+    """src's set in place of dest's, the old one kept until the new one is all there."""
+    old = dest + ".old"
+    shutil.rmtree(old, ignore_errors=True)
+    if os.path.exists(dest):
+        os.replace(dest, old)
+    try:
+        shutil.copytree(src, dest)
+    except Exception:
+        shutil.rmtree(dest, ignore_errors=True)
+        if os.path.exists(old):
+            os.replace(old, dest)
+        raise
+    shutil.rmtree(old, ignore_errors=True)
+
+
+# what a made set has (make_icons.py / make_ps2_icons.py); an older set may lack some, and the game shows Xbox art
+# for whatever's missing
+ICON_FILES = ["data/frontend/" + n for n in ("shared.big", "frontend.big", "ingame.big", "igonly.big", "minigame.big")
+              ] + [f"data/frontend/load{i}.big" for i in range(8)] + ["data/igshapes/igcrsr.xsh"]
+
+
+def is_icons_source(src):
+    """A folder or a .zip: an icons set someone already made, not a disc."""
+    return os.path.isdir(src) or src.lower().endswith(".zip")
+
+
+def find_set(folder, name):
+    """The set in folder: folder itself (it has data/frontend), or a name folder in it or one level further down."""
+    def has(d):
+        return os.path.isfile(os.path.join(d, "data", "frontend", "shared.big"))
+    if has(folder) and os.path.basename(folder.rstrip("/\\")).lower() != ("ps2_icons" if name == "gc_icons" else
+                                                                               "gc_icons"):
+        return folder
+    for d in [os.path.join(folder, name)] + [os.path.join(folder, s, name) for s in sorted(os.listdir(folder))
+                                             if os.path.isdir(os.path.join(folder, s))]:
+        if has(d):
+            return d
+    return None
+
+
+def import_icons(kind, src, root, log):
+    """gc_icons or ps2_icons someone already made (a folder, or a .zip with it), copied beside the game."""
+    name = "gc_icons" if kind == "gamecube" else "ps2_icons"
+    tmp = None
+    try:
+        if not os.path.isdir(src):
+            import zipfile
+            tmp = tempfile.mkdtemp(prefix="mvp-installer-")
+            try:
+                with zipfile.ZipFile(src) as z:
+                    for m in z.infolist():
+                        target = os.path.realpath(os.path.join(tmp, m.filename))
+                        if not target.startswith(os.path.realpath(tmp) + os.sep):
+                            raise discs.DiscError(f"{os.path.basename(src)} has a file outside its own folders")
+                    z.extractall(tmp)
+            except zipfile.BadZipFile:
+                raise discs.DiscError(f"{os.path.basename(src)} isn't a zip that can be read")
+            folder = tmp
+        else:
+            folder = src
+        found = find_set(folder, name)
+        if not found:
+            raise discs.DiscError(f"no {name} in {os.path.basename(src) or src} (it should hold data/frontend/shared.big)")
+        dest = os.path.join(root, name)
+        if os.path.realpath(found) == os.path.realpath(dest):
+            log.say(f"{name} is already in place.")
+            return
+        have = {os.path.relpath(os.path.join(d, f), found).replace(os.sep, "/").lower()
+                for d, _, fs in os.walk(found) for f in fs}
+        missing = [f for f in ICON_FILES if f not in have]
+        put_icons(found, dest)
+        log.say(f"{name} copied ({count_files(dest)} files).")
+        if missing:
+            log.say(f"  It's an older set without {', '.join(os.path.basename(m) for m in missing)}: the game shows "
+                    f"Xbox art there. Make a new set from the disc for all of it.")
+    finally:
+        if tmp:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
 def run(root, xbox=None, gamecube=None, ps2=None, log=None):
+    """gamecube / ps2: a disc image (the art is made from it), or a gc_icons / ps2_icons folder or .zip (copied)."""
     log = log or Log()
+    if not (xbox or gamecube or ps2):
+        raise discs.DiscError("choose your Xbox disc, and any GameCube or PS2 disc or icons")
     if xbox:
         install_xbox(xbox, root, log)
-    elif not os.path.isfile(os.path.join(root, "assets", "default.xbe")):
-        raise discs.DiscError("choose your Xbox disc: the game needs it")
     for kind, src in (("gamecube", gamecube), ("ps2", ps2)):
-        if src:
+        if src and is_icons_source(src):
+            import_icons(kind, src, root, log)
+        elif src:
             build_art(kind, src, root, log)
-    log.say("Done. Run MVP05.exe.")
+    if not os.path.isfile(os.path.join(root, "assets", "default.xbe")):
+        log.say("The Xbox files aren't in assets yet: choose your Xbox disc too, the game needs it.")
+    else:
+        log.say("Done. Run MVP05.exe.")
 
 
 # ---------------------------------------------------------------- the window
@@ -151,9 +236,11 @@ def gui(root):
 
     kinds = [
         ("xbox", "Xbox disc (required)", [("Xbox image", "*.iso *.xiso"), ("All files", "*.*")], True),
-        ("gamecube", "GameCube disc (optional, button art)",
-         [("GameCube image", "*.iso *.gcm *.rvz *.gcz *.ciso *.wia"), ("All files", "*.*")], False),
-        ("ps2", "PS2 disc (optional, button art)", [("PS2 image", "*.iso *.chd"), ("All files", "*.*")], False),
+        ("gamecube", "GameCube disc, or a gc_icons folder or .zip someone made (optional, button art)",
+         [("GameCube image or icons zip", "*.iso *.gcm *.rvz *.gcz *.ciso *.wia *.zip"), ("All files", "*.*")],
+         "gc_icons"),
+        ("ps2", "PS2 disc, or a ps2_icons folder or .zip someone made (optional, button art)",
+         [("PS2 image or icons zip", "*.iso *.chd *.zip"), ("All files", "*.*")], "ps2_icons"),
     ]
     vars_ = {}
     for i, (k, label, types, folder_ok) in enumerate(kinds):
@@ -167,13 +254,14 @@ def gui(root):
             if p:
                 v.set(os.path.normpath(p))
 
-        ttk.Button(frm, text="Image…", command=pick).grid(row=3 + 2 * i, column=1, padx=(6, 0), pady=(0, 6))
-        if folder_ok:
-            def pickdir(v=v):
-                p = filedialog.askdirectory(title="The folder with default.xbe")
-                if p:
-                    v.set(os.path.normpath(p))
-            ttk.Button(frm, text="Folder…", command=pickdir).grid(row=3 + 2 * i, column=2, padx=(6, 0), pady=(0, 6))
+        ttk.Button(frm, text="Image…" if folder_ok is True else "File…", command=pick).grid(
+            row=3 + 2 * i, column=1, padx=(6, 0), pady=(0, 6))
+
+        def pickdir(v=v, what=folder_ok):
+            p = filedialog.askdirectory(title="The folder with default.xbe" if what is True else f"The {what} folder")
+            if p:
+                v.set(os.path.normpath(p))
+        ttk.Button(frm, text="Folder…", command=pickdir).grid(row=3 + 2 * i, column=2, padx=(6, 0), pady=(0, 6))
 
     bar = ttk.Progressbar(frm, length=440, mode="determinate", maximum=1.0)
     bar.grid(row=8, column=0, columnspan=3, sticky="we", pady=(8, 4))
