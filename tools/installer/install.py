@@ -223,7 +223,7 @@ def gui(root):
     from tkinter import filedialog, ttk
 
     w = tk.Tk()
-    w.title(f"{GAME} Tools ({VERSION})")
+    w.title(f"{GAME} Tools ({VERSION}) by spy_jam")
     w.resizable(False, False)
     tabs = ttk.Notebook(w)
     tabs.grid(padx=8, pady=8)

@@ -108,9 +108,9 @@ Put `gc_icons/` and `ps2_icons/` beside the exe. Never commit them: they're made
 ## Credits
 
 - **Mad Dog (TGP482)**: the static recompiler SDK and the MVP Baseball 2005 recompilation this is built on.
-- **MVP05-Plus**: James, with Claude (Anthropic).
+- **MVP05-Plus**: spy_jam, with Claude (Anthropic).
 - Third-party libraries: see `THIRD_PARTY.txt`.
 
 ## Legal
 
-The SDK and this fork's code are MIT licensed (`SDK-LICENSE.txt`). MVP Baseball 2005 and its art belong to their owners; none of it is included. This project isn't affiliated with or endorsed by EA, Nintendo, Sony or Microsoft. Microsoft's runtime DLLs and shader compiler in releases are Microsoft's redistributable components, under their own terms.
+The SDK and this fork's code are MIT licensed (`SDK-LICENSE.txt`); MVP05-Plus's additions are Copyright 2026 spy_jam, under the same license. MVP Baseball 2005 and its art belong to their owners; none of it is included. This project isn't affiliated with or endorsed by EA, Nintendo, Sony or Microsoft. Microsoft's runtime DLLs and shader compiler in releases are Microsoft's redistributable components, under their own terms.
