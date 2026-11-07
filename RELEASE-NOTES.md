@@ -10,7 +10,7 @@ First release of MVP05-Plus by spy_jam, built on Mad Dog's MVP05 Public Beta 3 (
 - **MVP05-Plus Tools** (`MVP05-Plus-Tools.exe`), the installer: copies your Xbox game into `assets/` and builds the button art from only the files it needs on your GameCube and PS2 discs. Portable: everything stays in the game folder. Once installed, it opens on what's installed (checked each time) with a Launch button. It also changes the display settings and makes desktop shortcuts if you want them.
 - **Shader cache** in `shader_cache/`, so shaders compile once instead of every run.
 - **Save backups** at startup, in `save backups/` (15 kept by default), listed in the Tools' *Saves* tab, where you can restore single saves or a whole date.
-- **Fullscreen by default** at 1920 x 1080 (Mad Dog's release starts windowed); change it in the Tools' *Settings* tab.
+- **Fullscreen by default**, at your desktop's own resolution (Mad Dog's release starts windowed at 1920 x 1080); change it in the Tools' *Settings* tab.
 
 ## Fixed
 - The stolen-base (baserunner) crash.

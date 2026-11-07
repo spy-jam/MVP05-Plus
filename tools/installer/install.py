@@ -520,7 +520,7 @@ def settings_tab(tabs, root, tk, ttk):
     aniso = tk.StringVar()
     vsync = tk.BooleanVar()
     x720 = tk.BooleanVar()
-    resolutions = ["1280 x 720", "1600 x 900", "1920 x 1080", "2560 x 1440", "3840 x 2160", "Desktop's own"]
+    resolutions = ["Desktop's own", "1280 x 720", "1600 x 900", "1920 x 1080", "2560 x 1440", "3840 x 2160"]
     fps_names = {"30": 30, "60 (default)": 60, "Unlimited": 0}
     aniso_names = {"As the game asks": 0, "2x": 2, "4x": 4, "8x": 8, "16x": 16}
     rows = [
@@ -581,7 +581,7 @@ def settings_tab(tabs, root, tk, ttk):
     def defaults():
         ST.write(root, dict(ST.DEFAULTS))
         load()
-        note.configure(text="Back to the defaults (fullscreen, 1920 x 1080). Restart the game if it's running.",
+        note.configure(text="Back to the defaults (fullscreen at your desktop's resolution). Restart the game if it's running.",
                        foreground="#1a7f37")
 
     # desktop shortcuts, only when asked for
