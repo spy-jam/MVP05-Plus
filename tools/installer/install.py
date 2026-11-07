@@ -540,7 +540,7 @@ def settings_tab(tabs, root, tk, ttk):
     x720 = tk.BooleanVar()
     desk = desktop_resolution()
     # The game plays widescreen when the resolution is 3:2 or wider (app::Widescreen), else 4:3, with black bars at
-    # the sides of a wider screen. So the shape is picked here and the resolutions follow it.
+    # the sides of a wider screen. So the aspect ratio is picked here and the resolutions follow it.
     WIDE, NARROW = "Widescreen (16:9)", "Standard (4:3)"
     current = f"Current desktop resolution ({desk[0]} x {desk[1]})" if desk else "Current desktop resolution"
     fit43 = f"Fit to your screen ({desk[1] * 4 // 3} x {desk[1]})" if desk else None
@@ -553,7 +553,7 @@ def settings_tab(tabs, root, tk, ttk):
     rows = [
         ("Display mode", ttk.Combobox(frm, textvariable=mode, values=["Windowed", "Borderless", "Fullscreen"],
                                       state="readonly", width=34)),
-        ("Shape", ttk.Combobox(frm, textvariable=aspect, values=[WIDE, NARROW], state="readonly", width=34)),
+        ("Aspect ratio", ttk.Combobox(frm, textvariable=aspect, values=[WIDE, NARROW], state="readonly", width=34)),
         ("Resolution", res_box),
         ("Render scale (%)", ttk.Spinbox(frm, textvariable=scale, from_=25, to=200, increment=25, width=34)),
         ("Frame rate cap", ttk.Combobox(frm, textvariable=fps, values=list(fps_names), state="readonly", width=34)),
@@ -596,7 +596,7 @@ def settings_tab(tabs, root, tk, ttk):
         narrow = aspect.get() == NARROW
         res_box.configure(values=lists[aspect.get()])
         r = parse_res(res.get())
-        if r is None or is_wide(*r) == narrow:  # the resolution doesn't have the new shape: the first that does
+        if r is None or is_wide(*r) == narrow:  # the resolution isn't the new aspect ratio: the first that is
             res.set(lists[aspect.get()][0])
         x720_box.configure(state="disabled" if narrow else "normal")
         if narrow and mode.get() == "Fullscreen":
@@ -640,7 +640,7 @@ def settings_tab(tabs, root, tk, ttk):
             return
         w, h = r
         if is_wide(w, h) != (aspect.get() == WIDE):
-            note.configure(text=f"{w} x {h} is {'widescreen' if is_wide(w, h) else '4:3'}: pick that shape, or "
+            note.configure(text=f"{w} x {h} is {'widescreen' if is_wide(w, h) else '4:3'}: pick that aspect ratio, or "
                                 f"another resolution.", foreground="#a33")
             return
         fp = fps_names.get(fps.get(), 60) if fps.get() in fps_names else int(fps.get())
