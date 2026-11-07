@@ -168,12 +168,12 @@ try {
     $b3 = Join-Path $work "beta3"
     if (-not (Test-Path $b3)) { Expand-Archive $beta3.FullName -DestinationPath $b3 -Force }
     foreach ($dll in "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll") {
-        $f = Get-ChildItem $b3 -Recurse -Filter $dll | Select-Object -First 1
+        $f = Get-ChildItem $b3 -Recurse -File -Filter $dll | Select-Object -First 1
         if (-not $f) { Fail "$dll isn't in $($beta3.Name)" }
         Copy-Item $f.FullName $stage
     }
     foreach ($n in "MVP05-Plus-Tools.exe", "gcbridge") {
-        $f = Get-ChildItem $art -Recurse -Filter $n | Select-Object -First 1
+        $f = Get-ChildItem $art -Recurse -File -Filter $n | Select-Object -First 1  # (each artifact comes in a folder of its own name)
         if (-not $f) { Fail "$n isn't in the GitHub build's files" }
         Copy-Item $f.FullName $stage
     }
