@@ -33,7 +33,7 @@ Button art follows the controller connected when the game starts. Without the ar
    - Already have a `gc_icons` or `ps2_icons` set? Choose its folder or `.zip` instead of the disc.
 
    Only the files the art needs are read from the GameCube and PS2 discs.
-3. Press **Launch MVP 05**. From then on, the Launcher opens on what's installed, with Launch.
+3. Press **Launch MVP 05**. From then on, the Launcher opens on what's installed, with Launch. To quit the game, press **Esc** (it asks first).
 
 Windows may warn that the Launcher is from an unknown publisher: choose *More info → Run anyway*.
 

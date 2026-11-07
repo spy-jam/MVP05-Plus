@@ -13,6 +13,7 @@
 #include <chrono>
 #include <csignal>
 #include <cwchar>
+#include <string>
 #include <thread>
 
 #include <imgui.h>
@@ -36,6 +37,18 @@ HWND g_hwnd = nullptr;
 constexpr UINT kApplyDisplay = WM_APP + 1, kOpenWindow = WM_APP + 2;
 bool g_mode_changed = false;
 bool g_apply_posted = false;  // a display apply is waiting in the queue or running
+bool g_asking_quit = false;   // the Esc "Quit?" box is up: the window losing focus to it is not leaving the game
+
+// Esc: asks before quitting, with a word about saves (quitting while the game writes one can spoil it)
+void AskQuit(HWND hwnd) {
+    if (g_asking_quit) return;
+    g_asking_quit = true;
+    std::wstring text = std::wstring(L"Quit ") + kGame.short_title +
+                        L"?\n\nDon't quit while the game is saving: wait until it has finished.";
+    int answer = MessageBoxW(hwnd, text.c_str(), kGame.short_title, MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON2);
+    g_asking_quit = false;
+    if (answer == IDYES) PostMessageW(hwnd, WM_CLOSE, 0, 0);
+}
 
 constexpr UINT_PTR kCursorTimer = 0x4D565055;
 bool g_cursor_hidden = false;
@@ -178,6 +191,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             if (!repeated) PostMessageW(hwnd, WM_CLOSE, 0, 0);
             return 0;
         }
+        if (wp == VK_ESCAPE && !alt) {
+            if (!repeated) AskQuit(hwnd);
+            return 0;
+        }
         if (wp == VK_F11 || (wp == VK_RETURN && alt)) {
             if (!repeated) {
                 // Keep output dimensions unchanged: they also select the Xbox TV aspect.
@@ -213,7 +230,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             if (LOWORD(wp) == WA_INACTIVE) {
                 // a changed display mode steps aside for the desktop, minimized, and comes back on return; not while
                 // handing over to the next instance, which runs in the same mode
-                if (g_mode_changed && !kernel::g_relaunching) {
+                if (g_mode_changed && !kernel::g_relaunching && !g_asking_quit) {
                     MONITORINFOEXW mi{};
                     mi.cbSize = sizeof(mi);
                     GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &mi);
