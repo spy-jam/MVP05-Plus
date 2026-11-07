@@ -42,6 +42,9 @@ float RenderScale(uint32_t guest_height);
 bool Widescreen();
 
 std::filesystem::path ExeDir();
+// the window's icon at this size: the exe's own (resource 1), else mvp05.ico beside it (MVP05-Plus Tools make it
+// from the Xbox disc's title image), else none
+void* AppIcon(int size);
 // the game in assets (game_files.cpp): its folder and this executable's xbe, from the extracted files or a disc
 // image (.iso), which it mounts as D:; false after telling the player what is missing
 struct GameFiles {

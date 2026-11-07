@@ -25,6 +25,13 @@ using Microsoft::WRL::ComPtr;
 
 namespace app {
 
+void* AppIcon(int size) {
+    HINSTANCE inst = GetModuleHandleW(nullptr);
+    if (HANDLE h = LoadImageW(inst, MAKEINTRESOURCEW(1), IMAGE_ICON, size, size, 0)) return h;
+    std::filesystem::path ico = ExeDir() / L"mvp05.ico";
+    return LoadImageW(nullptr, ico.wstring().c_str(), IMAGE_ICON, size, size, LR_LOADFROMFILE);
+}
+
 namespace {
 
 constexpr auto kMinimum = std::chrono::seconds(1);
@@ -78,7 +85,8 @@ bool OpenSplash() {
     WNDCLASSEXW wc{sizeof(wc)};
     wc.lpfnWndProc = DefWindowProcW;
     wc.hInstance = inst;
-    wc.hIcon = LoadIconW(inst, MAKEINTRESOURCEW(1));
+    wc.hIcon = static_cast<HICON>(AppIcon(GetSystemMetrics(SM_CXICON)));
+    wc.hIconSm = static_cast<HICON>(AppIcon(GetSystemMetrics(SM_CXSMICON)));
     wc.hCursor = LoadCursorW(nullptr, MAKEINTRESOURCEW(32514));  // IDC_WAIT
     std::wstring cls = std::wstring(kGame.name) + L"Splash";
     wc.lpszClassName = cls.c_str();

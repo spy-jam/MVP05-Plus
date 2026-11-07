@@ -322,7 +322,8 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = app::WndProc;
     wc.hInstance = inst;
-    wc.hIcon = LoadIconW(inst, MAKEINTRESOURCEW(1));
+    wc.hIcon = static_cast<HICON>(app::AppIcon(GetSystemMetrics(SM_CXICON)));
+    wc.hIconSm = static_cast<HICON>(app::AppIcon(GetSystemMetrics(SM_CXSMICON)));
     wc.hbrBackground = static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
     wc.lpszClassName = app::kGame.name;
     RegisterClassExW(&wc);

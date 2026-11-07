@@ -279,14 +279,17 @@ def gui(root):
 
     w = tk.Tk()
     w.title(f"{GAME} Tools ({VERSION}) by spy_jam")
-    for ico in (os.path.join(getattr(sys, "_MEIPASS", ""), "mvp2005.ico"), os.path.join(HERE, "..", "..", "res",
-                                                                                         "mvp2005.ico")):
+    import title_icon
+    title_icon.ensure(root)  # the game's icon from the Xbox disc, once it's installed
+
+    def set_icon():
+        ico = os.path.join(root, title_icon.ICO)
         if os.name == "nt" and os.path.isfile(ico):
             try:
                 w.iconbitmap(default=ico)
             except tk.TclError:
                 pass
-            break
+    set_icon()
     w.resizable(False, False)
     tabs = ttk.Notebook(w)
     tabs.grid(padx=8, pady=8)
@@ -398,6 +401,9 @@ def gui(root):
         try:
             run(root, **{k: (v.get().strip() or None) for k, v in vars_.items()}, log=Log(say, progress))
             w.after(0, lambda: bar.configure(value=1.0))
+            import title_icon
+            if title_icon.ensure(root, say):
+                w.after(0, set_icon)
             r = check_install(root)
             if r["xbox_ok"] and r["exe"]:
                 w.after(1200, lambda: (show(r), [v.set("") for v in vars_.values()]))

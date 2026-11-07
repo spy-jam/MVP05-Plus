@@ -38,9 +38,3 @@ endif()
 # target name = GAME_EXE in build.bat, xbe = GAME_XBE
 add_xbe_image(MVP05 default.xbe game.toml ${GAME_PARTITIONS} game)
 
-# MVP05-Plus: the icon (res/mvp2005.ico) in MVP05.exe. -DMVP05_ICON=OFF builds without it.
-option(MVP05_ICON "Put res/mvp2005.ico in MVP05.exe" ON)
-if(WIN32 AND MVP05_ICON)
-    enable_language(RC)
-    target_sources(MVP05 PRIVATE res/mvp05.rc)
-endif()

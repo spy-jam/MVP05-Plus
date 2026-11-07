@@ -22,3 +22,4 @@ assets/*
 /save backups/
 /*.log
 /gcbridge.out
+/mvp05.ico
