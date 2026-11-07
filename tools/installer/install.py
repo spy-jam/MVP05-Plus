@@ -481,6 +481,28 @@ def when_text(t):
     return f"{t.month:02d}-{t.day:02d}-{t.year} {t.hour % 12 or 12}:{t.minute:02d} {'AM' if t.hour < 12 else 'PM'}"
 
 
+def right_click_menu(tree, items_for):
+    """A right-click menu on a list's rows: the row under the pointer is picked (kept with the others when it's
+    already one of several picked), then items_for(row) gives the menu's [(label, command)]."""
+    import tkinter as tk
+
+    def popup(e):
+        iid = tree.identify_row(e.y)
+        if not iid:
+            return
+        if iid not in tree.selection():
+            tree.selection_set(iid)
+        tree.focus(iid)
+        m = tk.Menu(tree, tearoff=0)
+        for label, cmd in items_for(iid):
+            m.add_command(label=label, command=cmd)
+        try:
+            m.tk_popup(e.x_root, e.y_root)
+        finally:
+            m.grab_release()
+    tree.bind("<Button-3>", popup)
+
+
 def open_in_explorer(path):
     os.makedirs(path, exist_ok=True)
     if os.name == "nt":
@@ -528,12 +550,16 @@ def current_saves_tab(nb, root, tk, ttk):
         for i, p in B.save_folders(os.path.join(root, "hdd")).items():
             files = [os.path.join(d, f) for d, _, fs in os.walk(p) for f in fs]
             when = max((os.path.getmtime(f) for f in files), default=os.path.getmtime(p))
-            saves.append((B.save_name(p), when, sum(os.path.getsize(f) for f in files)))
-        for name, when, size in sorted(saves, key=lambda x: x[1], reverse=True):
-            tree.insert("", "end", text=name, values=(
+            saves.append((B.save_name(p), when, sum(os.path.getsize(f) for f in files), p))
+        folders.clear()
+        for name, when, size, p in sorted(saves, key=lambda x: x[1], reverse=True):
+            folders[tree.insert("", "end", text=name, values=(
                 when_text(datetime.datetime.fromtimestamp(when)),
-                f"{size / 2**20:.1f} MB" if size >= 2**20 else f"{max(1, size // 1024)} KB"))
+                f"{size / 2**20:.1f} MB" if size >= 2**20 else f"{max(1, size // 1024)} KB"))] = p
         note.configure(text="" if saves else "No saves yet: they appear here once you save in the game.")
+
+    folders = {}
+    right_click_menu(tree, lambda iid: [("Open folder", lambda: open_in_explorer(folders[iid]))])
 
     bar = ttk.Frame(frm)
     bar.grid(row=2, column=0, sticky="we", pady=(8, 0))
@@ -844,6 +870,11 @@ def backups_tab(nb, root, tk, ttk, refresh_current):
     bar = ttk.Frame(frm)
     bar.grid(row=3, column=0, sticky="we", pady=(8, 0))
     ttk.Button(bar, text="Restore…", command=do_restore).pack(side="left")
+
+    def backup_menu(iid):
+        kind, b, sv = rows[iid]
+        return [("Restore…", do_restore), ("Open folder", lambda: open_in_explorer(sv["path"] if sv else b["path"]))]
+    right_click_menu(tree, backup_menu)
     ttk.Label(bar, text="Keep").pack(side="left", padx=(16, 4))
     kb = ttk.Combobox(bar, textvariable=keep, values=choices, state="readonly", width=6)
     kb.pack(side="left")
