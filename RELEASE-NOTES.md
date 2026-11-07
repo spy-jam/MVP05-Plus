@@ -7,9 +7,9 @@ First release of MVP05-Plus by spy_jam, built on Mad Dog's MVP05 Public Beta 3 r
 - **PlayStation pads** with the PS2 release's stick handling, analog button pressure and rumble.
 - **Native control layouts:** GameCube controllers use the GameCube release's layout, PlayStation pads the PS2 release's.
 - **Button art:** GameCube or PS2 button pictures in menus, help bars and in-game, picked from the controller connected at start. Built by the installer from your own discs (optional).
-- **MVP05-Plus Tools** (`MVP05-Plus-Tools.exe`), the installer: copies your Xbox game into `assets/` and builds the button art from only the files it needs on your GameCube and PS2 discs. Portable: everything stays in the game folder.
+- **MVP05-Plus Tools** (`MVP05-Plus-Tools.exe`), the installer: copies your Xbox game into `assets/` and builds the button art from only the files it needs on your GameCube and PS2 discs. Portable: everything stays in the game folder. Once installed, it opens on what's installed (checked each time) with a Launch button.
 - **Shader cache** in `shader_cache/`, so shaders compile once instead of every run.
-- **Save backups** at startup, in `save backups/` (10 kept by default), listed and restored in the Tools' *Save backups* tab.
+- **Save backups** at startup, in `save backups/` (10 kept by default), listed in the Tools' *Save backups* tab, where you can restore single saves or a whole date.
 
 ## Fixed
 - The stolen-base (baserunner) crash.

@@ -44,13 +44,41 @@ def save_name(folder):
     return os.path.basename(folder)
 
 
-def saves_in(drive_parent):
-    """The game's saves under <drive_parent>/E, by name."""
+def save_folders(drive_parent):
+    """{folder id: path} of the game's saves under <drive_parent>/E."""
     base = os.path.join(drive_parent, TITLE_UDATA)
     if not os.path.isdir(base):
-        return []
-    return sorted(save_name(os.path.join(base, d)) for d in os.listdir(base)
-                  if os.path.isdir(os.path.join(base, d)))
+        return {}
+    return {d: os.path.join(base, d) for d in os.listdir(base) if os.path.isdir(os.path.join(base, d))}
+
+
+def saves_in(drive_parent):
+    """The game's saves under <drive_parent>/E, by name."""
+    return sorted(save_name(p) for p in save_folders(drive_parent).values())
+
+
+def _files(folder):
+    out = {}
+    for d, _, fs in os.walk(folder):
+        for f in fs:
+            p = os.path.join(d, f)
+            st = os.stat(p)
+            out[os.path.relpath(p, folder)] = (st.st_size, st.st_mtime)
+    return out
+
+
+def compare(backup_save, current_save):
+    """'same', 'different' or 'not in your saves now' (copies keep the files' times, so equal times and sizes
+    mean the same save)."""
+    if not current_save or not os.path.isdir(current_save):
+        return "not in your saves now"
+    a, b = _files(backup_save), _files(current_save)
+    if a.keys() != b.keys():
+        return "different"
+    for k, (size, t) in a.items():
+        if b[k][0] != size or abs(b[k][1] - t) > 2:
+            return "different"
+    return "same as now"
 
 
 def list_backups(root):
@@ -67,12 +95,17 @@ def list_backups(root):
             when = datetime.datetime.strptime(d[:19], "%Y-%m-%d %H-%M-%S")
         except ValueError:
             when = datetime.datetime.fromtimestamp(os.path.getmtime(os.path.join(p, LIST)))
-        out.append(dict(path=p, name=d, when=when, saves=saves_in(p)))
+        now = save_folders(os.path.join(root, "hdd"))
+        saves = [dict(id=i, path=sp, name=save_name(sp), state=compare(sp, now.get(i)))
+                 for i, sp in save_folders(p).items()]
+        saves.sort(key=lambda x: x["name"].lower())
+        out.append(dict(path=p, name=d, when=when, saves=[x["name"] for x in saves], items=saves))
     return sorted(out, key=lambda b: b["when"], reverse=True)
 
 
-def restore(root, backup, say=print):
-    """backup's saves in place of the game's, after making a backup of the game's own."""
+def restore(root, backup, say=print, ids=None):
+    """backup's saves in place of the game's (all of them, or only the save folders in ids), after making a
+    backup of the game's own."""
     if game_running():
         raise BackupError("close MVP05.exe first: the game keeps its saves open while it runs")
     src = os.path.join(backup, "E")
@@ -87,6 +120,25 @@ def restore(root, backup, say=print):
         with open(os.path.join(keep, LIST), "w") as f:
             f.write("the saves before a restore with MVP05-Plus Tools\n")
         say(f"Your current saves are kept as the backup \"{os.path.basename(keep)}\".")
+    if ids:
+        have = save_folders(backup)
+        missing = [i for i in ids if i not in have]
+        if missing:
+            raise BackupError("that backup doesn't have " + ", ".join(missing))
+        base = os.path.join(root, "hdd", TITLE_UDATA)
+        os.makedirs(base, exist_ok=True)
+        for i in ids:
+            dest = os.path.join(base, i)
+            new, old = dest + ".restoring", dest + ".old"
+            for p in (new, old):
+                shutil.rmtree(p, ignore_errors=True)
+            shutil.copytree(have[i], new)
+            if os.path.isdir(dest):
+                os.replace(dest, old)
+            os.replace(new, dest)
+            shutil.rmtree(old, ignore_errors=True)
+            say(f"Restored \"{save_name(dest)}\" from {os.path.basename(backup)}.")
+        return
     new, old = drive + ".restoring", drive + ".old"
     for p in (new, old):
         shutil.rmtree(p, ignore_errors=True)

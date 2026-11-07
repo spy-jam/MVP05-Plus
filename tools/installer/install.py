@@ -13,10 +13,12 @@ Save backups: the game's own backups of your saves (save backups/), listed and r
   MVP05-Plus-Tools.exe --xbox X [--gamecube G] [--ps2 P] [--dir D]   installing without it
 """
 import argparse
+import json
 import contextlib
 import io
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import threading
@@ -64,9 +66,8 @@ def install_xbox(src, root, log):
         total = sum(n for _, n in todo.values())
         log.say(f"Xbox disc: MVP Baseball 2005, {len(files)} files"
                 + (f", copying {len(todo)} ({total / 2**20:.0f} MB)" if todo else ", already in assets"))
-        if not todo:
-            return
-        need_space(root, total)
+        if todo:
+            need_space(root, total)
         done = [0]
 
         def step(n):
@@ -76,7 +77,60 @@ def install_xbox(src, root, log):
 
         for p, (dest, _) in sorted(todo.items()):
             d.copy(p, dest, step)
+        with open(os.path.join(assets, MANIFEST), "w") as f:  # what a complete install has: checked at each start
+            json.dump({"title": "MVP Baseball 2005 (Xbox)", "files": {p: n for p, (_, n) in files.items()}}, f)
     log.say("Xbox files are in assets.")
+
+
+MANIFEST = "mvp05-plus-install.json"
+
+
+def check_install(root):
+    """What's installed, for the window: {exe, xbox, xbox_ok, gamecube, ps2} (texts; xbox_ok True when playable)."""
+    assets = os.path.join(root, "assets")
+    r = {"exe": os.path.isfile(os.path.join(root, "MVP05.exe"))}
+    xbe = os.path.join(assets, "default.xbe")
+    if not os.path.isfile(xbe):
+        r["xbox"], r["xbox_ok"] = "not installed", False
+    else:
+        try:
+            with open(xbe, "rb") as f:
+                tid, name = discs.xbe_title(f.read())
+            if tid != discs.XBOX_TITLE:
+                raise discs.DiscError(f"assets holds {name or 'another game'}, not MVP Baseball 2005")
+            m = os.path.join(assets, MANIFEST)
+            if os.path.isfile(m):
+                with open(m) as f:
+                    want = json.load(f)["files"]
+                gone, bad = [], []
+                for p, n in want.items():
+                    f = os.path.join(assets, *p.split("/"))
+                    if not os.path.isfile(f):
+                        gone.append(p)
+                    elif os.path.getsize(f) != n:
+                        bad.append(p)
+                if bad or gone:
+                    r["xbox"], r["xbox_ok"] = f"incomplete: {len(bad) + len(gone)} of {len(want)} files missing or " \
+                                              f"changed (install it again)", False
+                else:
+                    r["xbox"], r["xbox_ok"] = f"installed ({len(want)} files, all there)", True
+            elif os.path.isfile(os.path.join(assets, "data", "frontend", "shared.big")):
+                r["xbox"], r["xbox_ok"] = "installed (put there by hand)", True
+            else:
+                r["xbox"], r["xbox_ok"] = "incomplete: default.xbe is there but the game's data isn't", False
+        except Exception as e:
+            r["xbox"], r["xbox_ok"] = f"can't be used: {e}", False
+    for kind, name in (("gamecube", "gc_icons"), ("ps2", "ps2_icons")):
+        d = os.path.join(root, name)
+        if not os.path.isfile(os.path.join(d, "data", "frontend", "shared.big")):
+            r[kind] = "not installed (optional)"
+        else:
+            have = {os.path.relpath(os.path.join(a, f), d).replace(os.sep, "/").lower()
+                    for a, _, fs in os.walk(d) for f in fs}
+            missing = [f for f in ICON_FILES if f not in have]
+            r[kind] = "installed" + (" (an older set, missing " + ", ".join(os.path.basename(m) for m in missing) + ")"
+                                     if missing else "")
+    return r
 
 
 def build_art(kind, src, root, log):
@@ -227,13 +281,36 @@ def gui(root):
     w.resizable(False, False)
     tabs = ttk.Notebook(w)
     tabs.grid(padx=8, pady=8)
-    frm = ttk.Frame(tabs, padding=12)
-    tabs.add(frm, text="Install")
+    tab = ttk.Frame(tabs, padding=12)
+    tabs.add(tab, text="Install")
     backups_tab(tabs, root, tk, ttk)
+
+    # --- what's installed, with Launch: shown when the game is ready to play
+    ready = ttk.Frame(tab)
+    ttk.Label(ready, text=f"{GAME} is installed", font=("Segoe UI", 12, "bold")).grid(
+        row=0, column=0, columnspan=2, sticky="w")
+    ttk.Label(ready, text=root, foreground="#555").grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 10))
+    lines = {}
+    for i, (k, label) in enumerate((("xbox", "Xbox game"), ("gamecube", "GameCube button art"),
+                                    ("ps2", "PS2 button art"))):
+        mark = None
+        text = ttk.Label(ready)
+        text.grid(row=2 + i, column=0, columnspan=2, sticky="w", pady=1)
+        lines[k] = (mark, text, label)
+    rb = ttk.Frame(ready)
+    rb.grid(row=6, column=0, columnspan=2, sticky="we", pady=(16, 0))
+    launch = ttk.Button(rb, text="Launch MVP 05")
+    launch.pack(side="left", ipadx=18, ipady=6)
+    change = ttk.Button(rb, text="Add or change button art, or reinstall…")
+    change.pack(side="left", padx=10)
+    launch_note = ttk.Label(ready, text="", foreground="#a33", wraplength=520, justify="left")
+    launch_note.grid(row=7, column=0, columnspan=2, sticky="w", pady=(8, 0))
+
+    # --- the discs
+    frm = ttk.Frame(tab)
     ttk.Label(frm, text=f"{GAME} installs into this folder:", font=("Segoe UI", 10, "bold")).grid(
         row=0, column=0, columnspan=3, sticky="w")
     ttk.Label(frm, text=root, foreground="#555").grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 10))
-
     kinds = [
         ("xbox", "Xbox disc (required)", [("Xbox image", "*.iso *.xiso"), ("All files", "*.*")], True),
         ("gamecube", "GameCube disc, or a gc_icons folder or .zip someone made (optional, button art)",
@@ -243,10 +320,12 @@ def gui(root):
          [("PS2 image or icons zip", "*.iso *.chd *.zip"), ("All files", "*.*")], "ps2_icons"),
     ]
     vars_ = {}
+    labels = {}
     for i, (k, label, types, folder_ok) in enumerate(kinds):
         v = tk.StringVar()
         vars_[k] = v
-        ttk.Label(frm, text=label).grid(row=2 + 2 * i, column=0, columnspan=3, sticky="w")
+        labels[k] = ttk.Label(frm, text=label)
+        labels[k].grid(row=2 + 2 * i, column=0, columnspan=3, sticky="w")
         ttk.Entry(frm, textvariable=v, width=60).grid(row=3 + 2 * i, column=0, sticky="we", pady=(0, 6))
 
         def pick(v=v, types=types):
@@ -265,10 +344,13 @@ def gui(root):
 
     bar = ttk.Progressbar(frm, length=440, mode="determinate", maximum=1.0)
     bar.grid(row=8, column=0, columnspan=3, sticky="we", pady=(8, 4))
-    out = tk.Text(frm, width=72, height=9, state="disabled", wrap="word", relief="flat", background="#f4f4f4")
-    out.grid(row=9, column=0, columnspan=3, **{"pady": 4})
-    go = ttk.Button(frm, text="Install")
-    go.grid(row=10, column=2, sticky="e", pady=(6, 0))
+    out = tk.Text(frm, width=72, height=8, state="disabled", wrap="word", relief="flat", background="#f4f4f4")
+    out.grid(row=9, column=0, columnspan=3, pady=4)
+    fb = ttk.Frame(frm)
+    fb.grid(row=10, column=0, columnspan=3, sticky="we", pady=(6, 0))
+    go = ttk.Button(fb, text="Install")
+    go.pack(side="right")
+    back = ttk.Button(fb, text="← Back")
 
     def say(t):
         def f():
@@ -278,6 +360,27 @@ def gui(root):
             out.configure(state="disabled")
         w.after(0, f)
 
+    def show(state=None):
+        """The installed view when the game's ready to play, else the discs."""
+        r = state or check_install(root)
+        ok = r["xbox_ok"] and r["exe"]
+        if ok:
+            for k, (mark, text, label) in lines.items():
+                good = r[k].startswith("installed")
+                text.configure(text=f"{label}: {r[k]}", foreground="#1a7f37" if good else "#777")
+            frm.grid_remove()
+            ready.grid(row=0, column=0, sticky="nw")
+            back.pack(side="left")
+            labels["xbox"].configure(text="Xbox disc (installed: leave empty, or choose one to install again)")
+        else:
+            ready.grid_remove()
+            frm.grid(row=0, column=0, sticky="nw")
+            if not r["exe"]:
+                say("Note: MVP05.exe isn't in this folder. Put MVP05-Plus Tools in the game's folder.")
+            elif r["xbox"] != "not installed":
+                say(f"Xbox game: {r['xbox']}")
+        return ok
+
     def progress(x):
         w.after(0, lambda: bar.configure(value=x))
 
@@ -285,6 +388,9 @@ def gui(root):
         try:
             run(root, **{k: (v.get().strip() or None) for k, v in vars_.items()}, log=Log(say, progress))
             w.after(0, lambda: bar.configure(value=1.0))
+            r = check_install(root)
+            if r["xbox_ok"] and r["exe"]:
+                w.after(1200, lambda: (show(r), [v.set("") for v in vars_.values()]))
         except discs.DiscError as e:
             say(f"Stopped: {e}")
         except Exception:
@@ -297,11 +403,24 @@ def gui(root):
         bar.configure(value=0)
         threading.Thread(target=work, daemon=True).start()
 
+    def do_launch():
+        exe = os.path.join(root, "MVP05.exe")
+        try:
+            subprocess.Popen([exe], cwd=root, close_fds=True)
+        except OSError as e:
+            launch_note.configure(text=f"MVP05.exe wouldn't start: {e}")
+            return
+        w.after(800, w.destroy)
+
+    def do_change():
+        ready.grid_remove()
+        frm.grid(row=0, column=0, sticky="nw")
+
     go.configure(command=start)
-    if os.path.isfile(os.path.join(root, "assets", "default.xbe")):
-        say("The Xbox files are already in assets: choose only the discs you want button art from.")
-    if not os.path.isfile(os.path.join(root, "MVP05.exe")):
-        say("Note: MVP05.exe isn't in this folder. Put the installer in the game's folder first.")
+    launch.configure(command=do_launch)
+    change.configure(command=do_change)
+    back.configure(command=lambda: show())
+    show()
     w.mainloop()
 
 
@@ -313,15 +432,15 @@ def backups_tab(tabs, root, tk, ttk):
     tabs.add(frm, text="Save backups")
     ttk.Label(frm, text="Save backups", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, sticky="w")
     ttk.Label(frm, wraplength=520, justify="left", text=(
-        "The game backs up your saves each time it starts, when they've changed (save_backups in "
-        "mvp05-settings.toml says how many to keep). Restoring puts all of a backup's saves back; your saves "
-        "as they are now become a backup first, so you can undo it. Close the game first.")).grid(
+        "The game backs up your saves each time it starts, when they've changed. Open a date to see its saves, "
+        "pick the ones you want (Ctrl+click for several), or pick the date itself for all of them, and Restore. "
+        "Your saves as they are now become a backup first, so you can undo it. Close the game first.")).grid(
         row=1, column=0, sticky="w", pady=(2, 8))
-    tree = ttk.Treeview(frm, columns=("when", "saves"), show="headings", height=9, selectmode="browse")
-    tree.heading("when", text="Backed up")
-    tree.heading("saves", text="Saves in it")
-    tree.column("when", width=220, anchor="w")
-    tree.column("saves", width=300, anchor="w")
+    tree = ttk.Treeview(frm, columns=("state",), show="tree headings", height=11, selectmode="extended")
+    tree.heading("#0", text="Backed up / save")
+    tree.heading("state", text="Compared with your saves now")
+    tree.column("#0", width=330, anchor="w")
+    tree.column("state", width=190, anchor="w")
     tree.grid(row=2, column=0, sticky="we")
     out = tk.Text(frm, width=72, height=4, state="disabled", wrap="word", relief="flat", background="#f4f4f4")
     out.grid(row=4, column=0, pady=(8, 0))
@@ -338,26 +457,35 @@ def backups_tab(tabs, root, tk, ttk):
         rows.clear()
         for b in B.list_backups(root):
             when = b["when"].strftime("%Y-%m-%d %H:%M:%S") + (" (before restore)" if "before restore" in b["name"] else "")
-            iid = tree.insert("", "end", values=(when,
-                                                 ", ".join(b["saves"]) or "(no saves)"))
-            rows[iid] = b
+            n = len(b["items"])
+            parent = tree.insert("", "end", text=when, values=(f"{n} save{'s' if n != 1 else ''}",))
+            rows[parent] = ("backup", b, None)
+            for s in b["items"]:
+                iid = tree.insert(parent, "end", text=s["name"], values=(s["state"],))
+                rows[iid] = ("save", b, s)
         if not rows:
             say("No backups yet: the game makes one when it starts, once you have saves.")
 
     def do_restore():
-        sel = tree.selection()
+        sel = [rows[i] for i in tree.selection()]
         if not sel:
-            messagebox.showinfo("Save backups", "Pick a backup in the list first.")
+            messagebox.showinfo("Save backups", "Pick a date, or saves under one, first.")
             return
-        b = rows[sel[0]]
-        now = B.saves_in(os.path.join(root, "hdd"))
-        if not messagebox.askyesno("Restore this backup?", (
-                f"Your saves will be replaced by the ones backed up {b['when'].strftime('%Y-%m-%d %H:%M')}:\n"
-                f"{', '.join(b['saves']) or '(none)'}\n\nYour saves now ({', '.join(now) or 'none'}) are kept as a "
-                f"backup first.\n\nGo ahead?")):
+        backups_picked = {id(b): b for _, b, _ in sel}
+        if len(backups_picked) > 1:
+            messagebox.showinfo("Save backups", "Pick saves from one date at a time.")
+            return
+        b = sel[0][1]
+        whole = any(kind == "backup" for kind, _, _ in sel)
+        picked = b["items"] if whole else [s for kind, _, s in sel if kind == "save"]
+        when = b["when"].strftime("%Y-%m-%d %H:%M")
+        names = "\n".join("  " + s["name"] for s in picked) or "  (none)"
+        what = (f"All your saves will be replaced by the {len(picked)} backed up {when}:\n{names}" if whole else
+                f"These saves will be put back as they were {when}:\n{names}\n\nYour other saves stay as they are.")
+        if not messagebox.askyesno("Restore?", what + "\n\nYour saves now are kept as a backup first.\n\nGo ahead?"):
             return
         try:
-            B.restore(root, b["path"], say=say)
+            B.restore(root, b["path"], say=say, ids=None if whole else [s["id"] for s in picked])
         except B.BackupError as e:
             say(f"Stopped: {e}")
         except Exception as e:

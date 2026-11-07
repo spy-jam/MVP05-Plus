@@ -38,13 +38,13 @@ MVP Baseball 2005 on Windows and SteamOS, from [Mad Dog's](#credits) static reco
    Already have a `gc_icons` or `ps2_icons` set? Give it instead of the disc: the folder itself, the folder it's in, or a `.zip` with it inside. It's copied as it is.
 
    The installer checks each disc is MVP Baseball 2005. It copies the Xbox game into `assets/`, and reads only the files the art needs from the GameCube and PS2 discs (it never copies those discs).
-3. Run `MVP05.exe`.
+3. Run `MVP05.exe`, or press **Launch MVP 05** in the Tools. Once the game is installed, the Tools open on what's installed, with Launch, and check each time that the game files are all there.
 
 **By hand, without the installer:** copy your extracted Xbox game files into `assets/`, with `default.xbe` directly inside it. To build button art by hand, see [Button art](#button-art-by-hand).
 
 ## Save backups
 
-Each time the game starts, it backs up your saves into `save backups` if they've changed since the last backup (`save_backups` in the settings says how many to keep). The *Save backups* tab of `MVP05-Plus-Tools.exe` lists them by date, with the saves in each, and restores one: your saves as they are become a backup first, so a restore can be undone. Close the game before restoring.
+Each time the game starts, it backs up your saves into `save backups` if they've changed since the last backup (`save_backups` in the settings says how many to keep). The *Save backups* tab of `MVP05-Plus-Tools.exe` lists them by date. Open a date to see its saves and how each compares with yours now, then restore just the saves you pick, or the whole date. Your saves as they are become a backup first, so a restore can be undone. Close the game before restoring.
 
 ## Controllers
 
