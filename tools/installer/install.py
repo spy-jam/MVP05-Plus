@@ -589,7 +589,7 @@ def settings_tab(tabs, root, tk, ttk):
              NARROW: ([fit43] if fit43 else []) + ["640 x 480", "800 x 600", "1024 x 768", "1280 x 960", "1440 x 1080",
                                                    "1600 x 1200", "1920 x 1440", "2880 x 2160"]}
     fps_names = {"30": 30, "60 (default)": 60, "Unlimited": 0}
-    aniso_names = {"As the game asks": 0, "2x": 2, "4x": 4, "8x": 8, "16x": 16}
+    aniso_names = {"Off (as on Xbox)": 0, "2x": 2, "4x": 4, "8x": 8, "16x": 16}
     res_box = ttk.Combobox(frm, textvariable=res, values=lists[WIDE], width=34)
     rows = [
         ("Display mode", ttk.Combobox(frm, textvariable=mode, values=["Windowed", "Borderless", "Fullscreen"],
@@ -633,12 +633,21 @@ def settings_tab(tabs, root, tk, ttk):
             w, h = desk or (16, 9)
         return w * 2 >= h * 3
 
+    wide_720 = [True]  # 720p mode as it was in 16:9, for switching back
+
     def shape_changed(_=None):
         narrow = aspect.get() == NARROW
         res_box.configure(values=lists[aspect.get()])
         r = parse_res(res.get())
         if r is None or is_wide(*r) == narrow:  # the resolution isn't the new aspect ratio: the first that is
             res.set(lists[aspect.get()][0])
+        # 720p mode is widescreen only: off (and greyed) in 4:3, back as it was in 16:9
+        if narrow:
+            if str(x720_box.cget("state")) != "disabled":
+                wide_720[0] = x720.get()
+            x720.set(False)
+        else:
+            x720.set(wide_720[0])
         x720_box.configure(state="disabled" if narrow else "normal")
         if narrow and mode.get() == "Fullscreen":
             mode.set("Borderless")
@@ -668,7 +677,8 @@ def settings_tab(tabs, root, tk, ttk):
         fps.set(name_of(fps_names, s["fps_cap"]))
         aniso.set(name_of(aniso_names, s["anisotropic_filtering"]))
         vsync.set(bool(s["vsync"]))
-        x720.set(bool(s["xbox_720p"]))
+        wide_720[0] = bool(s["xbox_720p"]) if aspect.get() == WIDE else True
+        x720.set(wide_720[0] if aspect.get() == WIDE else False)
 
     def save():
         r = parse_res(res.get())
