@@ -531,6 +531,7 @@ def settings_tab(tabs, root, tk, ttk):
         "Saved in mvp05-settings.toml beside the game. Changes take effect the next time the game starts.")).grid(
         row=1, column=0, columnspan=3, sticky="w", pady=(0, 10))
     mode = tk.StringVar()
+    aspect = tk.StringVar()
     res = tk.StringVar()
     scale = tk.StringVar()
     fps = tk.StringVar()
@@ -538,14 +539,22 @@ def settings_tab(tabs, root, tk, ttk):
     vsync = tk.BooleanVar()
     x720 = tk.BooleanVar()
     desk = desktop_resolution()
+    # The game plays widescreen when the resolution is 3:2 or wider (app::Widescreen), else 4:3, with black bars at
+    # the sides of a wider screen. So the shape is picked here and the resolutions follow it.
+    WIDE, NARROW = "Widescreen (16:9)", "Standard (4:3)"
     current = f"Current desktop resolution ({desk[0]} x {desk[1]})" if desk else "Current desktop resolution"
-    resolutions = [current, "1280 x 720", "1600 x 900", "1920 x 1080", "2560 x 1440", "3840 x 2160"]
+    fit43 = f"Fit to your screen ({desk[1] * 4 // 3} x {desk[1]})" if desk else None
+    lists = {WIDE: [current, "1280 x 720", "1600 x 900", "1920 x 1080", "2560 x 1440", "3840 x 2160"],
+             NARROW: ([fit43] if fit43 else []) + ["640 x 480", "800 x 600", "1024 x 768", "1280 x 960", "1440 x 1080",
+                                                   "1600 x 1200", "1920 x 1440", "2880 x 2160"]}
     fps_names = {"30": 30, "60 (default)": 60, "Unlimited": 0}
     aniso_names = {"As the game asks": 0, "2x": 2, "4x": 4, "8x": 8, "16x": 16}
+    res_box = ttk.Combobox(frm, textvariable=res, values=lists[WIDE], width=34)
     rows = [
         ("Display mode", ttk.Combobox(frm, textvariable=mode, values=["Windowed", "Borderless", "Fullscreen"],
                                       state="readonly", width=34)),
-        ("Resolution", ttk.Combobox(frm, textvariable=res, values=resolutions, width=34)),
+        ("Shape", ttk.Combobox(frm, textvariable=aspect, values=[WIDE, NARROW], state="readonly", width=34)),
+        ("Resolution", res_box),
         ("Render scale (%)", ttk.Spinbox(frm, textvariable=scale, from_=25, to=200, increment=25, width=34)),
         ("Frame rate cap", ttk.Combobox(frm, textvariable=fps, values=list(fps_names), state="readonly", width=34)),
         ("Texture filtering", ttk.Combobox(frm, textvariable=aniso, values=list(aniso_names), state="readonly",
@@ -555,22 +564,65 @@ def settings_tab(tabs, root, tk, ttk):
         ttk.Label(frm, text=label).grid(row=2 + i, column=0, sticky="w", pady=3)
         widget.grid(row=2 + i, column=1, sticky="w", padx=(12, 0), pady=3)
     ttk.Label(frm, text="(or type one, like 1366 x 768)", foreground="#666").grid(
-        row=3, column=2, sticky="w", padx=8)
-    ttk.Checkbutton(frm, text="VSync", variable=vsync).grid(row=7, column=0, columnspan=2, sticky="w", pady=(6, 0))
-    ttk.Checkbutton(frm, text="Xbox 720p mode (the game runs as on an Xbox with a 720p widescreen TV)",
-                    variable=x720).grid(row=8, column=0, columnspan=3, sticky="w")
+        row=4, column=2, sticky="w", padx=8)
+    ttk.Checkbutton(frm, text="VSync", variable=vsync).grid(row=8, column=0, columnspan=2, sticky="w", pady=(6, 0))
+    x720_box = ttk.Checkbutton(frm, text="Xbox 720p mode (the game runs as on an Xbox with a 720p widescreen TV)",
+                               variable=x720)
+    x720_box.grid(row=9, column=0, columnspan=3, sticky="w")
     note = ttk.Label(frm, text="", wraplength=520, justify="left")
-    note.grid(row=10, column=0, columnspan=3, sticky="w", pady=(10, 0))
+    note.grid(row=11, column=0, columnspan=3, sticky="w", pady=(10, 0))
 
     def name_of(d, v):
         return next((k for k, x in d.items() if x == v), str(v))
+
+    def parse_res(text):
+        """(w, h), (0, 0) for the desktop's own, or None."""
+        if text.startswith("Current desktop"):
+            return 0, 0
+        if text.startswith("Fit to your screen"):
+            text = text[text.index("(") + 1:text.index(")")]
+        try:
+            w, h = (int(x) for x in text.lower().replace("×", "x").split("x"))
+        except ValueError:
+            return None
+        return (w, h) if 320 <= w <= 16384 and 240 <= h <= 16384 else None
+
+    def is_wide(w, h):
+        if not (w and h):
+            w, h = desk or (16, 9)
+        return w * 2 >= h * 3
+
+    def shape_changed(_=None):
+        narrow = aspect.get() == NARROW
+        res_box.configure(values=lists[aspect.get()])
+        r = parse_res(res.get())
+        if r is None or is_wide(*r) == narrow:  # the resolution doesn't have the new shape: the first that does
+            res.set(lists[aspect.get()][0])
+        x720_box.configure(state="disabled" if narrow else "normal")
+        if narrow and mode.get() == "Fullscreen":
+            mode.set("Borderless")
+            note.configure(text="4:3 plays with black bars at the sides. Display mode is now Borderless: fullscreen "
+                                "would switch your screen to a 4:3 mode, which many screens stretch.",
+                           foreground="#8a5a00")
+        elif not narrow:
+            note.configure(text="")
+
+    rows[1][1].bind("<<ComboboxSelected>>", shape_changed)
 
     def load():
         s = dict(ST.DEFAULTS)
         s.update(ST.read(root))
         mode.set(str(s["display_mode"]).capitalize())
         w, h = int(s.get("width") or 0), int(s.get("height") or 0)
-        res.set(f"{w} x {h}" if w and h else current)
+        aspect.set(WIDE if is_wide(w, h) else NARROW)
+        res_box.configure(values=lists[aspect.get()])
+        if not (w and h):
+            res.set(current)
+        elif fit43 and desk and (w, h) == (desk[1] * 4 // 3, desk[1]):
+            res.set(fit43)
+        else:
+            res.set(f"{w} x {h}")
+        x720_box.configure(state="normal" if aspect.get() == WIDE else "disabled")
         scale.set(str(s["render_percent"]))
         fps.set(name_of(fps_names, s["fps_cap"]))
         aniso.set(name_of(aniso_names, s["anisotropic_filtering"]))
@@ -578,17 +630,18 @@ def settings_tab(tabs, root, tk, ttk):
         x720.set(bool(s["xbox_720p"]))
 
     def save():
+        r = parse_res(res.get())
         try:
-            if res.get().startswith("Current desktop"):
-                w = h = 0
-            else:
-                w, h = (int(x) for x in res.get().lower().replace("×", "x").split("x"))
-                assert 320 <= w <= 16384 and 240 <= h <= 16384
             sc = int(scale.get())
-            assert 10 <= sc <= 400
+            assert r is not None and 10 <= sc <= 400
         except (ValueError, AssertionError):
             note.configure(text="The resolution is width x height (like 1920 x 1080), and the render scale a "
                                 "percentage (100 is the resolution itself).", foreground="#a33")
+            return
+        w, h = r
+        if is_wide(w, h) != (aspect.get() == WIDE):
+            note.configure(text=f"{w} x {h} is {'widescreen' if is_wide(w, h) else '4:3'}: pick that shape, or "
+                                f"another resolution.", foreground="#a33")
             return
         fp = fps_names.get(fps.get(), 60) if fps.get() in fps_names else int(fps.get())
         an = aniso_names.get(aniso.get(), 0) if aniso.get() in aniso_names else int(aniso.get().rstrip("x"))
@@ -606,7 +659,7 @@ def settings_tab(tabs, root, tk, ttk):
     # desktop shortcuts, only when asked for
     import shortcuts as SC
     ttk.Label(frm, text="Desktop shortcuts", font=("Segoe UI", 10, "bold")).grid(
-        row=11, column=0, columnspan=3, sticky="w", pady=(18, 4))
+        row=12, column=0, columnspan=3, sticky="w", pady=(18, 4))
     sc_rows = [(SC.GAME_NAME, lambda: os.path.join(root, "MVP05.exe"), "the game"),
                (SC.TOOLS_NAME, SC.tools_exe, "this Launcher")]
     sc_buttons = {}
@@ -640,14 +693,14 @@ def settings_tab(tabs, root, tk, ttk):
 
     for i, (name, target, what) in enumerate(sc_rows):
         b = ttk.Button(frm, width=9, command=lambda n=name, t=target, w_=what: sc_toggle(n, t, w_))
-        b.grid(row=12 + i, column=0, sticky="w", pady=2)
+        b.grid(row=13 + i, column=0, sticky="w", pady=2)
         lbl = ttk.Label(frm)
-        lbl.grid(row=12 + i, column=1, columnspan=2, sticky="w", padx=(12, 0))
+        lbl.grid(row=13 + i, column=1, columnspan=2, sticky="w", padx=(12, 0))
         sc_buttons[name] = (b, lbl)
     sc_refresh()
 
     bar = ttk.Frame(frm)
-    bar.grid(row=9, column=0, columnspan=3, sticky="we", pady=(14, 0))
+    bar.grid(row=10, column=0, columnspan=3, sticky="we", pady=(14, 0))
     ttk.Button(bar, text="Save", command=save).pack(side="right")
     ttk.Button(bar, text="Defaults", command=defaults).pack(side="right", padx=6)
     ttk.Button(bar, text="Open the settings file", command=lambda: os.startfile(os.path.join(root, ST.FILE))
