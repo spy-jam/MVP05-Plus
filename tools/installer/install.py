@@ -318,6 +318,40 @@ def gui(root):
     change.pack(side="left", padx=10)
     launch_note = ttk.Label(ready, text="", foreground="#a33", wraplength=520, justify="left")
     launch_note.grid(row=7, column=0, columnspan=2, sticky="w", pady=(8, 0))
+    # what Windows sees right now (controllers.py): the adapter and its driver, and the other controllers
+    ttk.Label(ready, text="Controllers", font=("Segoe UI", 10, "bold")).grid(row=8, column=0, columnspan=2,
+                                                                            sticky="w", pady=(14, 2))
+    pad_adapter = ttk.Label(ready, text="Looking…", wraplength=520, justify="left")
+    pad_adapter.grid(row=9, column=0, columnspan=2, sticky="w")
+    pad_others = ttk.Label(ready, text="", wraplength=520, justify="left")
+    pad_others.grid(row=10, column=0, columnspan=2, sticky="w")
+    ttk.Label(ready, foreground="#777", wraplength=520, justify="left", text=(
+        "Button art follows the controller connected when the game starts.")).grid(
+        row=11, column=0, columnspan=2, sticky="w", pady=(4, 0))
+    colours = {"ok": "#1a7f37", "warn": "#b35900", "none": "#777"}
+
+    def watch_pads():
+        import controllers
+
+        def look():
+            try:
+                st = controllers.status()
+            except Exception as e:
+                st = e
+            w.after(0, lambda: show_pads(st))
+
+        def show_pads(st):
+            if st is None:
+                pad_adapter.configure(text="Controller status is shown on Windows.", foreground="#777")
+            elif isinstance(st, Exception):
+                pad_adapter.configure(text=f"Couldn't read the controllers: {st}", foreground="#777")
+            else:
+                (level, text), line = controllers.summary(st)
+                pad_adapter.configure(text=text, foreground=colours[level])
+                pad_others.configure(text=line, foreground="#1a7f37" if st["pads"] or st["xinput"] else "#777")
+            if st is not None:
+                w.after(3000, lambda: threading.Thread(target=look, daemon=True).start())
+        threading.Thread(target=look, daemon=True).start()
 
     # --- the discs
     frm = ttk.Frame(tab)
@@ -437,6 +471,7 @@ def gui(root):
     change.configure(command=do_change)
     back.configure(command=lambda: show())
     show()
+    watch_pads()
     w.mainloop()
 
 
@@ -763,10 +798,14 @@ def backups_tab(nb, root, tk, ttk, refresh_current):
         whole = any(kind == "backup" for kind, _, _ in sel)
         picked = b["items"] if whole else [s for kind, _, s in sel if kind == "save"]
         when = b["when"].strftime("%Y-%m-%d %H:%M")
-        names = "\n".join("  " + s["name"] for s in picked) or "  (none)"
-        what = (f"All your saves will be replaced by the {len(picked)} backed up {when}:\n{names}" if whole else
-                f"These saves will be put back as they were {when}:\n{names}\n\nYour other saves stay as they are.")
-        if not messagebox.askyesno("Restore?", what + "\n\nYour saves now are kept as a backup first.\n\nGo ahead?"):
+        names = "\n".join("   •  " + s["name"] for s in picked) or "   (no saves)"
+        if whole:
+            what = (f"Restore all saves from {when}?\n\n{names}\n\nThis replaces all your current saves. They're "
+                    f"backed up to the save backups folder first.")
+        else:
+            what = (f"Restore from {when}?\n\n{names}\n\nYour current saves are backed up to the save backups "
+                    f"folder first.")
+        if not messagebox.askyesno("Restore saves?", what):
             return
         try:
             B.restore(root, b["path"], say=say, ids=None if whole else [s["id"] for s in picked])

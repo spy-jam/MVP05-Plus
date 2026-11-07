@@ -52,7 +52,7 @@ sh -c 'B="/home/deck/Games/MVP05-Plus/gcbridge"; chmod +x "$B"; "$B" & exec "$@"
 
 ## MVP05-Plus Launcher
 
-- **Install**: your discs in, then what's installed (checked each start) and **Launch MVP 05**.
+- **Install**: your discs in, then what's installed (checked each start), **Launch MVP 05**, and which controllers Windows sees right now, including whether the GameCube adapter has the WinUSB driver it needs.
 - **Saves**: *Current saves*, and *Backups* by date. Restore single saves or a whole date; your saves become a backup first, so a restore can be undone.
 - **Settings**: display mode, aspect ratio (16:9, or 4:3 with black bars at the sides), resolution (default: fullscreen at your desktop's resolution), render scale, frame rate cap, texture filtering, VSync, Xbox 720p mode; and desktop shortcuts for the game ("MVP 05 Plus") and the Launcher, if you want them.
 
