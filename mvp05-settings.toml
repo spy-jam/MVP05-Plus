@@ -16,4 +16,4 @@ gamecube_icons = true
 playstation_layout = true
 playstation_icons = true
 # How many save backups to keep in "save backups" (0: off).
-save_backups = 15
+save_backups = 30

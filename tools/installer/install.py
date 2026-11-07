@@ -857,7 +857,7 @@ def backups_tab(nb, root, tk, ttk, refresh_current):
         refresh()
         refresh_current()
 
-    keep = tk.StringVar(value=str(ST.read(root).get("save_backups", 15)))
+    keep = tk.StringVar(value=str(ST.read(root).get("save_backups", 30)))
     choices = ["0", "15", "30", "50", "100", "250", "1000"]
     if keep.get() not in choices:  # a number set by hand in the settings file stays in the list
         choices = sorted(choices + [keep.get()], key=lambda x: int(x) if x.isdigit() else 0)

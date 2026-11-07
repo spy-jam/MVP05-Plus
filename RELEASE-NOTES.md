@@ -9,7 +9,7 @@ First release of MVP05-Plus by spy_jam, built on Mad Dog's MVP05 Public Beta 3 (
 - **Button art:** GameCube or PS2 button pictures in menus, help bars and in-game, picked from the controller connected at start. Built by the installer from your own discs (optional).
 - **MVP05-Plus Launcher** (`MVP05-Plus-Launcher.exe`), the installer: copies your Xbox game into `assets/` and builds the button art from only the files it needs on your GameCube and PS2 discs. Portable: everything stays in the game folder. Once installed, it opens on what's installed (checked each time) with a Launch button. It also changes the display settings and makes desktop shortcuts if you want them.
 - **Shader cache** in `shader_cache/`, so shaders compile once instead of every run.
-- **Save backups** at startup, in `save backups/` (15 kept by default), listed in the Launcher's *Saves* tab, where you can restore single saves or a whole date.
+- **Save backups** at startup, in `save backups/` (30 kept by default), listed in the Launcher's *Saves* tab, where you can restore single saves or a whole date.
 - **Esc quits** after asking (Alt+F4 still works). Don't quit while the game is saving.
 - **Fullscreen by default**, at your desktop's own resolution (Mad Dog's release starts windowed at 1920 x 1080); change it in the Launcher's *Settings* tab.
 

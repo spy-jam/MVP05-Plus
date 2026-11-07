@@ -11,7 +11,7 @@ MVP Baseball 2005 on Windows, and on SteamOS through Proton, built on [Mad Dog's
 * **Button art to match your controller**: GameCube or PS2 buttons in menus and in-game, made from your own discs (optional).
 * **MVP05-Plus Launcher**: install from your discs, launch the game, restore save backups, adjust display settings.
 * **Fixes**: a shader cache against mid-game stutter, SteamOS support through Proton (black screen fixed, GameCube adapter via `gcbridge`), and a fix for a crash during stolen bases that was found in testing.
-* **Save backups** every time the game starts (15 kept), with single saves or a whole date restored from the Launcher.
+* **Save backups** every time the game starts (30 kept), with single saves or a whole date restored from the Launcher.
 
 ## Compatible controllers
 
@@ -64,7 +64,7 @@ sh -c 'B="/home/deck/Games/MVP05-Plus/gcbridge"; chmod +x "$B"; "$B" & exec "$@"
 * **Saves**: *Current saves*, and *Backups* by date. Restore single saves or a whole date; your saves become a backup first, so a restore can be undone.
 * **Settings**: display mode, aspect ratio (16:9, or 4:3 with black bars at the sides), resolution (default: fullscreen at your desktop's resolution), render scale, frame rate cap, texture filtering, VSync, Xbox 720p mode; and desktop shortcuts for the game ("MVP 05 Plus") and the Launcher, if you want them.
 
-Everything is also in `mvp05-settings.toml`. Plus adds `gamecube_layout`, `gamecube_icons`, `playstation_layout`, `playstation_icons` (all on) and `save_backups` (15).
+Everything is also in `mvp05-settings.toml`. Plus adds `gamecube_layout`, `gamecube_icons`, `playstation_layout`, `playstation_icons` (all on) and `save_backups` (30).
 
 ## Building from source
 

@@ -6,7 +6,7 @@
 // saves are the same as the newest backup's makes none; only the newest save_backups are kept (0: off).
 namespace saves {
 
-inline uint32_t g_keep = 15;  // settings file: save_backups
+inline uint32_t g_keep = 30;  // settings file: save_backups
 
 void Backup();  // GameInfo::init, after the settings load: never stops the game from starting
 
