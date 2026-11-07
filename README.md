@@ -2,14 +2,14 @@
 
 MVP Baseball 2005 on Windows, and on SteamOS through Proton, built on [Mad Dog's](#credits) PC port of the Xbox game. Plus adds GameCube and PlayStation controllers that play like their own releases did, with matching button art.
 
-> **You need your own copy of the Xbox game.** No game files or game art are included. The Tools build what's needed from your own discs.
+> **You need your own copy of the Xbox game.** No game files or game art are included. The Launcher builds what's needed from your own discs.
 
 ## Features
 
 - **GameCube controllers** through a Wii U / Switch adapter: all 4 ports and rumble, with the GameCube release's full control layout, stick deadzones, C-stick and analog trigger handling.
 - **PlayStation controllers** with the PS2 release's full control layout and stick handling, analog button pressure and rumble.
 - **Button art to match**: GameCube or PS2 buttons in menus and in-game, made from your own discs (optional).
-- **MVP05-Plus Tools**: installs from your discs, launches the game, restores save backups, changes display settings.
+- **MVP05-Plus Launcher**: installs from your discs, launches the game, restores save backups, changes display settings.
 - **Fixes**: a shader cache against mid-game stutter, SteamOS support through Proton (black screen fixed, GameCube adapter via `gcbridge`), and a fix for a crash during stolen bases that was found in testing.
 - **Save backups** every time the game starts (15 kept).
 
@@ -26,16 +26,16 @@ Button art follows the controller connected when the game starts. Without the ar
 ## Install
 
 1. Download `MVP05-Plus-Beta-1.zip` from [Releases](../../releases) and unzip it anywhere. Everything stays in that folder: nothing goes into Program Files or the registry, and desktop shortcuts are only made if you ask.
-2. Run `MVP05-Plus-Tools.exe` and choose your discs:
+2. Run `MVP05-Plus-Launcher.exe` and choose your discs:
    - **Xbox** (required): a Redump `.iso`, `.xiso`, or a folder of extracted files.
    - **GameCube** (optional, for GameCube art): `.iso` / `.gcm`, or `.rvz` / `.gcz` / `.ciso` with Dolphin installed.
    - **PS2** (optional, for PS2 art): `.iso`, or `.chd` with `chdman` installed.
    - Already have a `gc_icons` or `ps2_icons` set? Choose its folder or `.zip` instead of the disc.
 
    Only the files the art needs are read from the GameCube and PS2 discs.
-3. Press **Launch MVP 05**. From then on, the Tools open on what's installed, with Launch.
+3. Press **Launch MVP 05**. From then on, the Launcher opens on what's installed, with Launch.
 
-Windows may warn that the Tools are from an unknown publisher: choose *More info → Run anyway*.
+Windows may warn that the Launcher is from an unknown publisher: choose *More info → Run anyway*.
 
 ## Setting up controllers
 
@@ -50,11 +50,11 @@ Add `MVP05.exe` to Steam as a non-Steam game, run with Proton. For the GameCube 
 sh -c 'B="/home/deck/Games/MVP05-Plus/gcbridge"; chmod +x "$B"; "$B" & exec "$@"' sh %command%
 ```
 
-## MVP05-Plus Tools
+## MVP05-Plus Launcher
 
 - **Install**: your discs in, then what's installed (checked each start) and **Launch MVP 05**.
 - **Saves**: *Current saves*, and *Backups* by date. Restore single saves or a whole date; your saves become a backup first, so a restore can be undone.
-- **Settings**: display mode, resolution (default: fullscreen at your desktop's resolution), render scale, frame rate cap, texture filtering, VSync, Xbox 720p mode; and desktop shortcuts for the game ("MVP 05 Plus") and the Tools, if you want them.
+- **Settings**: display mode, resolution (default: fullscreen at your desktop's resolution), render scale, frame rate cap, texture filtering, VSync, Xbox 720p mode; and desktop shortcuts for the game ("MVP 05 Plus") and the Launcher, if you want them.
 
 Everything is also in `mvp05-settings.toml`. Plus adds `gamecube_layout`, `gamecube_icons`, `playstation_layout`, `playstation_icons` (all on) and `save_backups` (15).
 
@@ -78,4 +78,4 @@ python tools/ps2_layout/make_ps2_icons.py assets/data <PS2 disc's DATA folder> p
 
 ## Legal
 
-MIT licensed (`SDK-LICENSE.txt`); MVP05-Plus's additions are Copyright 2026 spy_jam under the same license. MVP Baseball 2005 and its art belong to EA; none of it is included. The game's icon is made from your own Xbox disc by the Tools. Not affiliated with or endorsed by EA, Nintendo, Sony or Microsoft. Microsoft's runtime DLLs and shader compiler are Microsoft's redistributable components, under their own terms.
+MIT licensed (`SDK-LICENSE.txt`); MVP05-Plus's additions are Copyright 2026 spy_jam under the same license. MVP Baseball 2005 and its art belong to EA; none of it is included. The game's icon is made from your own Xbox disc by the Launcher. Not affiliated with or endorsed by EA, Nintendo, Sony or Microsoft. Microsoft's runtime DLLs and shader compiler are Microsoft's redistributable components, under their own terms.

@@ -1,11 +1,11 @@
-"""Desktop shortcuts, only when asked for (Settings tab): "MVP 05 Plus" for the game, "MVP 05 Plus Tools" for the
-Tools. Made with Windows' own shortcut maker (WScript.Shell, through PowerShell); removed by deleting the .lnk."""
+"""Desktop shortcuts, only when asked for (Settings tab): "MVP 05 Plus" for the game, "MVP 05 Plus Launcher" for the
+Launcher. Made with Windows' own shortcut maker (WScript.Shell, through PowerShell); removed by deleting the .lnk."""
 import os
 import subprocess
 import sys
 
 GAME_NAME = "MVP 05 Plus"
-TOOLS_NAME = "MVP 05 Plus Tools"
+TOOLS_NAME = "MVP 05 Plus Launcher"
 
 
 def desktop():
@@ -27,7 +27,7 @@ def exists(name):
 
 
 def tools_exe():
-    """The Tools' own exe, or None when they're run from source."""
+    """The Launcher's own exe, or None when it's run from source."""
     return sys.executable if getattr(sys, "frozen", False) else None
 
 

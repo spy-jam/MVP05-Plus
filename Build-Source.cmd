@@ -16,7 +16,7 @@ exit /b %RESULT%
 :build
 if not exist "assets\default.xbe" (
  echo Supply your extracted Xbox game in assets first: default.xbe goes directly in assets.
- echo MVP05-Plus Tools can put it there for you: python tools\installer\install.py --xbox "your Xbox image or folder" --dir .
+ echo MVP05-Plus Launcher can put it there for you: python tools\installer\install.py --xbox "your Xbox image or folder" --dir .
  echo See START-HERE.txt.
  exit /b 1
 )

@@ -118,7 +118,7 @@ def restore(root, backup, say=print, ids=None):
         keep = os.path.join(root, "save backups", f"{stamp} before restore")
         shutil.copytree(drive, os.path.join(keep, "E"))
         with open(os.path.join(keep, LIST), "w") as f:
-            f.write("the saves before a restore with MVP05-Plus Tools\n")
+            f.write("the saves before a restore with MVP05-Plus Launcher\n")
         say(f"Your current saves are kept as the backup \"{os.path.basename(keep)}\".")
     if ids:
         have = save_folders(backup)

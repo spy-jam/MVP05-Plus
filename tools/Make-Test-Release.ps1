@@ -5,7 +5,7 @@ MVP05-Plus: a test release, made the way a real one is, in your Downloads folder
   2. copies your Xbox game files into its assets (from your current game folder), for the build
   3. builds MVP05.exe (Visual Studio's x64 tools, LLVM clang, CMake, Ninja)
   4. puts the repository on your GitHub as a PRIVATE repository and runs the "release tools" build there
-     (MVP05-Plus-Tools.exe, gcbridge), then downloads them
+     (MVP05-Plus-Launcher.exe, gcbridge), then downloads them
   5. packs MVP05-Plus-Beta-1.zip as a release is packed, with Mad Dog's three runtime DLLs from his Beta 3 zip
   6. makes a DRAFT release on GitHub with it (only you can see a draft)
   7. unzips that zip into Downloads\MVP05-Plus-Beta-1, as a player would, and opens it
@@ -159,7 +159,7 @@ try {
             if ($LASTEXITCODE -ne 0) { Fail "couldn't push (if the GitHub one has changes of its own, sort that out first)" }
         }
 
-        Step "Building the Tools and gcbridge on GitHub"
+        Step "Building the Launcher and gcbridge on GitHub"
         $before = (& gh run list --workflow release-tools.yml --limit 1 --json databaseId --jq ".[0].databaseId" 2>$null)
         & gh workflow run release-tools.yml --ref main
         if ($LASTEXITCODE -ne 0) { Fail "couldn't start the build (Actions may need turning on in the repository's Actions tab)" }
@@ -193,7 +193,7 @@ try {
         if (-not $f) { Fail "$dll isn't in $($beta3.Name)" }
         Copy-Item $f.FullName $stage
     }
-    foreach ($n in "MVP05-Plus-Tools.exe", "gcbridge") {
+    foreach ($n in "MVP05-Plus-Launcher.exe", "gcbridge") {
         $f = Get-ChildItem $art -Recurse -File -Filter $n | Select-Object -First 1  # (each artifact comes in a folder of its own name)
         if (-not $f) { Fail "$n isn't in the GitHub build's files" }
         Copy-Item $f.FullName $stage
@@ -252,7 +252,7 @@ try {
     Expand-Archive $zip -DestinationPath $player
     Write-Host ""
     Write-Host "Done." -ForegroundColor Green
-    Write-Host "  Player's folder: $player   (run MVP05-Plus-Tools.exe there, then MVP05.exe)"
+    Write-Host "  Player's folder: $player   (run MVP05-Plus-Launcher.exe there, then MVP05.exe)"
     Write-Host "  Draft release:   https://github.com/$me/$RepoName/releases"
     Write-Host "  The repository is private; publishing the draft or making the repository public is up to you."
     Start-Process explorer.exe $player

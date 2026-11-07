@@ -10,7 +10,7 @@ const app::GameInfo app::kGame = {
     .log = "mvp05",                        // log file prefix
     .settings = "mvp05-settings.toml",          // settings file beside the exe
     .splash = L"splash",                  // optional splash.png or splash.bmp beside the exe
-    .missing = L"The game isn't installed yet.\n\nOpen MVP05-Plus-Tools.exe in this folder and choose your Xbox disc. "
+    .missing = L"The game isn't installed yet.\n\nOpen MVP05-Plus-Launcher.exe in this folder and choose your Xbox disc. "
                 L"Then start the game with Launch MVP 05 there.\n\n(Or put your extracted Xbox files in the assets folder by "
                 L"hand, with default.xbe directly inside it.)",
     .images = {{"default.xbe", "MVP05"}},  // each recompiled xbe and its exe, for title launches

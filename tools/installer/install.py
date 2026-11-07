@@ -1,4 +1,4 @@
-"""MVP05-Plus Tools. Install: puts your own discs' game files where the game looks for them, in the folder the installer is in.
+"""MVP05-Plus Launcher. Install: puts your own discs' game files where the game looks for them, in the folder the installer is in.
 
   Xbox disc (required)        every file, into assets/ (as Mad Dog's original asks for by hand)
   GameCube disc (optional)    only the 11 files the button art needs, read into a temporary folder, made into
@@ -9,8 +9,8 @@ Nothing is written anywhere else: no registry, no shortcuts, no Program Files. D
 
 Save backups: the game's own backups of your saves (save backups/), listed and restored.
 
-  MVP05-Plus-Tools.exe                       the window
-  MVP05-Plus-Tools.exe --xbox X [--gamecube G] [--ps2 P] [--dir D]   installing without it
+  MVP05-Plus-Launcher.exe                       the window
+  MVP05-Plus-Launcher.exe --xbox X [--gamecube G] [--ps2 P] [--dir D]   installing without it
 """
 import argparse
 import datetime
@@ -278,7 +278,7 @@ def gui(root):
     from tkinter import filedialog, ttk
 
     w = tk.Tk()
-    w.title(f"{GAME} Tools ({VERSION}) by spy_jam")
+    w.title(f"{GAME} Launcher ({VERSION}) by spy_jam")
     import title_icon
     title_icon.ensure(root)  # the game's icon from the Xbox disc, once it's installed
 
@@ -389,7 +389,7 @@ def gui(root):
             ready.grid_remove()
             frm.grid(row=0, column=0, sticky="nw")
             if not r["exe"]:
-                say("Note: MVP05.exe isn't in this folder. Put MVP05-Plus Tools in the game's folder.")
+                say("Note: MVP05.exe isn't in this folder. Put MVP05-Plus Launcher in the game's folder.")
             elif r["xbox"] != "not installed":
                 say(f"Xbox game: {r['xbox']}")
         return ok
@@ -608,7 +608,7 @@ def settings_tab(tabs, root, tk, ttk):
     ttk.Label(frm, text="Desktop shortcuts", font=("Segoe UI", 10, "bold")).grid(
         row=11, column=0, columnspan=3, sticky="w", pady=(18, 4))
     sc_rows = [(SC.GAME_NAME, lambda: os.path.join(root, "MVP05.exe"), "the game"),
-               (SC.TOOLS_NAME, SC.tools_exe, "these Tools")]
+               (SC.TOOLS_NAME, SC.tools_exe, "this Launcher")]
     sc_buttons = {}
 
     def sc_refresh():
@@ -617,7 +617,7 @@ def settings_tab(tabs, root, tk, ttk):
             if os.name != "nt" or not target() or not os.path.isfile(target()):
                 b.configure(text="Create", state="disabled")
                 lbl.configure(text=f"\"{name}\": " + ("Windows only" if os.name != "nt" else
-                                                       "only from the Tools' .exe" if not target() else
+                                                       "only from the Launcher's .exe" if not target() else
                                                        "MVP05.exe isn't here"), foreground="#777")
             elif SC.exists(name):
                 b.configure(text="Remove", state="normal")
