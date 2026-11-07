@@ -53,14 +53,35 @@ try {
     if (-not $beta3) { Fail "MVP05-Public-Beta-3.zip (Mad Dog's) isn't in ${Downloads}: it has the three runtime DLLs" }
 
     Step "Source"
+    $mark = Join-Path $repo ".git\mvp-imported-zip.txt"
     if (Test-Path (Join-Path $repo ".git")) {
         Write-Host "Using $repo"
+        # a newer MVP05-Plus-repo.zip in Downloads: its new commits brought in (the build is kept)
+        $stamp = if ($repoZip) { $repoZip.LastWriteTimeUtc.Ticks.ToString() } else { "" }
+        $seen = if (Test-Path $mark) { (Get-Content $mark -Raw).Trim() } else { "" }
+        if ($repoZip -and $stamp -ne $seen) {
+            $in = Join-Path $work "incoming"
+            if (Test-Path $in) { Remove-Item $in -Recurse -Force }
+            Expand-Archive $repoZip.FullName -DestinationPath $in -Force
+            Push-Location $repo
+            try {
+                & git fetch -q (Join-Path $in "MVP05-Plus") main
+                & git merge -q --ff-only FETCH_HEAD
+                if ($LASTEXITCODE -ne 0) {
+                    Fail "$($repoZip.Name) doesn't follow on from $repo (delete that folder and run this again)"
+                }
+                Write-Host "Updated from $($repoZip.Name): $(& git log -1 --format=%s)"
+            } finally { Pop-Location }
+            Remove-Item $in -Recurse -Force
+            Set-Content $mark $stamp
+        }
     } else {
         if (-not $repoZip) { Fail "MVP05-Plus-repo.zip isn't in $Downloads" }
         New-Item -ItemType Directory -Force $work | Out-Null
         Write-Host "Unzipping $($repoZip.Name)"
         Expand-Archive $repoZip.FullName -DestinationPath $work -Force
         if (-not (Test-Path (Join-Path $repo ".git"))) { Fail "the zip didn't hold an MVP05-Plus folder with its git history" }
+        Set-Content $mark $repoZip.LastWriteTimeUtc.Ticks.ToString()
     }
     Get-ChildItem $repo -Recurse -File | Unblock-File
 

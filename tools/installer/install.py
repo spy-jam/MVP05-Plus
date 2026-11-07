@@ -7,7 +7,7 @@
 
 Nothing is written anywhere else: no registry, no shortcuts, no Program Files. Deleting the folder removes it all.
 
-Saves (experimental): dynasty saves between the GameCube release (Dolphin .gci) and this game (tools/saves).
+Save backups: the game's own backups of your saves (save backups/), listed and restored.
 
   MVP05-Plus-Tools.exe                       the window
   MVP05-Plus-Tools.exe --xbox X [--gamecube G] [--ps2 P] [--dir D]   installing without it
@@ -23,7 +23,7 @@ import threading
 import traceback
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-for sub in ("gc_layout", "ps2_layout", "saves"):  # the art builders (bundled beside this when frozen)
+for sub in ("gc_layout", "ps2_layout"):  # the art builders (bundled beside this when frozen)
     for base in (os.path.join(HERE, "..", sub), os.path.join(getattr(sys, "_MEIPASS", HERE), sub)):
         if os.path.isdir(base) and base not in sys.path:
             sys.path.insert(0, base)
@@ -229,7 +229,7 @@ def gui(root):
     tabs.grid(padx=8, pady=8)
     frm = ttk.Frame(tabs, padding=12)
     tabs.add(frm, text="Install")
-    saves_tab(tabs, root, tk, ttk, filedialog)
+    backups_tab(tabs, root, tk, ttk)
     ttk.Label(frm, text=f"{GAME} installs into this folder:", font=("Segoe UI", 10, "bold")).grid(
         row=0, column=0, columnspan=3, sticky="w")
     ttk.Label(frm, text=root, foreground="#555").grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 10))
@@ -305,228 +305,76 @@ def gui(root):
     w.mainloop()
 
 
-def saves_tab(tabs, root, tk, ttk, filedialog):
-    from tkinter import messagebox, simpledialog
-    import saves05 as S
+def backups_tab(tabs, root, tk, ttk):
+    from tkinter import messagebox
+    import backups as B
 
     frm = ttk.Frame(tabs, padding=12)
-    tabs.add(frm, text="Saves (experimental)")
-    ttk.Label(frm, text="Dynasty saves between the GameCube release (Dolphin) and this game",
-              font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=3, sticky="w")
-    ttk.Label(frm, foreground="#8a5a00", wraplength=520, justify="left", text=(
-        "Experimental: tested on mid-season dynasties; playoff saves untested. A GameCube dynasty replaces one of "
-        "your dynasties here, which is copied into \"save backups\" first. Close the game before converting.")).grid(
-        row=1, column=0, columnspan=3, sticky="w", pady=(2, 8))
-    cols = ("name", "type", "when")
-    tree = ttk.Treeview(frm, columns=cols, show="headings", height=7, selectmode="browse")
-    for c, t, wd in zip(cols, ("Save", "Type", "Saved"), (250, 90, 150)):
-        tree.heading(c, text=t)
-        tree.column(c, width=wd, anchor="w")
-    tree.grid(row=2, column=0, columnspan=3, sticky="we")
-    out = tk.Text(frm, width=72, height=6, state="disabled", wrap="word", relief="flat", background="#f4f4f4")
-    out.grid(row=4, column=0, columnspan=3, pady=(8, 0))
-    saves = {}
+    tabs.add(frm, text="Save backups")
+    ttk.Label(frm, text="Save backups", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, sticky="w")
+    ttk.Label(frm, wraplength=520, justify="left", text=(
+        "The game backs up your saves each time it starts, when they've changed (save_backups in "
+        "mvp05-settings.toml says how many to keep). Restoring puts all of a backup's saves back; your saves "
+        "as they are now become a backup first, so you can undo it. Close the game first.")).grid(
+        row=1, column=0, sticky="w", pady=(2, 8))
+    tree = ttk.Treeview(frm, columns=("when", "saves"), show="headings", height=9, selectmode="browse")
+    tree.heading("when", text="Backed up")
+    tree.heading("saves", text="Saves in it")
+    tree.column("when", width=220, anchor="w")
+    tree.column("saves", width=300, anchor="w")
+    tree.grid(row=2, column=0, sticky="we")
+    out = tk.Text(frm, width=72, height=4, state="disabled", wrap="word", relief="flat", background="#f4f4f4")
+    out.grid(row=4, column=0, pady=(8, 0))
+    rows = {}
 
     def say(t):
-        def f():
-            out.configure(state="normal")
-            out.insert("end", t + "\n")
-            out.see("end")
-            out.configure(state="disabled")
-        frm.after(0, f)
+        out.configure(state="normal")
+        out.insert("end", t + "\n")
+        out.see("end")
+        out.configure(state="disabled")
 
     def refresh():
         tree.delete(*tree.get_children())
-        saves.clear()
-        try:
-            for s in S.list_saves(root):
-                iid = tree.insert("", "end", values=(s["name"], s["type"], s["when"].strftime("%Y-%m-%d %H:%M")))
-                saves[iid] = s
-        except Exception as e:
-            say(f"Couldn't read the saves: {e}")
-        if not saves:
-            say(f"No saves in {os.path.relpath(S.udata(root), root)} yet. Start a dynasty in the game and save "
-                f"it once: a GameCube dynasty is converted over one of yours.")
+        rows.clear()
+        for b in B.list_backups(root):
+            when = b["when"].strftime("%Y-%m-%d %H:%M:%S") + (" (before restore)" if "before restore" in b["name"] else "")
+            iid = tree.insert("", "end", values=(when,
+                                                 ", ".join(b["saves"]) or "(no saves)"))
+            rows[iid] = b
+        if not rows:
+            say("No backups yet: the game makes one when it starts, once you have saves.")
 
-    def chosen(dynasty=True):
+    def do_restore():
         sel = tree.selection()
         if not sel:
-            messagebox.showinfo("Saves", "Pick one of your saves in the list first.")
-            return None
-        s = saves[sel[0]]
-        if dynasty and s["type"] != "Dynasty":
-            messagebox.showinfo("Saves", f"\"{s['name']}\" is a {s['type']} save: pick a Dynasty save.")
-            return None
-        return s
-
-    def background(fn):
-        def work():
-            try:
-                fn()
-            except S.SaveError as e:
-                say(f"Stopped: {e}")
-            except Exception:
-                say("Something went wrong (nothing was written):\n" + traceback.format_exc(limit=4))
-            frm.after(0, refresh)
-        threading.Thread(target=work, daemon=True).start()
-
-    def do_import():
-        s = chosen()
-        if not s:
+            messagebox.showinfo("Save backups", "Pick a backup in the list first.")
             return
-        gci = filedialog.askopenfilename(title="Your GameCube dynasty (.gci from Dolphin's Memory Card Manager)",
-                                         filetypes=[("GameCube save", "*.gci"), ("All files", "*.*")])
-        if not gci:
+        b = rows[sel[0]]
+        now = B.saves_in(os.path.join(root, "hdd"))
+        if not messagebox.askyesno("Restore this backup?", (
+                f"Your saves will be replaced by the ones backed up {b['when'].strftime('%Y-%m-%d %H:%M')}:\n"
+                f"{', '.join(b['saves']) or '(none)'}\n\nYour saves now ({', '.join(now) or 'none'}) are kept as a "
+                f"backup first.\n\nGo ahead?")):
             return
-        if not messagebox.askyesno("Replace this dynasty?", (
-                f"\"{s['name']}\" will be replaced by the GameCube dynasty.\n\nIt's copied into \"save backups\" "
-                f"first, so you can put it back.\n\nGo ahead?")):
-            return
-        background(lambda: S.import_gamecube(root, gci, s["folder"], say=say))
-
-    def do_export():
-        s = chosen()
-        if not s:
-            return
-        tpl = filedialog.askopenfilename(title="Any GameCube MVP 2005 dynasty .gci (a template for the card's "
-                                               "header and icons)",
-                                         filetypes=[("GameCube save", "*.gci"), ("All files", "*.*")])
-        if not tpl:
-            return
-        dest = filedialog.askdirectory(title="Where to put the GameCube save")
-        if not dest:
-            return
-        name = simpledialog.askstring("Name", "Dynasty name on the GameCube (up to 10 letters or digits):",
-                                      initialvalue="".join(c for c in s["name"] if c.isalnum())[:10])
-        if name is None:
-            return
-        background(lambda: S.export_gamecube(root, s["folder"], tpl, dest, name or None, say=say))
+        try:
+            B.restore(root, b["path"], say=say)
+        except B.BackupError as e:
+            say(f"Stopped: {e}")
+        except Exception as e:
+            say(f"Something went wrong: {e}")
+        refresh()
 
     def open_folder():
-        d = S.udata(root)
-        os.makedirs(d, exist_ok=True)
-        if os.name == "nt":
+        d = os.path.join(root, "save backups")
+        if os.name == "nt" and os.path.isdir(d):
             os.startfile(d)
 
     bar = ttk.Frame(frm)
-    bar.grid(row=3, column=0, columnspan=3, sticky="we", pady=(8, 0))
-    ttk.Button(bar, text="Import GameCube dynasty…", command=do_import).pack(side="left")
-    ttk.Button(bar, text="Export to GameCube…", command=do_export).pack(side="left", padx=6)
-    ttk.Button(bar, text="Standings…", command=lambda: standings_window(frm, root, S, chosen, say, refresh)).pack(
-        side="left")
-    ttk.Button(bar, text="Saves folder", command=open_folder).pack(side="right")
+    bar.grid(row=3, column=0, sticky="we", pady=(8, 0))
+    ttk.Button(bar, text="Restore…", command=do_restore).pack(side="left")
+    ttk.Button(bar, text="Backups folder", command=open_folder).pack(side="right")
     ttk.Button(bar, text="Refresh", command=refresh).pack(side="right", padx=6)
     refresh()
-
-
-def standings_window(parent, root, S, chosen, say, refresh):
-    """Short seasons: every MLB team's record projected to 162 games, in the save file or in the running game."""
-    import tkinter as tk
-    from tkinter import messagebox, ttk
-
-    w = tk.Toplevel(parent)
-    w.title("Standings for short seasons")
-    w.resizable(False, False)
-    f = ttk.Frame(w, padding=12)
-    f.grid()
-    ttk.Label(f, wraplength=470, justify="left", text=(
-        "Projects every MLB team's record to a 162-game season (the same winning percentage), for dynasties "
-        "played with a short schedule. Do it after the last regular-season game, before the playoffs.")).grid(
-        row=0, column=0, columnspan=2, sticky="w")
-    how = tk.StringVar(value="file")
-    ttk.Radiobutton(f, variable=how, value="file", text=(
-        "In the save file (experimental): save the dynasty, close the game, patch the save picked in the list, "
-        "load it again")).grid(row=1, column=0, columnspan=2, sticky="w", pady=(8, 0))
-    ttk.Radiobutton(f, variable=how, value="memory", text=(
-        "In the running game (the patcher's method): save the dynasty and stay on the season screen")).grid(
-        row=2, column=0, columnspan=2, sticky="w")
-    row = ttk.Frame(f)
-    row.grid(row=3, column=0, columnspan=2, sticky="w", pady=6)
-    ttk.Label(row, text="Games in your season schedule:").pack(side="left")
-    games = tk.StringVar(value="")
-    ttk.Entry(row, textvariable=games, width=6).pack(side="left", padx=6)
-    ttk.Label(row, text="(the running game's search needs it)", foreground="#666").pack(side="left")
-    tree = ttk.Treeview(f, columns=("t", "w", "l", "pw", "pl"), show="headings", height=10)
-    for c, t in zip(("t", "w", "l", "pw", "pl"), ("Team", "W", "L", "162: W", "162: L")):
-        tree.heading(c, text=t)
-        tree.column(c, width=80, anchor="center")
-    tree.grid(row=4, column=0, columnspan=2)
-    note = ttk.Label(f, text="", wraplength=470, justify="left")
-    note.grid(row=5, column=0, columnspan=2, sticky="w", pady=4)
-    state = {}
-
-    def show(recs, text):
-        tree.delete(*tree.get_children())
-        for t, wn, ls in recs:
-            pw, pl = S.project(wn, ls)
-            tree.insert("", "end", values=(t, wn, ls, pw, pl))
-        note.configure(text=text)
-
-    def season_games():
-        try:
-            n = int(games.get())
-            assert 1 <= n <= 162
-            return n
-        except (ValueError, AssertionError):
-            messagebox.showinfo("Standings", "Enter how many games your season schedule has (1-162).", parent=w)
-            return None
-
-    def find():
-        state.clear()
-        try:
-            if how.get() == "file":
-                s = chosen()
-                if not s:
-                    return
-                r = S.read_standings(s["folder"])
-                text = f"{r['name']}"
-                if r["scheduled"]:
-                    left = r["scheduled"] - r["played"]
-                    text += (f": all {r['scheduled']} scheduled games played." if not left else
-                             f": {left} of {r['scheduled']} scheduled games not played yet. Patch after the last one.")
-                state.update(kind="file", save=s)
-                show(r["records"], text)
-            else:
-                n = season_games()
-                if not n:
-                    return
-                import standings_mem as M
-                h, addr, fmt, recs = M.find(n, root, lambda t: note.configure(text=t))
-                state.update(kind="memory", h=h, addr=addr, fmt=fmt, n=n)
-                show([(t, a, b) for t, (a, b) in zip(S.MLB_TEAMS, recs)],
-                     f"Found in the running game at {addr:#x} ({'[W][L]' if fmt == 'A' else 'split halves'}).")
-        except Exception as e:
-            show([], f"Stopped: {e}")
-
-    def apply():
-        if not state:
-            messagebox.showinfo("Standings", "Press Find first and check the records.", parent=w)
-            return
-        try:
-            if state["kind"] == "file":
-                S.patch_standings(root, state["save"]["folder"], say=say)
-                note.configure(text="Patched. Load the dynasty and advance to the playoffs, then save.")
-                refresh()
-            else:
-                import standings_mem as M
-                ok = M.apply(state["h"], state["addr"], state["fmt"], state["n"])
-                note.configure(text="Written. In the game: advance to the playoffs, then save the dynasty." if ok else
-                               "The write failed: try running the Tools as administrator.")
-        except Exception as e:
-            note.configure(text=f"Stopped: {e}")
-        state.clear()
-
-    def closing():
-        if state.get("kind") == "memory":
-            import standings_mem as M
-            M.close(state["h"])
-        w.destroy()
-
-    b = ttk.Frame(f)
-    b.grid(row=6, column=0, columnspan=2, sticky="e")
-    ttk.Button(b, text="Find", command=find).pack(side="left")
-    ttk.Button(b, text="Patch", command=apply).pack(side="left", padx=6)
-    w.protocol("WM_DELETE_WINDOW", closing)
 
 
 def main():

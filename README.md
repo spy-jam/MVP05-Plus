@@ -25,7 +25,7 @@ MVP Baseball 2005 on Windows and SteamOS, from [Mad Dog's](#credits) static reco
 - A fix for the stolen-base (baserunner) crash.
 - **SteamOS / Proton:** a fix for the black screen, and the GameCube adapter through a small helper (`gcbridge`).
 - A shader cache, so later runs don't stutter compiling shaders mid-game.
-- Automatic save backups at startup.
+- Automatic save backups at startup, restored from the Tools.
 
 ## Install
 
@@ -42,18 +42,9 @@ MVP Baseball 2005 on Windows and SteamOS, from [Mad Dog's](#credits) static reco
 
 **By hand, without the installer:** copy your extracted Xbox game files into `assets/`, with `default.xbe` directly inside it. To build button art by hand, see [Button art](#button-art-by-hand).
 
-## Saves (experimental)
+## Save backups
 
-The *Saves* tab of `MVP05-Plus-Tools.exe` converts **dynasty saves** between the GameCube release and this game:
-
-- **Import GameCube dynasty:** your `.gci` (exported from Dolphin's *Memory Card Manager*) replaces one of your dynasties here. The one it replaces is copied into `save backups` first. Start a dynasty in the game and save it once if you don't have one yet.
-- **Export to GameCube:** one of your dynasties as a `.gci` for Dolphin to import. It needs any GameCube MVP 2005 dynasty `.gci` as a template, and a memory card with no other dynasty on it (a dynasty takes 197 of 251 blocks).
-
-Tested on mid-season dynasties, loaded and played both ways. Playoff saves are untested. Close the game before converting. How it works: [`docs/SAVE-CONVERSION.md`](docs/SAVE-CONVERSION.md).
-
-**Standings for short seasons:** *Standings…* projects every MLB team's record to 162 games (the same winning percentage), for dynasties played with a short schedule, after the last regular-season game and before the playoffs. Two ways:
-- **In the save file** (experimental): save the dynasty, close the game, pick the save and patch it (it's backed up first), then load it and advance to the playoffs.
-- **In the running game** (the original patcher's method): save the dynasty, stay on the season screen, enter your season's length, *Find*, *Patch*, then advance to the playoffs and save. The standalone script is still there too: `tools/saves/standings_patcher.py`.
+Each time the game starts, it backs up your saves into `save backups` if they've changed since the last backup (`save_backups` in the settings says how many to keep). The *Save backups* tab of `MVP05-Plus-Tools.exe` lists them by date, with the saves in each, and restores one: your saves as they are become a backup first, so a restore can be undone. Close the game before restoring.
 
 ## Controllers
 

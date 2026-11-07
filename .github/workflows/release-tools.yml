@@ -22,17 +22,9 @@ jobs:
         run: >
           pyinstaller --onefile --windowed --name MVP05-Plus-Tools
           --paths tools/installer --paths tools/gc_layout --paths tools/ps2_layout
-          --paths tools/saves --paths tools/saves/mvp05/lib
-          --hidden-import make_icons --hidden-import make_ps2_icons
-          --hidden-import saves05 --hidden-import standings_mem --hidden-import standings_patcher
-          --hidden-import gc2xb_v0 --hidden-import xb2gc
-          --hidden-import containers --hidden-import gc_checksums
-          --add-data "tools/saves/mvp05/lib/*.json;."
+          --hidden-import make_icons --hidden-import make_ps2_icons --hidden-import backups
           --collect-submodules iconlib
           tools/installer/install.py
-      - name: Check the save converter's tables are bundled
-        shell: bash
-        run: ls tools/saves/mvp05/lib/*.json
       - uses: actions/upload-artifact@v4
         with:
           name: MVP05-Plus-Tools
