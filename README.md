@@ -25,7 +25,7 @@ Button art follows the controller connected when the game starts. Without the ar
 
 ## Install
 
-1. Download `MVP05-Plus-Beta-1.zip` from [Releases](../../releases) and unzip it anywhere. Everything stays in that folder: nothing goes into Program Files or the registry.
+1. Download `MVP05-Plus-Beta-1.zip` from [Releases](../../releases) and unzip it anywhere. Everything stays in that folder: nothing goes into Program Files or the registry, and desktop shortcuts are only made if you ask.
 2. Run `MVP05-Plus-Tools.exe` and choose your discs:
    - **Xbox** (required): a Redump `.iso`, `.xiso`, or a folder of extracted files.
    - **GameCube** (optional, for GameCube art): `.iso` / `.gcm`, or `.rvz` / `.gcz` / `.ciso` with Dolphin installed.
@@ -54,7 +54,7 @@ sh -c 'B="/home/deck/Games/MVP05-Plus/gcbridge"; chmod +x "$B"; "$B" & exec "$@"
 
 - **Install**: your discs in, then what's installed (checked each start) and **Launch MVP 05**.
 - **Saves**: *Current saves*, and *Backups* by date. Restore single saves or a whole date; your saves become a backup first, so a restore can be undone.
-- **Settings**: display mode, resolution (default 1920 x 1080, windowed), render scale, frame rate cap, texture filtering, VSync, Xbox 720p mode.
+- **Settings**: display mode, resolution (default 1920 x 1080, windowed), render scale, frame rate cap, texture filtering, VSync, Xbox 720p mode; and desktop shortcuts for the game ("MVP 05 Plus") and the Tools, if you want them.
 
 Everything is also in `mvp05-settings.toml`. Plus adds `gamecube_layout`, `gamecube_icons`, `playstation_layout`, `playstation_icons` (all on) and `save_backups` (15).
 

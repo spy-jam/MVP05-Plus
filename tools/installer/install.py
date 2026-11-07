@@ -584,6 +584,49 @@ def settings_tab(tabs, root, tk, ttk):
         note.configure(text="Back to the defaults (windowed, 1920 x 1080). Restart the game if it's running.",
                        foreground="#1a7f37")
 
+    # desktop shortcuts, only when asked for
+    import shortcuts as SC
+    ttk.Label(frm, text="Desktop shortcuts", font=("Segoe UI", 10, "bold")).grid(
+        row=11, column=0, columnspan=3, sticky="w", pady=(18, 4))
+    sc_rows = [(SC.GAME_NAME, lambda: os.path.join(root, "MVP05.exe"), "the game"),
+               (SC.TOOLS_NAME, SC.tools_exe, "these Tools")]
+    sc_buttons = {}
+
+    def sc_refresh():
+        for name, target, _ in sc_rows:
+            b, lbl = sc_buttons[name]
+            if os.name != "nt" or not target() or not os.path.isfile(target()):
+                b.configure(text="Create", state="disabled")
+                lbl.configure(text=f"\"{name}\": " + ("Windows only" if os.name != "nt" else
+                                                       "only from the Tools' .exe" if not target() else
+                                                       "MVP05.exe isn't here"), foreground="#777")
+            elif SC.exists(name):
+                b.configure(text="Remove", state="normal")
+                lbl.configure(text=f"\"{name}\" is on your desktop", foreground="#1a7f37")
+            else:
+                b.configure(text="Create", state="normal")
+                lbl.configure(text=f"\"{name}\": not on your desktop", foreground="#555")
+
+    def sc_toggle(name, target, what):
+        try:
+            if SC.exists(name):
+                SC.remove(name)
+            else:
+                import title_icon
+                SC.create(name, target(), os.path.join(root, title_icon.ICO) if what == "the game" else None,
+                          f"Opens {what}")
+        except OSError as e:
+            note.configure(text=f"Couldn't change the shortcut: {e}", foreground="#a33")
+        sc_refresh()
+
+    for i, (name, target, what) in enumerate(sc_rows):
+        b = ttk.Button(frm, width=9, command=lambda n=name, t=target, w_=what: sc_toggle(n, t, w_))
+        b.grid(row=12 + i, column=0, sticky="w", pady=2)
+        lbl = ttk.Label(frm)
+        lbl.grid(row=12 + i, column=1, columnspan=2, sticky="w", padx=(12, 0))
+        sc_buttons[name] = (b, lbl)
+    sc_refresh()
+
     bar = ttk.Frame(frm)
     bar.grid(row=9, column=0, columnspan=3, sticky="we", pady=(14, 0))
     ttk.Button(bar, text="Save", command=save).pack(side="right")
