@@ -95,8 +95,23 @@ try {
         $vs = (& $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath)
         if (-not $vs) { Fail "Visual Studio has no C++ tools (add 'Desktop development with C++')" }
         $devcmd = Join-Path $vs "Common7\Tools\VsDevCmd.bat"
-        $llvm = Join-Path $vs "VC\Tools\Llvm\x64\bin"
-        $path = if (Test-Path $llvm) { "set `"PATH=$llvm;%PATH%`" && " } else { "" }
+        # clang: Visual Studio's own (the "C++ Clang tools" component), LLVM's installer, or already on PATH
+        $llvm = $null
+        foreach ($c in @((Join-Path $vs "VC\Tools\Llvm\x64\bin"), (Join-Path $env:ProgramFiles "LLVM\bin"),
+                         (Join-Path ${env:ProgramFiles(x86)} "LLVM\bin"))) {
+            if (-not $llvm -and (Test-Path (Join-Path $c "clang++.exe"))) { $llvm = $c }
+        }
+        if (-not $llvm) {
+            $onpath = Get-Command clang++ -ErrorAction SilentlyContinue
+            if ($onpath) { $llvm = Split-Path $onpath.Source }
+        }
+        if (-not $llvm) {
+            Fail ("clang isn't installed. In Visual Studio Installer: Modify > Individual components > tick " +
+                  "'C++ Clang Compiler for Windows' and 'C++ CMake tools for Windows', Modify, then run this again " +
+                  "(or install LLVM from https://github.com/llvm/llvm-project/releases)")
+        }
+        Write-Host "clang: $llvm"
+        $path = "set `"PATH=$llvm;%PATH%`" && "
         if (Test-Path $exe) { Remove-Item $exe }
         & cmd /c "call `"$devcmd`" -arch=x64 -host_arch=x64 >nul && $path cd /d `"$repo`" && Build-Source.cmd"
         if (-not (Test-Path $exe)) {
