@@ -503,6 +503,23 @@ def current_saves_tab(nb, root, tk, ttk):
     return refresh
 
 
+def desktop_resolution():
+    """The main screen's resolution in real pixels (not scaled by Windows' display scaling), or None."""
+    if os.name != "nt":
+        return None
+    try:
+        import ctypes
+        u, g = ctypes.windll.user32, ctypes.windll.gdi32
+        dc = u.GetDC(None)
+        try:
+            w, h = g.GetDeviceCaps(dc, 118), g.GetDeviceCaps(dc, 117)  # DESKTOPHORZRES, DESKTOPVERTRES
+        finally:
+            u.ReleaseDC(None, dc)
+        return (w, h) if w > 0 and h > 0 else None
+    except Exception:
+        return None
+
+
 def settings_tab(tabs, root, tk, ttk):
     """Display options in mvp05-settings.toml: the game reads them when it starts."""
     import settings as ST
@@ -520,17 +537,19 @@ def settings_tab(tabs, root, tk, ttk):
     aniso = tk.StringVar()
     vsync = tk.BooleanVar()
     x720 = tk.BooleanVar()
-    resolutions = ["Desktop's own", "1280 x 720", "1600 x 900", "1920 x 1080", "2560 x 1440", "3840 x 2160"]
+    desk = desktop_resolution()
+    current = f"Current desktop resolution ({desk[0]} x {desk[1]})" if desk else "Current desktop resolution"
+    resolutions = [current, "1280 x 720", "1600 x 900", "1920 x 1080", "2560 x 1440", "3840 x 2160"]
     fps_names = {"30": 30, "60 (default)": 60, "Unlimited": 0}
     aniso_names = {"As the game asks": 0, "2x": 2, "4x": 4, "8x": 8, "16x": 16}
     rows = [
         ("Display mode", ttk.Combobox(frm, textvariable=mode, values=["Windowed", "Borderless", "Fullscreen"],
-                                      state="readonly", width=24)),
-        ("Resolution", ttk.Combobox(frm, textvariable=res, values=resolutions, width=24)),
-        ("Render scale (%)", ttk.Spinbox(frm, textvariable=scale, from_=25, to=200, increment=25, width=24)),
-        ("Frame rate cap", ttk.Combobox(frm, textvariable=fps, values=list(fps_names), state="readonly", width=24)),
+                                      state="readonly", width=34)),
+        ("Resolution", ttk.Combobox(frm, textvariable=res, values=resolutions, width=34)),
+        ("Render scale (%)", ttk.Spinbox(frm, textvariable=scale, from_=25, to=200, increment=25, width=34)),
+        ("Frame rate cap", ttk.Combobox(frm, textvariable=fps, values=list(fps_names), state="readonly", width=34)),
         ("Texture filtering", ttk.Combobox(frm, textvariable=aniso, values=list(aniso_names), state="readonly",
-                                           width=24)),
+                                           width=34)),
     ]
     for i, (label, widget) in enumerate(rows):
         ttk.Label(frm, text=label).grid(row=2 + i, column=0, sticky="w", pady=3)
@@ -551,7 +570,7 @@ def settings_tab(tabs, root, tk, ttk):
         s.update(ST.read(root))
         mode.set(str(s["display_mode"]).capitalize())
         w, h = int(s.get("width") or 0), int(s.get("height") or 0)
-        res.set(f"{w} x {h}" if w and h else "Desktop's own")
+        res.set(f"{w} x {h}" if w and h else current)
         scale.set(str(s["render_percent"]))
         fps.set(name_of(fps_names, s["fps_cap"]))
         aniso.set(name_of(aniso_names, s["anisotropic_filtering"]))
@@ -560,7 +579,7 @@ def settings_tab(tabs, root, tk, ttk):
 
     def save():
         try:
-            if res.get().startswith("Desktop"):
+            if res.get().startswith("Current desktop"):
                 w = h = 0
             else:
                 w, h = (int(x) for x in res.get().lower().replace("×", "x").split("x"))
