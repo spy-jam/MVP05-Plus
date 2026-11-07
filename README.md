@@ -1,6 +1,6 @@
 # MVP05-Plus
 
-MVP Baseball 2005 on Windows and SteamOS, built on [Mad Dog's](#credits) PC port of the Xbox game. Plus adds GameCube and PlayStation controllers that play like their own releases did, with matching button art.
+MVP Baseball 2005 on Windows, and on SteamOS through Proton, built on [Mad Dog's](#credits) PC port of the Xbox game. Plus adds GameCube and PlayStation controllers that play like their own releases did, with matching button art.
 
 > **You need your own copy of the Xbox game.** No game files or game art are included. The Tools build what's needed from your own discs.
 
@@ -10,7 +10,7 @@ MVP Baseball 2005 on Windows and SteamOS, built on [Mad Dog's](#credits) PC port
 - **PlayStation controllers** with the PS2 release's controls, analog button pressure and rumble.
 - **Button art to match**: GameCube or PS2 buttons in menus and in-game, made from your own discs (optional).
 - **MVP05-Plus Tools**: installs from your discs, launches the game, restores save backups, changes display settings.
-- **Fixes**: the stolen-base crash, a shader cache against mid-game stutter, and SteamOS support (black screen fixed, GameCube adapter via `gcbridge`).
+- **Fixes**: the stolen-base crash, a shader cache against mid-game stutter, and SteamOS support through Proton (black screen fixed, GameCube adapter via `gcbridge`).
 - **Save backups** every time the game starts (15 kept).
 
 ## Compatible controllers
@@ -54,7 +54,7 @@ sh -c 'B="/home/deck/Games/MVP05-Plus/gcbridge"; chmod +x "$B"; "$B" & exec "$@"
 
 - **Install**: your discs in, then what's installed (checked each start) and **Launch MVP 05**.
 - **Saves**: *Current saves*, and *Backups* by date. Restore single saves or a whole date; your saves become a backup first, so a restore can be undone.
-- **Settings**: display mode, resolution (default 1920 x 1080, windowed), render scale, frame rate cap, texture filtering, VSync, Xbox 720p mode; and desktop shortcuts for the game ("MVP 05 Plus") and the Tools, if you want them.
+- **Settings**: display mode, resolution (default fullscreen at 1920 x 1080), render scale, frame rate cap, texture filtering, VSync, Xbox 720p mode; and desktop shortcuts for the game ("MVP 05 Plus") and the Tools, if you want them.
 
 Everything is also in `mvp05-settings.toml`. Plus adds `gamecube_layout`, `gamecube_icons`, `playstation_layout`, `playstation_icons` (all on) and `save_backups` (15).
 

@@ -581,7 +581,7 @@ def settings_tab(tabs, root, tk, ttk):
     def defaults():
         ST.write(root, dict(ST.DEFAULTS))
         load()
-        note.configure(text="Back to the defaults (windowed, 1920 x 1080). Restart the game if it's running.",
+        note.configure(text="Back to the defaults (fullscreen, 1920 x 1080). Restart the game if it's running.",
                        foreground="#1a7f37")
 
     # desktop shortcuts, only when asked for
