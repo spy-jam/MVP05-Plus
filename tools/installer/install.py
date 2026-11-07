@@ -346,7 +346,7 @@ def gui(root):
             if p:
                 v.set(os.path.normpath(p))
 
-        ttk.Button(frm, text="Image…" if folder_ok is True else "File…", command=pick).grid(
+        ttk.Button(frm, text="Image…", command=pick).grid(
             row=3 + 2 * i, column=1, padx=(6, 0), pady=(0, 6))
 
         def pickdir(v=v, what=folder_ok):

@@ -146,7 +146,7 @@
   "tools/gcbridge/gcbridge.c": "23297365fb6b9915fb9607dc3c0e9aa774337e2e86c8d68c3b4684c53dac5bb1",
   "tools/installer/backups.py": "fd8857704f67a61b1f074385f0f42801d66df1f37f2d5cc9d24a7eb25162ff12",
   "tools/installer/discs.py": "a62c5e5a1b8bbf79ae2e8f46f2df4016a3a26f25ae77aa692166306703953a98",
-  "tools/installer/install.py": "9099ec17e6bb70270f131f5a1a86dd6101819c4c8041bebb7cd8db46cb21d0c4",
+  "tools/installer/install.py": "1065af965eb1a2dc406ce3cabed676256a718af5b9d002a6c93deef029de4895",
   "tools/installer/requirements.txt": "7061e8b52209928fbbf4c5f3e6d0ce1d3924ce81c603a3b5d024f3a4665ed074",
   "tools/installer/settings.py": "848dfbf726e1607282c03ab82211fda3c56b16c2a5683d3a68c8b7d71ffc667e",
   "tools/installer/shortcuts.py": "42270a4a2fbb15b36f1e4902332295bf3b3c7eba75e59ce50c30aac44d37ca80",
