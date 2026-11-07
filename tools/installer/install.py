@@ -832,13 +832,12 @@ def backups_tab(nb, root, tk, ttk, refresh_current):
         refresh_current()
 
     keep = tk.StringVar(value=str(ST.read(root).get("save_backups", 15)))
+    choices = ["0", "15", "30", "50", "100", "250", "1000"]
+    if keep.get() not in choices:  # a number set by hand in the settings file stays in the list
+        choices = sorted(choices + [keep.get()], key=lambda x: int(x) if x.isdigit() else 0)
 
     def save_keep(*_):
-        try:
-            n = int(keep.get())
-            assert 0 <= n <= 999
-        except (ValueError, AssertionError):
-            return
+        n = int(keep.get())
         if ST.read(root).get("save_backups") != n:
             ST.write(root, {"save_backups": n})
 
@@ -846,11 +845,10 @@ def backups_tab(nb, root, tk, ttk, refresh_current):
     bar.grid(row=3, column=0, sticky="we", pady=(8, 0))
     ttk.Button(bar, text="Restore…", command=do_restore).pack(side="left")
     ttk.Label(bar, text="Keep").pack(side="left", padx=(16, 4))
-    sb = ttk.Spinbox(bar, textvariable=keep, from_=0, to=99, width=4, command=save_keep)
-    sb.pack(side="left")
-    sb.bind("<FocusOut>", save_keep)
-    sb.bind("<Return>", save_keep)
-    ttk.Label(bar, text="backups (0: off)").pack(side="left", padx=(4, 0))
+    kb = ttk.Combobox(bar, textvariable=keep, values=choices, state="readonly", width=6)
+    kb.pack(side="left")
+    kb.bind("<<ComboboxSelected>>", save_keep)
+    ttk.Label(bar, text="backups").pack(side="left", padx=(4, 0))
     ttk.Button(bar, text="Open backups folder",
                command=lambda: open_in_explorer(os.path.join(root, "save backups"))).pack(side="right")
     ttk.Button(bar, text="Refresh", command=refresh).pack(side="right", padx=6)
