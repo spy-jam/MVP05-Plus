@@ -147,7 +147,7 @@
   "tools/installer/backups.py": "33e2d94c694d8cc64d343b72a5881d5a067ec64cfeb59d83a37b2f8667ab4e8b",
   "tools/installer/controllers.py": "57137c40a3c63b35afec00cdf9b3997629d470a8fd786a2f26eef35afa0e5a27",
   "tools/installer/discs.py": "a62c5e5a1b8bbf79ae2e8f46f2df4016a3a26f25ae77aa692166306703953a98",
-  "tools/installer/install.py": "8e2c865d6d55d2a39729b3c0b3f601075f0fdb64e74d35e70b74bf27a7e6888f",
+  "tools/installer/install.py": "a60b53cd500bdfe5a90d6803125998c270bee4fd6b200157d951bebc4c8c304e",
   "tools/installer/requirements.txt": "7061e8b52209928fbbf4c5f3e6d0ce1d3924ce81c603a3b5d024f3a4665ed074",
   "tools/installer/settings.py": "848dfbf726e1607282c03ab82211fda3c56b16c2a5683d3a68c8b7d71ffc667e",
   "tools/installer/shortcuts.py": "55c4ca1c11e349f2b37b20f8a9f83b9a21629e314e8c09491d01156718d7216e",

@@ -752,8 +752,8 @@ def backups_tab(nb, root, tk, ttk, refresh_current):
     frm = ttk.Frame(nb, padding=10)
     nb.add(frm, text="Backups")
     ttk.Label(frm, wraplength=520, justify="left", text=(
-        "A backup is made each time the game starts. Open a date and pick the saves to restore (Ctrl+click for "
-        "several), or pick the date to restore everything from it.")).grid(
+        "A backup is made each time the game starts. Open a date and pick the saves to restore, or pick the date to "
+        "restore everything from it.")).grid(
         row=1, column=0, sticky="w", pady=(0, 8))
     tree = ttk.Treeview(frm, columns=("state",), show="tree headings", height=10, selectmode="extended")
     tree.heading("#0", text="Backed up / save")
