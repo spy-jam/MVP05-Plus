@@ -68,17 +68,17 @@ def _files(folder):
 
 
 def compare(backup_save, current_save):
-    """'same', 'different' or 'not in your saves now' (copies keep the files' times, so equal times and sizes
+    """'Unchanged', 'Changed' or 'Not in current saves' (copies keep the files' times, so equal times and sizes
     mean the same save)."""
     if not current_save or not os.path.isdir(current_save):
-        return "not in your saves now"
+        return "Not in current saves"
     a, b = _files(backup_save), _files(current_save)
     if a.keys() != b.keys():
-        return "different"
+        return "Changed"
     for k, (size, t) in a.items():
         if b[k][0] != size or abs(b[k][1] - t) > 2:
-            return "different"
-    return "same as now"
+            return "Changed"
+    return "Unchanged"
 
 
 def list_backups(root):

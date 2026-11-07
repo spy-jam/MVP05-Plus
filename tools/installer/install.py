@@ -798,7 +798,7 @@ def backups_tab(nb, root, tk, ttk, refresh_current):
         row=1, column=0, sticky="w", pady=(0, 8))
     tree = ttk.Treeview(frm, columns=("state",), show="tree headings", height=10, selectmode="extended")
     tree.heading("#0", text="Backed up / save")
-    tree.heading("state", text="Compared with your saves now")
+    tree.heading("state", text="Compared to current saves")
     tree.column("#0", width=330, anchor="w")
     tree.column("state", width=190, anchor="w")
     tree.grid(row=2, column=0, sticky="we")
