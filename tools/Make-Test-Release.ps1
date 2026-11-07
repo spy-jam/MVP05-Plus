@@ -70,12 +70,16 @@ try {
         if (-not $GameDir) {
             Add-Type -AssemblyName System.Windows.Forms
             $dlg = New-Object System.Windows.Forms.FolderBrowserDialog
-            $dlg.Description = "Your current MVP05 game folder (the one with assets\default.xbe)"
+            $dlg.Description = "Your current MVP05 game folder, or its assets folder (the one with default.xbe)"
             if ($dlg.ShowDialog() -ne "OK") { Fail "no game folder chosen" }
             $GameDir = $dlg.SelectedPath
         }
-        $src = Join-Path $GameDir "assets"
-        if (-not (Test-Path (Join-Path $src "default.xbe"))) { Fail "$src has no default.xbe" }
+        # the game folder, its assets folder, or any folder with default.xbe directly in it
+        $src = $null
+        foreach ($c in @($GameDir, (Join-Path $GameDir "assets"))) {
+            if (-not $src -and (Test-Path -LiteralPath (Join-Path $c "default.xbe"))) { $src = $c }
+        }
+        if (-not $src) { Fail "there's no default.xbe in $GameDir or in an assets folder inside it" }
         Write-Host "Copying $src (a few GB, once)"
         & robocopy $src (Join-Path $repo "assets") /E /NFL /NDL /NJH /NJS /NP | Out-Null
         if ($LASTEXITCODE -ge 8) { Fail "copying the game files failed (robocopy $LASTEXITCODE)" }
