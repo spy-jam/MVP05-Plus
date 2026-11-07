@@ -411,6 +411,7 @@ def gui(root):
         """The installed view when the game's ready to play, else the discs."""
         r = state or check_install(root)
         ok = r["xbox_ok"] and r["exe"]
+        tabs.tab(tab, text="Play" if ok else "Install")  # Install until the game's installed, then Play
         if ok:
             for k, (mark, text, label) in lines.items():
                 good = r[k].startswith("installed")
