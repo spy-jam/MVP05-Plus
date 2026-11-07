@@ -13,7 +13,7 @@ First release of MVP05-Plus by spy_jam, built on Mad Dog's MVP05 Public Beta 3 (
 - **Fullscreen by default**, at your desktop's own resolution (Mad Dog's release starts windowed at 1920 x 1080); change it in the Tools' *Settings* tab.
 
 ## Fixed
-- The stolen-base (baserunner) crash.
+- A crash during stolen bases, found in testing.
 - SteamOS (through Proton): the black screen; the GameCube adapter through `gcbridge` (see the README for the launch option).
 
 ## Known issues

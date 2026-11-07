@@ -10,7 +10,9 @@ const app::GameInfo app::kGame = {
     .log = "mvp05",                        // log file prefix
     .settings = "mvp05-settings.toml",          // settings file beside the exe
     .splash = L"splash",                  // optional splash.png or splash.bmp beside the exe
-    .missing = L"Put the game in the assets folder: its disc image (.iso), or default.xbe with its folders beside it.",
+    .missing = L"The game isn't installed yet.\n\nOpen MVP05-Plus-Tools.exe in this folder and choose your Xbox disc. "
+                L"Then start the game with Launch MVP 05 there.\n\n(Or put your extracted Xbox files in the assets folder by "
+                L"hand, with default.xbe directly inside it.)",
     .images = {{"default.xbe", "MVP05"}},  // each recompiled xbe and its exe, for title launches
     .options = {{"gamecube_layout", &gc::g_enabled, nullptr}, {"gamecube_icons", &gc::g_icons, nullptr},  // GameCube controllers play as on GameCube
                 {"playstation_layout", &gc::g_ps_enabled, nullptr}, {"playstation_icons", &gc::g_ps_icons, nullptr},  // and PlayStation pads as on PS2
