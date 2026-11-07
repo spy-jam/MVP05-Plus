@@ -50,6 +50,12 @@ Add `MVP05.exe` to Steam as a non-Steam game, run with Proton. For the GameCube 
 sh -c 'B="/home/deck/Games/MVP05-Plus/gcbridge"; chmod +x "$B"; "$B" & exec "$@"' sh %command%
 ```
 
+## Adding to Steam (optional)
+
+1. In Steam: *Games → Add a Non-Steam Game to My Library*, and choose `MVP05.exe`.
+2. Playing with a PlayStation or Switch controller? In the game's *Properties → Controller*, choose *Disable Steam Input*. Otherwise Steam passes it to the game as an Xbox controller, with the Xbox layout and buttons.
+3. On SteamOS, also follow the Proton steps above.
+
 ## MVP05-Plus Launcher
 
 - **Install**, which becomes **Play** once the game's installed: your discs in, then what's installed (checked each start), **Launch MVP 05**, and which controllers Windows sees right now, including whether the GameCube adapter has the WinUSB driver it needs.
