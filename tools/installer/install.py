@@ -476,6 +476,11 @@ def gui(root):
     w.mainloop()
 
 
+def when_text(t):
+    """11-07-2026 3:39 PM"""
+    return f"{t.month:02d}-{t.day:02d}-{t.year} {t.hour % 12 or 12}:{t.minute:02d} {'AM' if t.hour < 12 else 'PM'}"
+
+
 def open_in_explorer(path):
     os.makedirs(path, exist_ok=True)
     if os.name == "nt":
@@ -526,7 +531,7 @@ def current_saves_tab(nb, root, tk, ttk):
             saves.append((B.save_name(p), when, sum(os.path.getsize(f) for f in files)))
         for name, when, size in sorted(saves, key=lambda x: x[1], reverse=True):
             tree.insert("", "end", text=name, values=(
-                datetime.datetime.fromtimestamp(when).strftime("%Y-%m-%d %H:%M"),
+                when_text(datetime.datetime.fromtimestamp(when)),
                 f"{size / 2**20:.1f} MB" if size >= 2**20 else f"{max(1, size // 1024)} KB"))
         note.configure(text="" if saves else "No saves yet: they appear here once you save in the game.")
 
@@ -775,7 +780,7 @@ def backups_tab(nb, root, tk, ttk, refresh_current):
         tree.delete(*tree.get_children())
         rows.clear()
         for b in B.list_backups(root):
-            when = b["when"].strftime("%Y-%m-%d %H:%M:%S") + (" (before restore)" if "before restore" in b["name"] else "")
+            when = when_text(b["when"]) + (" (before restore)" if "before restore" in b["name"] else "")
             n = len(b["items"])
             parent = tree.insert("", "end", text=when, values=(f"{n} save{'s' if n != 1 else ''}",))
             rows[parent] = ("backup", b, None)
@@ -797,7 +802,7 @@ def backups_tab(nb, root, tk, ttk, refresh_current):
         b = sel[0][1]
         whole = any(kind == "backup" for kind, _, _ in sel)
         picked = b["items"] if whole else [s for kind, _, s in sel if kind == "save"]
-        when = b["when"].strftime("%Y-%m-%d %H:%M")
+        when = when_text(b["when"])
         names = "\n".join("   •  " + s["name"] for s in picked) or "   (no saves)"
         if whole:
             what = (f"Restore all saves from {when}?\n\n{names}\n\nThis replaces all your current saves. They're "
