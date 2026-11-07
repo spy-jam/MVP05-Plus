@@ -720,7 +720,7 @@ def settings_tab(tabs, root, tk, ttk):
                 SC.remove(name)
             else:
                 import title_icon
-                SC.create(name, target(), os.path.join(root, title_icon.ICO) if what == "the game" else None,
+                SC.create(name, target(), os.path.join(root, title_icon.ICO),
                           f"Opens {what}")
         except OSError as e:
             note.configure(text=f"Couldn't change the shortcut: {e}", foreground="#a33")
