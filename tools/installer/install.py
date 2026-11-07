@@ -533,8 +533,8 @@ def current_saves_tab(nb, root, tk, ttk):
     bar = ttk.Frame(frm)
     bar.grid(row=2, column=0, sticky="we", pady=(8, 0))
     ttk.Button(bar, text="Open saves folder",
-               command=lambda: open_in_explorer(os.path.join(root, "hdd", B.TITLE_UDATA))).pack(side="left")
-    ttk.Button(bar, text="Refresh", command=refresh).pack(side="right")
+               command=lambda: open_in_explorer(os.path.join(root, "hdd", B.TITLE_UDATA))).pack(side="right")
+    ttk.Button(bar, text="Refresh", command=refresh).pack(side="right", padx=6)
     refresh()
     return refresh
 
@@ -752,9 +752,8 @@ def backups_tab(nb, root, tk, ttk, refresh_current):
     frm = ttk.Frame(nb, padding=10)
     nb.add(frm, text="Backups")
     ttk.Label(frm, wraplength=520, justify="left", text=(
-        "The game backs up your saves each time it starts, when they've changed. Open a date to see its saves, "
-        "pick the ones you want (Ctrl+click for several), or pick the date itself for all of them, and Restore. "
-        "Your saves as they are now become a backup first, so you can undo it. Close the game first.")).grid(
+        "A backup is made each time the game starts. Open a date and pick the saves to restore (Ctrl+click for "
+        "several), or pick the date to restore everything from it.")).grid(
         row=1, column=0, sticky="w", pady=(0, 8))
     tree = ttk.Treeview(frm, columns=("state",), show="tree headings", height=10, selectmode="extended")
     tree.heading("#0", text="Backed up / save")
