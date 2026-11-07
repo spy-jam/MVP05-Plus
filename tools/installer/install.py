@@ -279,6 +279,14 @@ def gui(root):
 
     w = tk.Tk()
     w.title(f"{GAME} Tools ({VERSION}) by spy_jam")
+    for ico in (os.path.join(getattr(sys, "_MEIPASS", ""), "mvp2005.ico"), os.path.join(HERE, "..", "..", "res",
+                                                                                         "mvp2005.ico")):
+        if os.name == "nt" and os.path.isfile(ico):
+            try:
+                w.iconbitmap(default=ico)
+            except tk.TclError:
+                pass
+            break
     w.resizable(False, False)
     tabs = ttk.Notebook(w)
     tabs.grid(padx=8, pady=8)

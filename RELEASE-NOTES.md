@@ -1,6 +1,6 @@
 # MVP05-Plus Beta 1
 
-First release of MVP05-Plus by spy_jam, built on Mad Dog's MVP05 Public Beta 3 recompilation.
+First release of MVP05-Plus by spy_jam, built on Mad Dog's MVP05 Public Beta 3 (made with TGP482's XboxXBERecomp).
 
 ## New
 - **GameCube controllers** through a Wii U / Switch GameCube adapter (official or compatible, in Wii U mode), all 4 ports, with rumble. Stick, C-stick and triggers handled as the GameCube release does. Hold X + Y + Start for 3 seconds to recentre.

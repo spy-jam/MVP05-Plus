@@ -1,111 +1,81 @@
 # MVP05-Plus
 
-MVP Baseball 2005 on Windows and SteamOS, from [Mad Dog's](#credits) static recompilation of the Xbox game, with GameCube and PlayStation controllers played the way their own releases played them.
+MVP Baseball 2005 on Windows and SteamOS, built on [Mad Dog's](#credits) PC port of the Xbox game. Plus adds GameCube and PlayStation controllers that play like their own releases did, with matching button art.
 
-*MVP05-Plus is a working name.*
+> **You need your own copy of the Xbox game.** No game files or game art are included. The Tools build what's needed from your own discs.
 
-> **You need your own copy of the Xbox game.** No game files, game code or game art are included here or in any release. The installer builds everything it needs from your own discs, on your PC.
+## Features
 
-## What Plus adds
+- **GameCube controllers** through a Wii U / Switch adapter: all 4 ports, rumble, and the GameCube release's controls (bunt is Z + A).
+- **PlayStation controllers** with the PS2 release's controls, analog button pressure and rumble.
+- **Button art to match**: GameCube or PS2 buttons in menus and in-game, made from your own discs (optional).
+- **MVP05-Plus Tools**: installs from your discs, launches the game, restores save backups, changes display settings.
+- **Fixes**: the stolen-base crash, a shader cache against mid-game stutter, and SteamOS support (black screen fixed, GameCube adapter via `gcbridge`).
+- **Save backups** every time the game starts (15 kept).
 
-**Controllers**
-- **GameCube controllers** through a Wii U / Switch GameCube adapter (official or compatible), all 4 ports, with rumble.
-- GameCube stick, C-stick and trigger handling as the GameCube release does it. Hold X + Y + Start for 3 seconds to recentre.
-- **PlayStation pads** with the PS2 release's stick handling, analog button pressure and rumble.
+## Compatible controllers
 
-**Control layouts**
-- GameCube controllers use the GameCube release's own control layout (for example, bunt is Z + A).
-- PlayStation pads use the PS2 release's control layout.
+- **GameCube controllers** (official adapter, or compatible in Wii U mode) — GameCube button art and controls
+- **DualSense, DualSense Edge, DualShock 4** — PS2 button art and controls
+- **DualShock 3** — PS2 button art and controls, with pressure-sensitive buttons (on Windows, through [DsHidMini](https://github.com/nefarius/DsHidMini) in SDL mode)
+- **Xbox 360, Xbox One and Xbox Series controllers** — Xbox button art and controls, as the original
+- **Other controllers** (Switch Pro and most others SDL supports) — Xbox button art and controls
 
-**Button art**
-- GameCube or PlayStation button pictures in the menus, help bars and in-game displays, picked from the controller connected when the game starts.
-- Built by the installer from your own GameCube or PS2 disc. Optional: without them the game shows Xbox buttons.
-
-**Fixes and extras**
-- A fix for the stolen-base (baserunner) crash.
-- **SteamOS / Proton:** a fix for the black screen, and the GameCube adapter through a small helper (`gcbridge`).
-- A shader cache, so later runs don't stutter compiling shaders mid-game.
-- Automatic save backups at startup, restored from the Tools.
+Button art follows the controller connected when the game starts. Without the art sets, PlayStation and GameCube controllers still use their own controls, with Xbox buttons shown.
 
 ## Install
 
-1. Download `MVP05-Plus-Beta-1.zip` from [Releases](../../releases) and unzip it wherever you like. The game stays in that folder: nothing goes into Program Files, the registry or the Start menu, and deleting the folder removes it.
-2. Run `MVP05-Plus-Tools.exe` and, on its *Install* tab, point it at:
-   - **your Xbox disc image** (required): `.iso` (Redump), `.xiso`, or a folder of already extracted files (the one with `default.xbe`, or the folder just above it);
-   - **your GameCube disc image** (optional, for GameCube button art): `.iso` / `.gcm`, or `.rvz` / `.gcz` / `.ciso` if Dolphin is installed;
-   - **your PS2 disc image** (optional, for PS2 button art): `.iso`, or `.chd` if `chdman` is installed.
+1. Download `MVP05-Plus-Beta-1.zip` from [Releases](../../releases) and unzip it anywhere. Everything stays in that folder: nothing goes into Program Files or the registry.
+2. Run `MVP05-Plus-Tools.exe` and choose your discs:
+   - **Xbox** (required): a Redump `.iso`, `.xiso`, or a folder of extracted files.
+   - **GameCube** (optional, for GameCube art): `.iso` / `.gcm`, or `.rvz` / `.gcz` / `.ciso` with Dolphin installed.
+   - **PS2** (optional, for PS2 art): `.iso`, or `.chd` with `chdman` installed.
+   - Already have a `gc_icons` or `ps2_icons` set? Choose its folder or `.zip` instead of the disc.
 
-   Already have a `gc_icons` or `ps2_icons` set? Give it instead of the disc: the folder itself, the folder it's in, or a `.zip` with it inside. It's copied as it is.
+   Only the files the art needs are read from the GameCube and PS2 discs.
+3. Press **Launch MVP 05**. From then on, the Tools open on what's installed, with Launch.
 
-   The installer checks each disc is MVP Baseball 2005. It copies the Xbox game into `assets/`, and reads only the files the art needs from the GameCube and PS2 discs (it never copies those discs).
-3. Run `MVP05.exe`, or press **Launch MVP 05** in the Tools. Once the game is installed, the Tools open on what's installed, with Launch, and check each time that the game files are all there.
+Windows may warn that the Tools are from an unknown publisher: choose *More info → Run anyway*.
 
-**By hand, without the installer:** copy your extracted Xbox game files into `assets/`, with `default.xbe` directly inside it. To build button art by hand, see [Button art](#button-art-by-hand).
+## Setting up controllers
 
-## Saves and settings in the Tools
-
-`MVP05-Plus-Tools.exe` has three tabs: *Install*, *Saves* and *Settings*.
-
-- **Saves → Current saves:** the saves the game uses now, with when each was last saved, and a button to open their folder.
-- **Saves → Backups:** each time the game starts, it backs up your saves into `save backups` if they've changed (15 kept by default; change it there). The backups are listed by date. Open a date to see its saves and how each compares with yours now, then restore just the saves you pick, or the whole date. Your saves as they are become a backup first, so a restore can be undone. Close the game before restoring.
-- **Settings:** the display options in `mvp05-settings.toml` (display mode, resolution, render scale, frame rate cap, texture filtering, VSync, Xbox 720p mode). The default is windowed at 1920 x 1080. The game reads them when it starts.
-
-## Controllers
-
-- **GameCube adapter (Wii U / Switch):** the official adapter, or a compatible one set to its *Wii U* mode if it has a switch (not *PC*). On Windows, give the adapter the WinUSB driver with [Zadig](https://zadig.akeo.ie/), the same as for Dolphin (select *WUP-028*, choose *WinUSB*, *Replace Driver*). Plug controllers into any port.
-- **PlayStation pads:** connect them as usual (USB or Bluetooth).
-- **Xbox-style pads:** work as in Mad Dog's original.
+- **GameCube adapter on Windows:** give it the WinUSB driver with [Zadig](https://zadig.akeo.ie/), as for Dolphin (select *WUP-028*, *WinUSB*, *Replace Driver*). Third-party adapters: set the switch to *Wii U*.
+- **PlayStation and Xbox controllers:** connect by USB or Bluetooth as usual.
 
 ### SteamOS (Proton)
 
-1. Copy the whole game folder to SteamOS and add `MVP05.exe` to Steam as a non-Steam game, run with Proton.
-2. For the GameCube adapter: turn off Steam's own GameCube adapter support, and set the game's launch options to (with your folder's path):
+Add `MVP05.exe` to Steam as a non-Steam game, run with Proton. For the GameCube adapter, turn off Steam's own GameCube adapter support and set the launch options (with your folder's path):
 
-   ```
-   sh -c 'B="/home/deck/Games/MVP05-Plus/gcbridge"; chmod +x "$B"; "$B" & exec "$@"' sh %command%
-   ```
+```
+sh -c 'B="/home/deck/Games/MVP05-Plus/gcbridge"; chmod +x "$B"; "$B" & exec "$@"' sh %command%
+```
 
-   `gcbridge` reads the adapter on SteamOS itself, the way Dolphin does, and passes it to the game.
+## MVP05-Plus Tools
 
-## Settings
+- **Install**: your discs in, then what's installed (checked each start) and **Launch MVP 05**.
+- **Saves**: *Current saves*, and *Backups* by date. Restore single saves or a whole date; your saves become a backup first, so a restore can be undone.
+- **Settings**: display mode, resolution (default 1920 x 1080, windowed), render scale, frame rate cap, texture filtering, VSync, Xbox 720p mode.
 
-`mvp05-settings.toml` beside the exe. Plus adds:
-
-| Setting | Default | Meaning |
-| --- | --- | --- |
-| `gamecube_layout` | `true` | GameCube controllers use the GameCube release's control layout |
-| `gamecube_icons` | `true` | Show GameCube button art when a GameCube controller is connected at start (needs `gc_icons/`) |
-| `playstation_layout` | `true` | PlayStation pads use the PS2 release's control layout |
-| `playstation_icons` | `true` | Show PS2 button art when a PlayStation pad is connected at start (needs `ps2_icons/`) |
-| `save_backups` | `15` | How many save backups to keep in `save backups/` (0: off) |
+Everything is also in `mvp05-settings.toml`. Plus adds `gamecube_layout`, `gamecube_icons`, `playstation_layout`, `playstation_icons` (all on) and `save_backups` (15).
 
 ## Building from source
 
-Requires Windows x64, the Visual Studio C++ tools and Windows SDK, LLVM Clang/lld, CMake 3.25+ and Ninja (as Mad Dog's original). Put your extracted Xbox files in `assets/`, open an x64 developer prompt with `clang`, `clang++`, `cmake` and `ninja` on PATH, and run `Build-Source.cmd`. It builds `MVP05.exe` and copies Microsoft's `d3dcompiler_47.dll` from the Windows SDK beside it as `d3dcompiler_ms.dll` (needed under Proton).
+Windows x64 with Visual Studio's C++ tools and Windows SDK, LLVM Clang, CMake 3.25+ and Ninja. Put your Xbox files in `assets/` and run `Build-Source.cmd` from an *x64 Native Tools Command Prompt*. Details: [`docs/MVP05-HANDOFF.md`](docs/MVP05-HANDOFF.md); making a release: [`docs/RELEASING.md`](docs/RELEASING.md).
 
-### Button art by hand
-
-Python 3 with Pillow and numpy (`pip install pillow numpy`):
+Button art by hand (Python 3 with `pip install pillow numpy`):
 
 ```
 python tools/gc_layout/make_icons.py assets/data <GameCube disc's data folder> gc_icons
 python tools/ps2_layout/make_ps2_icons.py assets/data <PS2 disc's DATA folder> ps2_icons
 ```
 
-Put `gc_icons/` and `ps2_icons/` beside the exe. Never commit them: they're made from game art.
-
-## Documentation
-
-- [`docs/MVP05-HANDOFF.md`](docs/MVP05-HANDOFF.md): how everything works, with code references and the full change history.
-- [`docs/RELEASING.md`](docs/RELEASING.md): putting a release together on GitHub.
-- `START-HERE.txt`, `SOURCE-MAP.txt`: Mad Dog's guides to the base project.
-
 ## Credits
 
-- **Mad Dog (TGP482)**: the static recompiler SDK and the MVP Baseball 2005 recompilation this is built on.
+- **[Mad Dog](https://github.com/maddog847)**: the MVP Baseball 2005 PC port this is built on.
+- **[TGP482](https://github.com/TGP482)**: [XboxXBERecomp](https://github.com/TGP482/XboxXBERecomp), the static recompiler for original Xbox games that the port is made with.
 - **MVP05-Plus**: spy_jam, with Claude (Anthropic).
 - Third-party libraries: see `THIRD_PARTY.txt`.
 
 ## Legal
 
-The SDK and this fork's code are MIT licensed (`SDK-LICENSE.txt`); MVP05-Plus's additions are Copyright 2026 spy_jam, under the same license. MVP Baseball 2005 and its art belong to their owners; none of it is included. This project isn't affiliated with or endorsed by EA, Nintendo, Sony or Microsoft. Microsoft's runtime DLLs and shader compiler in releases are Microsoft's redistributable components, under their own terms.
+MIT licensed (`SDK-LICENSE.txt`); MVP05-Plus's additions are Copyright 2026 spy_jam under the same license. MVP Baseball 2005 belongs to EA; apart from the game's icon (as in Mad Dog's release), none of it is included. Not affiliated with or endorsed by EA, Nintendo, Sony or Microsoft. Microsoft's runtime DLLs and shader compiler are Microsoft's redistributable components, under their own terms.
