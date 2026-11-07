@@ -42,9 +42,13 @@ MVP Baseball 2005 on Windows and SteamOS, from [Mad Dog's](#credits) static reco
 
 **By hand, without the installer:** copy your extracted Xbox game files into `assets/`, with `default.xbe` directly inside it. To build button art by hand, see [Button art](#button-art-by-hand).
 
-## Save backups
+## Saves and settings in the Tools
 
-Each time the game starts, it backs up your saves into `save backups` if they've changed since the last backup (`save_backups` in the settings says how many to keep). The *Save backups* tab of `MVP05-Plus-Tools.exe` lists them by date. Open a date to see its saves and how each compares with yours now, then restore just the saves you pick, or the whole date. Your saves as they are become a backup first, so a restore can be undone. Close the game before restoring.
+`MVP05-Plus-Tools.exe` has three tabs: *Install*, *Saves* and *Settings*.
+
+- **Saves → Current saves:** the saves the game uses now, with when each was last saved, and a button to open their folder.
+- **Saves → Backups:** each time the game starts, it backs up your saves into `save backups` if they've changed (15 kept by default; change it there). The backups are listed by date. Open a date to see its saves and how each compares with yours now, then restore just the saves you pick, or the whole date. Your saves as they are become a backup first, so a restore can be undone. Close the game before restoring.
+- **Settings:** the display options in `mvp05-settings.toml` (display mode, resolution, render scale, frame rate cap, texture filtering, VSync, Xbox 720p mode). The default is windowed at 1920 x 1080. The game reads them when it starts.
 
 ## Controllers
 
@@ -73,7 +77,7 @@ Each time the game starts, it backs up your saves into `save backups` if they've
 | `gamecube_icons` | `true` | Show GameCube button art when a GameCube controller is connected at start (needs `gc_icons/`) |
 | `playstation_layout` | `true` | PlayStation pads use the PS2 release's control layout |
 | `playstation_icons` | `true` | Show PS2 button art when a PlayStation pad is connected at start (needs `ps2_icons/`) |
-| `save_backups` | `10` | How many save backups to keep in `save backups/` (0: off) |
+| `save_backups` | `15` | How many save backups to keep in `save backups/` (0: off) |
 
 ## Building from source
 

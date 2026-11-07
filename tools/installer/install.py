@@ -13,6 +13,7 @@ Save backups: the game's own backups of your saves (save backups/), listed and r
   MVP05-Plus-Tools.exe --xbox X [--gamecube G] [--ps2 P] [--dir D]   installing without it
 """
 import argparse
+import datetime
 import json
 import contextlib
 import io
@@ -283,7 +284,8 @@ def gui(root):
     tabs.grid(padx=8, pady=8)
     tab = ttk.Frame(tabs, padding=12)
     tabs.add(tab, text="Install")
-    backups_tab(tabs, root, tk, ttk)
+    saves_tab(tabs, root, tk, ttk)
+    settings_tab(tabs, root, tk, ttk)
 
     # --- what's installed, with Launch: shown when the game is ready to play
     ready = ttk.Frame(tab)
@@ -424,19 +426,172 @@ def gui(root):
     w.mainloop()
 
 
-def backups_tab(tabs, root, tk, ttk):
-    from tkinter import messagebox
+def open_in_explorer(path):
+    os.makedirs(path, exist_ok=True)
+    if os.name == "nt":
+        os.startfile(path)
+
+
+def saves_tab(tabs, root, tk, ttk):
+    """Saves: Current saves and Backups, each its own tab inside."""
+    outer = ttk.Frame(tabs, padding=8)
+    tabs.add(outer, text="Saves")
+    inner = ttk.Notebook(outer)
+    inner.grid(sticky="nwe")
+    refresh_current = current_saves_tab(inner, root, tk, ttk)
+    refresh_backups = backups_tab(inner, root, tk, ttk, refresh_current)
+
+    def on_tab(_):  # each list as it is now when it's looked at
+        if inner.index("current") == 0:
+            refresh_current()
+        else:
+            refresh_backups()
+    inner.bind("<<NotebookTabChanged>>", on_tab)
+
+
+def current_saves_tab(nb, root, tk, ttk):
     import backups as B
 
+    frm = ttk.Frame(nb, padding=10)
+    nb.add(frm, text="Current saves")
+    ttk.Label(frm, wraplength=520, justify="left", text=(
+        "The saves the game uses now, in hdd beside MVP05.exe.")).grid(row=0, column=0, sticky="w", pady=(0, 8))
+    tree = ttk.Treeview(frm, columns=("when", "size"), show="tree headings", height=12, selectmode="browse")
+    tree.heading("#0", text="Save")
+    tree.heading("when", text="Last saved")
+    tree.heading("size", text="Size")
+    tree.column("#0", width=280, anchor="w")
+    tree.column("when", width=150, anchor="w")
+    tree.column("size", width=80, anchor="e")
+    tree.grid(row=1, column=0, sticky="we")
+    note = ttk.Label(frm, text="", foreground="#666")
+    note.grid(row=3, column=0, sticky="w", pady=(6, 0))
+
+    def refresh():
+        tree.delete(*tree.get_children())
+        saves = []
+        for i, p in B.save_folders(os.path.join(root, "hdd")).items():
+            files = [os.path.join(d, f) for d, _, fs in os.walk(p) for f in fs]
+            when = max((os.path.getmtime(f) for f in files), default=os.path.getmtime(p))
+            saves.append((B.save_name(p), when, sum(os.path.getsize(f) for f in files)))
+        for name, when, size in sorted(saves, key=lambda x: x[1], reverse=True):
+            tree.insert("", "end", text=name, values=(
+                datetime.datetime.fromtimestamp(when).strftime("%Y-%m-%d %H:%M"),
+                f"{size / 2**20:.1f} MB" if size >= 2**20 else f"{max(1, size // 1024)} KB"))
+        note.configure(text="" if saves else "No saves yet: they appear here once you save in the game.")
+
+    bar = ttk.Frame(frm)
+    bar.grid(row=2, column=0, sticky="we", pady=(8, 0))
+    ttk.Button(bar, text="Open saves folder",
+               command=lambda: open_in_explorer(os.path.join(root, "hdd", B.TITLE_UDATA))).pack(side="left")
+    ttk.Button(bar, text="Refresh", command=refresh).pack(side="right")
+    refresh()
+    return refresh
+
+
+def settings_tab(tabs, root, tk, ttk):
+    """Display options in mvp05-settings.toml: the game reads them when it starts."""
+    import settings as ST
+
     frm = ttk.Frame(tabs, padding=12)
-    tabs.add(frm, text="Save backups")
-    ttk.Label(frm, text="Save backups", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, sticky="w")
+    tabs.add(frm, text="Settings")
+    ttk.Label(frm, text="Display", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=3, sticky="w")
+    ttk.Label(frm, foreground="#666", wraplength=520, justify="left", text=(
+        "Saved in mvp05-settings.toml beside the game. Changes take effect the next time the game starts.")).grid(
+        row=1, column=0, columnspan=3, sticky="w", pady=(0, 10))
+    mode = tk.StringVar()
+    res = tk.StringVar()
+    scale = tk.StringVar()
+    fps = tk.StringVar()
+    aniso = tk.StringVar()
+    vsync = tk.BooleanVar()
+    x720 = tk.BooleanVar()
+    resolutions = ["1280 x 720", "1600 x 900", "1920 x 1080", "2560 x 1440", "3840 x 2160", "Desktop's own"]
+    fps_names = {"30": 30, "60 (default)": 60, "Unlimited": 0}
+    aniso_names = {"As the game asks": 0, "2x": 2, "4x": 4, "8x": 8, "16x": 16}
+    rows = [
+        ("Display mode", ttk.Combobox(frm, textvariable=mode, values=["Windowed", "Borderless", "Fullscreen"],
+                                      state="readonly", width=24)),
+        ("Resolution", ttk.Combobox(frm, textvariable=res, values=resolutions, width=24)),
+        ("Render scale (%)", ttk.Spinbox(frm, textvariable=scale, from_=25, to=200, increment=25, width=24)),
+        ("Frame rate cap", ttk.Combobox(frm, textvariable=fps, values=list(fps_names), state="readonly", width=24)),
+        ("Texture filtering", ttk.Combobox(frm, textvariable=aniso, values=list(aniso_names), state="readonly",
+                                           width=24)),
+    ]
+    for i, (label, widget) in enumerate(rows):
+        ttk.Label(frm, text=label).grid(row=2 + i, column=0, sticky="w", pady=3)
+        widget.grid(row=2 + i, column=1, sticky="w", padx=(12, 0), pady=3)
+    ttk.Label(frm, text="(or type one, like 1366 x 768)", foreground="#666").grid(
+        row=3, column=2, sticky="w", padx=8)
+    ttk.Checkbutton(frm, text="VSync", variable=vsync).grid(row=7, column=0, columnspan=2, sticky="w", pady=(6, 0))
+    ttk.Checkbutton(frm, text="Xbox 720p mode (the game runs as on an Xbox with a 720p widescreen TV)",
+                    variable=x720).grid(row=8, column=0, columnspan=3, sticky="w")
+    note = ttk.Label(frm, text="", wraplength=520, justify="left")
+    note.grid(row=10, column=0, columnspan=3, sticky="w", pady=(10, 0))
+
+    def name_of(d, v):
+        return next((k for k, x in d.items() if x == v), str(v))
+
+    def load():
+        s = dict(ST.DEFAULTS)
+        s.update(ST.read(root))
+        mode.set(str(s["display_mode"]).capitalize())
+        w, h = int(s.get("width") or 0), int(s.get("height") or 0)
+        res.set(f"{w} x {h}" if w and h else "Desktop's own")
+        scale.set(str(s["render_percent"]))
+        fps.set(name_of(fps_names, s["fps_cap"]))
+        aniso.set(name_of(aniso_names, s["anisotropic_filtering"]))
+        vsync.set(bool(s["vsync"]))
+        x720.set(bool(s["xbox_720p"]))
+
+    def save():
+        try:
+            if res.get().startswith("Desktop"):
+                w = h = 0
+            else:
+                w, h = (int(x) for x in res.get().lower().replace("×", "x").split("x"))
+                assert 320 <= w <= 16384 and 240 <= h <= 16384
+            sc = int(scale.get())
+            assert 10 <= sc <= 400
+        except (ValueError, AssertionError):
+            note.configure(text="The resolution is width x height (like 1920 x 1080), and the render scale a "
+                                "percentage (100 is the resolution itself).", foreground="#a33")
+            return
+        fp = fps_names.get(fps.get(), 60) if fps.get() in fps_names else int(fps.get())
+        an = aniso_names.get(aniso.get(), 0) if aniso.get() in aniso_names else int(aniso.get().rstrip("x"))
+        ST.write(root, {"display_mode": mode.get().lower(), "width": w, "height": h, "render_percent": sc,
+                        "fps_cap": fp, "vsync": vsync.get(), "anisotropic_filtering": an,
+                        "xbox_720p": x720.get()})
+        note.configure(text="Saved. Restart the game if it's running.", foreground="#1a7f37")
+
+    def defaults():
+        ST.write(root, dict(ST.DEFAULTS))
+        load()
+        note.configure(text="Back to the defaults (windowed, 1920 x 1080). Restart the game if it's running.",
+                       foreground="#1a7f37")
+
+    bar = ttk.Frame(frm)
+    bar.grid(row=9, column=0, columnspan=3, sticky="we", pady=(14, 0))
+    ttk.Button(bar, text="Save", command=save).pack(side="right")
+    ttk.Button(bar, text="Defaults", command=defaults).pack(side="right", padx=6)
+    ttk.Button(bar, text="Open the settings file", command=lambda: os.startfile(os.path.join(root, ST.FILE))
+               if os.name == "nt" else None).pack(side="left")
+    load()
+
+
+def backups_tab(nb, root, tk, ttk, refresh_current):
+    from tkinter import messagebox
+    import backups as B
+    import settings as ST
+
+    frm = ttk.Frame(nb, padding=10)
+    nb.add(frm, text="Backups")
     ttk.Label(frm, wraplength=520, justify="left", text=(
         "The game backs up your saves each time it starts, when they've changed. Open a date to see its saves, "
         "pick the ones you want (Ctrl+click for several), or pick the date itself for all of them, and Restore. "
         "Your saves as they are now become a backup first, so you can undo it. Close the game first.")).grid(
-        row=1, column=0, sticky="w", pady=(2, 8))
-    tree = ttk.Treeview(frm, columns=("state",), show="tree headings", height=11, selectmode="extended")
+        row=1, column=0, sticky="w", pady=(0, 8))
+    tree = ttk.Treeview(frm, columns=("state",), show="tree headings", height=10, selectmode="extended")
     tree.heading("#0", text="Backed up / save")
     tree.heading("state", text="Compared with your saves now")
     tree.column("#0", width=330, anchor="w")
@@ -491,18 +646,33 @@ def backups_tab(tabs, root, tk, ttk):
         except Exception as e:
             say(f"Something went wrong: {e}")
         refresh()
+        refresh_current()
 
-    def open_folder():
-        d = os.path.join(root, "save backups")
-        if os.name == "nt" and os.path.isdir(d):
-            os.startfile(d)
+    keep = tk.StringVar(value=str(ST.read(root).get("save_backups", 15)))
+
+    def save_keep(*_):
+        try:
+            n = int(keep.get())
+            assert 0 <= n <= 999
+        except (ValueError, AssertionError):
+            return
+        if ST.read(root).get("save_backups") != n:
+            ST.write(root, {"save_backups": n})
 
     bar = ttk.Frame(frm)
     bar.grid(row=3, column=0, sticky="we", pady=(8, 0))
     ttk.Button(bar, text="Restore…", command=do_restore).pack(side="left")
-    ttk.Button(bar, text="Backups folder", command=open_folder).pack(side="right")
+    ttk.Label(bar, text="Keep").pack(side="left", padx=(16, 4))
+    sb = ttk.Spinbox(bar, textvariable=keep, from_=0, to=99, width=4, command=save_keep)
+    sb.pack(side="left")
+    sb.bind("<FocusOut>", save_keep)
+    sb.bind("<Return>", save_keep)
+    ttk.Label(bar, text="backups (0: off)").pack(side="left", padx=(4, 0))
+    ttk.Button(bar, text="Open backups folder",
+               command=lambda: open_in_explorer(os.path.join(root, "save backups"))).pack(side="right")
     ttk.Button(bar, text="Refresh", command=refresh).pack(side="right", padx=6)
     refresh()
+    return refresh
 
 
 def main():
