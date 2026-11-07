@@ -14,3 +14,7 @@
    ```
    Check the zip has no `assets` files besides `PUT-GAME-FILES-HERE.txt`, and no `gc_icons` or `ps2_icons`.
 5. **Publish:** on GitHub, *Releases → Draft a new release*, tag `beta-1`, title `MVP05-Plus Beta 1`, paste `RELEASE-NOTES.md` as the description, attach `MVP05-Plus-Beta-1.zip`, and tick *Set as a pre-release*.
+
+## A private test release, automatically
+
+`tools/Make-Test-Release.cmd` does steps 1-5 privately in your Downloads folder: it unzips `MVP05-Plus-repo.zip`, copies your Xbox files in from your game folder, builds `MVP05.exe`, pushes to a **private** GitHub repository, runs the release tools build there and downloads it, packs the zip with Mad Dog's DLLs (from `MVP05-Public-Beta-3.zip` in Downloads), makes a **draft** release, and unzips the zip into `Downloads\MVP05-Plus-Beta-1` as a player would. It needs Git, the GitHub CLI (`gh`, signed in once with `gh auth login`) and Visual Studio's C++ and Clang tools. Run it again after changes: it reuses what's there and replaces the draft.

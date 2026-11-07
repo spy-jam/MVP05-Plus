@@ -4,6 +4,7 @@ cd /d "%~dp0"
 rem opened by double-click (Explorer runs it as cmd /c "...Build-Source.cmd"): keep the window open at the end
 set "PAUSE_AT_END="
 echo %cmdcmdline% | find /i "/c" >nul && set "PAUSE_AT_END=1"
+if defined MVP_NO_PAUSE set "PAUSE_AT_END="
 call :build
 set "RESULT=%errorlevel%"
 if defined PAUSE_AT_END (

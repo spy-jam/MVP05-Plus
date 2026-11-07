@@ -1,0 +1,222 @@
+<#
+MVP05-Plus: a test release, made the way a real one is, in your Downloads folder, all private.
+
+  1. unzips MVP05-Plus-repo.zip into Downloads\MVP05-Plus-test\MVP05-Plus (or reuses it)
+  2. copies your Xbox game files into its assets (from your current game folder), for the build
+  3. builds MVP05.exe (Visual Studio's x64 tools, LLVM clang, CMake, Ninja)
+  4. puts the repository on your GitHub as a PRIVATE repository and runs the "release tools" build there
+     (MVP05-Plus-Tools.exe, gcbridge), then downloads them
+  5. packs MVP05-Plus-Beta-1.zip as a release is packed, with Mad Dog's three runtime DLLs from his Beta 3 zip
+  6. makes a DRAFT release on GitHub with it (only you can see a draft)
+  7. unzips that zip into Downloads\MVP05-Plus-Beta-1, as a player would, and opens it
+
+Needs: Git and the GitHub CLI (https://cli.github.com), signed in once with "gh auth login"; Visual Studio (or its
+Build Tools) with the C++ tools, Windows SDK and the "C++ Clang tools" component (or LLVM on PATH).
+Run it with Make-Test-Release.cmd (beside it), or:  powershell -ExecutionPolicy Bypass -File Make-Test-Release.ps1
+Nothing from the game is ever pushed: assets, gc_icons and ps2_icons are in .gitignore, and that's checked.
+#>
+param(
+    [string]$Downloads = (Join-Path $env:USERPROFILE "Downloads"),
+    [string]$GameDir = "",          # your current MVP05 folder (with assets\default.xbe); asked for if not given
+    [string]$RepoName = "MVP05-Plus",
+    [string]$Version = "Beta 1",
+    [switch]$SkipBuild              # use the MVP05.exe already built in the work folder
+)
+# "Continue": Windows PowerShell 5.1 turns a program's stderr into a stopping error under "Stop" (git and gh write
+# progress there), so each step checks its own result, and the file steps below stop on errors by themselves
+$ErrorActionPreference = "Continue"
+$PSDefaultParameterValues = @{ "*-Item:ErrorAction" = "Stop"; "Expand-Archive:ErrorAction" = "Stop"; "Copy-Item:ErrorAction" = "Stop" }
+$env:MVP_NO_PAUSE = "1"   # Build-Source.cmd: don't wait for a key at the end
+function Step($t) { Write-Host ""; Write-Host "== $t" -ForegroundColor Cyan }
+function Fail($t) { Write-Host ""; Write-Host "Stopped: $t" -ForegroundColor Red; throw "stopped" }
+function Need($cmd, $why) { if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) { Fail "$cmd isn't installed ($why)" } }
+
+try {
+    $work = Join-Path $Downloads "MVP05-Plus-test"
+    $repo = Join-Path $work "MVP05-Plus"
+    $tag = "test-" + ($Version -replace '\s', '-').ToLower()
+    $zipName = "MVP05-Plus-" + ($Version -replace '\s', '-') + ".zip"
+
+    Step "Checking what's needed"
+    Need git "https://git-scm.com"
+    Need gh "the GitHub CLI: https://cli.github.com, then run: gh auth login"
+    & gh auth status *> $null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Signing in to GitHub (once)..."
+        & gh auth login --web --git-protocol https
+        if ($LASTEXITCODE -ne 0) { Fail "not signed in to GitHub" }
+    }
+    $me = (& gh api user --jq .login).Trim()
+    Write-Host "GitHub account: $me"
+    $repoZip = Get-ChildItem $Downloads -Filter "MVP05-Plus-repo*.zip" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    $beta3 = Get-ChildItem $Downloads -Filter "MVP05-Public-Beta-3*.zip" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if (-not $beta3) { Fail "MVP05-Public-Beta-3.zip (Mad Dog's) isn't in ${Downloads}: it has the three runtime DLLs" }
+
+    Step "Source"
+    if (Test-Path (Join-Path $repo ".git")) {
+        Write-Host "Using $repo"
+    } else {
+        if (-not $repoZip) { Fail "MVP05-Plus-repo.zip isn't in $Downloads" }
+        New-Item -ItemType Directory -Force $work | Out-Null
+        Write-Host "Unzipping $($repoZip.Name)"
+        Expand-Archive $repoZip.FullName -DestinationPath $work -Force
+        if (-not (Test-Path (Join-Path $repo ".git"))) { Fail "the zip didn't hold an MVP05-Plus folder with its git history" }
+    }
+    Get-ChildItem $repo -Recurse -File | Unblock-File
+
+    Step "Xbox game files for the build"
+    $xbe = Join-Path $repo "assets\default.xbe"
+    if (-not (Test-Path $xbe)) {
+        if (-not $GameDir) {
+            Add-Type -AssemblyName System.Windows.Forms
+            $dlg = New-Object System.Windows.Forms.FolderBrowserDialog
+            $dlg.Description = "Your current MVP05 game folder (the one with assets\default.xbe)"
+            if ($dlg.ShowDialog() -ne "OK") { Fail "no game folder chosen" }
+            $GameDir = $dlg.SelectedPath
+        }
+        $src = Join-Path $GameDir "assets"
+        if (-not (Test-Path (Join-Path $src "default.xbe"))) { Fail "$src has no default.xbe" }
+        Write-Host "Copying $src (a few GB, once)"
+        & robocopy $src (Join-Path $repo "assets") /E /NFL /NDL /NJH /NJS /NP | Out-Null
+        if ($LASTEXITCODE -ge 8) { Fail "copying the game files failed (robocopy $LASTEXITCODE)" }
+    } else { Write-Host "Already in assets" }
+
+    Step "Building MVP05.exe"
+    $exe = Join-Path $repo "MVP05.exe"
+    if ($SkipBuild -and (Test-Path $exe)) {
+        Write-Host "Using the MVP05.exe already there"
+    } else {
+        $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+        if (-not (Test-Path $vswhere)) { Fail "Visual Studio (or its Build Tools) isn't installed" }
+        $vs = (& $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath)
+        if (-not $vs) { Fail "Visual Studio has no C++ tools (add 'Desktop development with C++')" }
+        $devcmd = Join-Path $vs "Common7\Tools\VsDevCmd.bat"
+        $llvm = Join-Path $vs "VC\Tools\Llvm\x64\bin"
+        $path = if (Test-Path $llvm) { "set `"PATH=$llvm;%PATH%`" && " } else { "" }
+        if (Test-Path $exe) { Remove-Item $exe }
+        & cmd /c "call `"$devcmd`" -arch=x64 -host_arch=x64 >nul && $path cd /d `"$repo`" && Build-Source.cmd"
+        if (-not (Test-Path $exe)) {
+            Fail "the build didn't make MVP05.exe (see above; clang needs Visual Studio's 'C++ Clang tools' component or LLVM)"
+        }
+    }
+
+    Step "Your private GitHub repository"
+    Push-Location $repo
+    try {
+        $tracked = & git ls-files
+        $bad = $tracked | Where-Object { $_ -match '^(assets/(?!PUT-GAME-FILES-HERE)|gc_icons/|ps2_icons/)' -or $_ -match '\.(xbe|big|iso)$' }
+        if ($bad) { Fail "game files would be pushed: $($bad | Select-Object -First 3)" }
+        & gh repo view "$me/$RepoName" *> $null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Making $me/$RepoName (private)"
+            & gh repo create $RepoName --private --source . --remote origin --push
+            if ($LASTEXITCODE -ne 0) { Fail "couldn't make the repository" }
+        } else {
+            $vis = (& gh repo view "$me/$RepoName" --json visibility --jq .visibility).Trim()
+            Write-Host "$me/$RepoName is there ($vis)"
+            if (-not (& git remote)) { & git remote add origin "https://github.com/$me/$RepoName.git" }
+            & git push -u origin main
+            if ($LASTEXITCODE -ne 0) { Fail "couldn't push (if the GitHub one has changes of its own, sort that out first)" }
+        }
+
+        Step "Building the Tools and gcbridge on GitHub"
+        $before = (& gh run list --workflow release-tools.yml --limit 1 --json databaseId --jq ".[0].databaseId" 2>$null)
+        & gh workflow run release-tools.yml --ref main
+        if ($LASTEXITCODE -ne 0) { Fail "couldn't start the build (Actions may need turning on in the repository's Actions tab)" }
+        $run = $null
+        for ($i = 0; $i -lt 30 -and -not $run; $i++) {
+            Start-Sleep 3
+            $id = (& gh run list --workflow release-tools.yml --limit 1 --json databaseId --jq ".[0].databaseId")
+            if ($id -and $id -ne $before) { $run = $id.Trim() }
+        }
+        if (-not $run) { Fail "the build didn't show up on GitHub" }
+        Write-Host "Waiting for it (about 5 minutes)..."
+        & gh run watch $run --exit-status
+        if ($LASTEXITCODE -ne 0) { Fail "the GitHub build failed: gh run view $run --log-failed" }
+        $art = Join-Path $work "artifacts"
+        if (Test-Path $art) { Remove-Item $art -Recurse -Force }
+        & gh run download $run --dir $art
+        if ($LASTEXITCODE -ne 0) { Fail "couldn't download the build's files" }
+    } finally { Pop-Location }
+
+    Step "Packing $zipName"
+    $stage = Join-Path $work "release-files"
+    if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
+    New-Item -ItemType Directory $stage | Out-Null
+    Copy-Item $exe $stage
+    $d3d = Join-Path $repo "d3dcompiler_ms.dll"
+    if (Test-Path $d3d) { Copy-Item $d3d $stage } else { Fail "d3dcompiler_ms.dll wasn't made by the build" }
+    $b3 = Join-Path $work "beta3"
+    if (-not (Test-Path $b3)) { Expand-Archive $beta3.FullName -DestinationPath $b3 -Force }
+    foreach ($dll in "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll") {
+        $f = Get-ChildItem $b3 -Recurse -Filter $dll | Select-Object -First 1
+        if (-not $f) { Fail "$dll isn't in $($beta3.Name)" }
+        Copy-Item $f.FullName $stage
+    }
+    foreach ($n in "MVP05-Plus-Tools.exe", "gcbridge") {
+        $f = Get-ChildItem $art -Recurse -Filter $n | Select-Object -First 1
+        if (-not $f) { Fail "$n isn't in the GitHub build's files" }
+        Copy-Item $f.FullName $stage
+    }
+    $zip = Join-Path $work $zipName
+    if (Test-Path $zip) { Remove-Item $zip }
+    $py = Get-Command py -ErrorAction SilentlyContinue
+    if (-not $py) { $py = Get-Command python -ErrorAction SilentlyContinue }
+    if ($py -and $py.Source -notmatch "WindowsApps") {
+        Push-Location $work
+        try { & $py.Source (Join-Path $repo "tools\make_release.py") $stage $Version } finally { Pop-Location }
+    }
+    if (-not (Test-Path $zip)) {
+        # no Python: the same files and manifest (gcbridge's executable mark is set by its Steam launch option anyway)
+        $pack = Join-Path $work "pack"
+        if (Test-Path $pack) { Remove-Item $pack -Recurse -Force }
+        New-Item -ItemType Directory $pack, (Join-Path $pack "assets") | Out-Null
+        Copy-Item "$stage\*" $pack
+        foreach ($n in "README.md", "RELEASE-NOTES.md", "START-HERE.txt", "mvp05-settings.toml", "SDK-LICENSE.txt",
+                       "THIRD_PARTY.txt", "MICROSOFT-RUNTIME-NOTICE.txt") {
+            if (Test-Path (Join-Path $repo $n)) { Copy-Item (Join-Path $repo $n) $pack }
+        }
+        Copy-Item (Join-Path $repo "assets\PUT-GAME-FILES-HERE.txt") (Join-Path $pack "assets")
+        $m = [ordered]@{}
+        Get-ChildItem $pack -Recurse -File | Sort-Object FullName | ForEach-Object {
+            $m[$_.FullName.Substring($pack.Length + 1).Replace('\', '/')] = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+        }
+        [IO.File]::WriteAllText((Join-Path $pack "SHA256-MANIFEST.json"), ($m | ConvertTo-Json) + "`n")
+        # entries named with / (Compress-Archive in Windows PowerShell writes \, which SteamOS's unzip keeps in names)
+        Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
+        $za = [IO.Compression.ZipFile]::Open($zip, "Create")
+        try {
+            Get-ChildItem $pack -Recurse -File | ForEach-Object {
+                $name = $_.FullName.Substring($pack.Length + 1).Replace('\', '/')
+                [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($za, $_.FullName, $name, "Optimal") | Out-Null
+            }
+        } finally { $za.Dispose() }
+        Remove-Item $pack -Recurse -Force
+    }
+    Write-Host "Made $zip"
+
+    Step "Draft release on GitHub (only you can see it)"
+    Push-Location $repo
+    try {
+        & gh release view $tag *> $null
+        if ($LASTEXITCODE -eq 0) { & gh release delete $tag --yes | Out-Null }
+        & gh release create $tag $zip --draft --prerelease --target main --title "MVP05-Plus $Version (test)" --notes-file RELEASE-NOTES.md
+        if ($LASTEXITCODE -ne 0) { Fail "couldn't make the draft release" }
+    } finally { Pop-Location }
+
+    Step "Unzipping it as a player would"
+    $player = Join-Path $Downloads ("MVP05-Plus-" + ($Version -replace '\s', '-'))
+    if (Test-Path $player) {
+        $player = $player + "-" + (Get-Date -Format "yyyyMMdd-HHmm")
+    }
+    Expand-Archive $zip -DestinationPath $player
+    Write-Host ""
+    Write-Host "Done." -ForegroundColor Green
+    Write-Host "  Player's folder: $player   (run MVP05-Plus-Tools.exe there, then MVP05.exe)"
+    Write-Host "  Draft release:   https://github.com/$me/$RepoName/releases"
+    Write-Host "  The repository is private; publishing the draft or making the repository public is up to you."
+    Start-Process explorer.exe $player
+} catch {
+    if ($_.Exception.Message -ne "stopped") { Write-Host ""; Write-Host "Stopped: $($_.Exception.Message)" -ForegroundColor Red }
+    exit 1
+}
