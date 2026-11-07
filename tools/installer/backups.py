@@ -68,10 +68,10 @@ def _files(folder):
 
 
 def compare(backup_save, current_save):
-    """'Unchanged', 'Changed' or 'Not in current saves' (copies keep the files' times, so equal times and sizes
+    """'Unchanged', 'Changed' or 'Save not found' (copies keep the files' times, so equal times and sizes
     mean the same save)."""
     if not current_save or not os.path.isdir(current_save):
-        return "Not in current saves"
+        return "Save not found"
     a, b = _files(backup_save), _files(current_save)
     if a.keys() != b.keys():
         return "Changed"
