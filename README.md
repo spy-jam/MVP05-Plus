@@ -1,6 +1,6 @@
 # MVP05-Plus
 
-MVP Baseball 2005 on Windows, and on SteamOS through Proton, built on [Mad Dog's](#credits) PC port of the Original Xbox game. spy_jam's MVP05-Plus adds GameCube and PlayStation controllers that play like their original releases did, with matching GameCube and PS2 button art. Includes a launcher for easy installation, save backups and display settings.
+MVP Baseball 2005 on Windows, and on SteamOS through Proton, built on [Mad Dog's](#credits) PC port of the Original Xbox game. spy_jam's MVP05-Plus adds GameCube and PlayStation controller support with full control layouts and button labels. Includes a launcher for easy installation, also providing a save backup menu and display settings.
 
 > **You need your own copy of the Xbox game.** No game files or game art are included. The Launcher builds what's needed from your own discs.
 
@@ -10,18 +10,18 @@ MVP Baseball 2005 on Windows, and on SteamOS through Proton, built on [Mad Dog's
 * **PlayStation controllers** with the PS2 release's full control layout and stick handling, analog button pressure and rumble.
 * **Button art to match your controller**: GameCube or PS2 buttons in menus and in-game, made from your own discs (optional).
 * **MVP05-Plus Launcher**: install from your discs, launch the game, restore save backups, adjust display settings.
-* **Fixes**: a shader cache against mid-game stutter, SteamOS support through Proton (black screen fixed, GameCube adapter via `gcbridge`), and a fix for a crash during stolen bases that was found in testing.
-* **Save backups** every time the game starts (30 kept), with single saves or a whole date restored from the Launcher.
+* **Fixes**: a shader cache to prevent mid-game stutter, SteamOS support through Proton (black screen fixed, GameCube adapter via `gcbridge`), and a fix for a crash during stolen bases, found while testing the original port.
+* **Save backups**: a full save backup menu in the Launcher. Your saves are backed up automatically when the game starts, keeping the latest 30 backups by default, and you can view and restore them in the Launcher.
 
 ## Compatible controllers
 
 * **GameCube controllers** (official adapter, or a third-party adapter in Wii U mode) — GameCube button art and controls
-* **DualSense, DualSense Edge, DualShock 4** — PS2 button art and controls
+* **DualSense, DualShock 4** — PS2 button art and controls
 * **DualShock 3** — PS2 button art and controls, with pressure-sensitive buttons (on Windows, through [DsHidMini](https://github.com/nefarius/DsHidMini) in SDL mode)
 * **Xbox 360, Xbox One and Xbox Series controllers** — Xbox button art and controls, as the original
 * **Other controllers** (Switch Pro and most others SDL supports) — Xbox button art and controls
 
-Button art follows the controller connected when the game starts. Without the art sets, PlayStation and GameCube controllers still use their own controls, with Xbox buttons shown.
+Button art follows the controller connected when the game starts. Without the art sets, PlayStation and GameCube controllers still use their own control layouts, with Xbox buttons shown.
 
 ## Install
 
@@ -87,7 +87,7 @@ python tools/ps2_layout/make_ps2_icons.py assets/data <PS2 disc's DATA folder> p
 ## Special Thanks
 
 * Special thanks to Mad Dog and Kccitystar for their help in the MVP community and consultation on this project.
-* Also RIP to MVPmods.com and a shout out to all the work that had been done on there throughout the years.
+* Also rip to MVPmods.com and a shout out to all the community members that had done valuable work on there over the years.
 
 ## Disclaimer
 
