@@ -1,25 +1,25 @@
 # MVP05-Plus
 
-MVP Baseball 2005 on Windows, and on SteamOS through Proton, built on [Mad Dog's](#credits) PC port of the Original Xbox game. spy_jam's MVP05-Plus adds GameCube and PlayStation controllers that play like their original releases did, with matching GameCube and PS2 button art.
+MVP Baseball 2005 on Windows, and on SteamOS through Proton, built on [Mad Dog's](#credits) PC port of the Original Xbox game. spy_jam's MVP05-Plus adds GameCube and PlayStation controllers that play like their original releases did, with matching GameCube and PS2 button art. Includes a launcher for easy installation, save backups and display settings.
 
 > **You need your own copy of the Xbox game.** No game files or game art are included. The Launcher builds what's needed from your own discs.
 
 ## Features
 
-- **GameCube controllers** through a Wii U / Switch adapter: all 4 ports and rumble, with the GameCube release's full control layout, stick deadzones, C-stick and analog trigger handling.
-- **PlayStation controllers** with the PS2 release's full control layout and stick handling, analog button pressure and rumble.
-- **Button art to match your controller**: GameCube or PS2 buttons in menus and in-game, made from your own discs (optional).
-- **MVP05-Plus Launcher**: install from your discs, launch the game, restore save backups, adjust display settings.
-- **Fixes**: a shader cache against mid-game stutter, SteamOS support through Proton (black screen fixed, GameCube adapter via `gcbridge`), and a fix for a crash during stolen bases that was found in testing.
-- **Save backups** every time the game starts (15 kept), with single saves or a whole date restored from the Launcher.
+* **GameCube controllers** through a Wii U / Switch adapter: all 4 ports and rumble, with the GameCube release's full control layout, stick deadzones, C-stick and analog trigger handling.
+* **PlayStation controllers** with the PS2 release's full control layout and stick handling, analog button pressure and rumble.
+* **Button art to match your controller**: GameCube or PS2 buttons in menus and in-game, made from your own discs (optional).
+* **MVP05-Plus Launcher**: install from your discs, launch the game, restore save backups, adjust display settings.
+* **Fixes**: a shader cache against mid-game stutter, SteamOS support through Proton (black screen fixed, GameCube adapter via `gcbridge`), and a fix for a crash during stolen bases that was found in testing.
+* **Save backups** every time the game starts (15 kept), with single saves or a whole date restored from the Launcher.
 
 ## Compatible controllers
 
-- **GameCube controllers** (official adapter, or a third-party adapter in Wii U mode) — GameCube button art and controls
-- **DualSense, DualSense Edge, DualShock 4** — PS2 button art and controls
-- **DualShock 3** — PS2 button art and controls, with pressure-sensitive buttons (on Windows, through [DsHidMini](https://github.com/nefarius/DsHidMini) in SDL mode)
-- **Xbox 360, Xbox One and Xbox Series controllers** — Xbox button art and controls, as the original
-- **Other controllers** (Switch Pro and most others SDL supports) — Xbox button art and controls
+* **GameCube controllers** (official adapter, or a third-party adapter in Wii U mode) — GameCube button art and controls
+* **DualSense, DualSense Edge, DualShock 4** — PS2 button art and controls
+* **DualShock 3** — PS2 button art and controls, with pressure-sensitive buttons (on Windows, through [DsHidMini](https://github.com/nefarius/DsHidMini) in SDL mode)
+* **Xbox 360, Xbox One and Xbox Series controllers** — Xbox button art and controls, as the original
+* **Other controllers** (Switch Pro and most others SDL supports) — Xbox button art and controls
 
 Button art follows the controller connected when the game starts. Without the art sets, PlayStation and GameCube controllers still use their own controls, with Xbox buttons shown.
 
@@ -27,20 +27,22 @@ Button art follows the controller connected when the game starts. Without the ar
 
 1. Download `MVP05-Plus-Beta-1.zip` from [Releases](../../releases) and unzip it anywhere. Everything stays in that folder: nothing goes into Program Files or the registry, and desktop shortcuts are only made if you ask.
 2. Run `MVP05-Plus-Launcher.exe` and choose your discs:
-   - **Xbox** (required): a Redump `.iso`, `.xiso`, or a folder of extracted files.
-   - **GameCube** (optional, for GameCube art): `.iso` / `.gcm`, or `.rvz` / `.gcz` / `.ciso` with Dolphin installed.
-   - **PS2** (optional, for PS2 art): `.iso`, or `.chd` with `chdman` installed.
-   - Already have a `gc_icons` or `ps2_icons` set? Choose its folder or `.zip` instead of the disc.
+
+   * **Xbox** (required): a Redump `.iso`, `.xiso`, or a folder of extracted files.
+   * **GameCube** (optional, for GameCube art): `.iso` / `.gcm`, or `.rvz` / `.gcz` / `.ciso` with Dolphin installed.
+   * **PS2** (optional, for PS2 art): `.iso`, or `.chd` with `chdman` installed.
+   * Already have a `gc_icons` or `ps2_icons` set? Choose its folder or `.zip` instead of the disc.
 
    Only the files the art needs are read from the GameCube and PS2 discs.
+
 3. Press **Launch MVP 05**. From then on, the Launcher opens on what's installed, with Launch. To quit the game, press **Esc** (it asks first).
 
 Windows may warn that the Launcher is from an unknown publisher: choose *More info → Run anyway*.
 
 ## Setting up controllers
 
-- **GameCube adapter on Windows:** give it the WinUSB driver with [Zadig](https://zadig.akeo.ie/), as for Dolphin (select *WUP-028*, *WinUSB*, *Replace Driver*). Third-party adapters: set the switch to *Wii U*.
-- **PlayStation and Xbox controllers:** connect by USB or Bluetooth as usual.
+* **GameCube adapter on Windows:** give it the WinUSB driver with [Zadig](https://zadig.akeo.ie/), as for Dolphin (select *WUP-028*, *WinUSB*, *Replace Driver*). Third-party adapters: set the switch to *Wii U*.
+* **PlayStation and Xbox controllers:** connect by USB or Bluetooth as usual.
 
 ### SteamOS (Proton)
 
@@ -58,9 +60,9 @@ sh -c 'B="/home/deck/Games/MVP05-Plus/gcbridge"; chmod +x "$B"; "$B" & exec "$@"
 
 ## MVP05-Plus Launcher
 
-- **Install**, which becomes **Play** once the game's installed: your discs in, then what's installed (checked each start), **Launch MVP 05**, and which controllers Windows sees right now, including whether the GameCube adapter has the WinUSB driver it needs.
-- **Saves**: *Current saves*, and *Backups* by date. Restore single saves or a whole date; your saves become a backup first, so a restore can be undone.
-- **Settings**: display mode, aspect ratio (16:9, or 4:3 with black bars at the sides), resolution (default: fullscreen at your desktop's resolution), render scale, frame rate cap, texture filtering, VSync, Xbox 720p mode; and desktop shortcuts for the game ("MVP 05 Plus") and the Launcher, if you want them.
+* **Install**, which becomes **Play** once the game's installed: your discs in, then what's installed (checked each start), **Launch MVP 05**, and which controllers Windows sees right now, including whether the GameCube adapter has the WinUSB driver it needs.
+* **Saves**: *Current saves*, and *Backups* by date. Restore single saves or a whole date; your saves become a backup first, so a restore can be undone.
+* **Settings**: display mode, aspect ratio (16:9, or 4:3 with black bars at the sides), resolution (default: fullscreen at your desktop's resolution), render scale, frame rate cap, texture filtering, VSync, Xbox 720p mode; and desktop shortcuts for the game ("MVP 05 Plus") and the Launcher, if you want them.
 
 Everything is also in `mvp05-settings.toml`. Plus adds `gamecube_layout`, `gamecube_icons`, `playstation_layout`, `playstation_icons` (all on) and `save_backups` (15).
 
@@ -77,19 +79,19 @@ python tools/ps2_layout/make_ps2_icons.py assets/data <PS2 disc's DATA folder> p
 
 ## Credits
 
-- **[Mad Dog](https://github.com/maddog847)**: the MVP Baseball 2005 PC port this is built on.
-- **[TGP482](https://github.com/TGP482)**: [XboxXBERecomp](https://github.com/TGP482/XboxXBERecomp), the static recompiler for original Xbox games that the port is made with.
-- **MVP05-Plus**: spy_jam, with Claude (Anthropic).
-- Third-party libraries: see `THIRD_PARTY.txt`.
+* [**Mad Dog**](https://github.com/maddog847): the MVP Baseball 2005 PC port this is built on.
+* [**TGP482**](https://github.com/TGP482): [XboxXBERecomp](https://github.com/TGP482/XboxXBERecomp), the static recompiler for original Xbox games that the port is made with.
+* **MVP05-Plus**: spy_jam, with Claude (Anthropic).
+* Third-party libraries: see `THIRD_PARTY.txt`.
 
 ## Special Thanks
 
-- Special thanks to Mad Dog and Kccitystar for their help in the MVP community and consultation on this project. 
-- Also RIP to MVPmods.com and a shout out to all the work that had been done on there throughout the years. 
+* Special thanks to Mad Dog and Kccitystar for their help in the MVP community and consultation on this project.
+* Also RIP to MVPmods.com and a shout out to all the work that had been done on there throughout the years.
 
 ## Disclaimer
 
-- This project was entirely vibecoded so take that as you will. But to be clear, everything I added to this project was thoroughly tested and many hours were spent making sure every detail functioned and looked proper.
+* This project was entirely vibecoded so take that as you will. But to be clear, everything I added to this project was thoroughly tested and many hours were spent making sure every detail functioned and looked proper.
 
 ## Legal
 
