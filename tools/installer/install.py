@@ -607,7 +607,7 @@ def settings_tab(tabs, root, tk, ttk):
     ttk.Label(frm, text="(or type one, like 1366 x 768)", foreground="#666").grid(
         row=4, column=2, sticky="w", padx=8)
     ttk.Checkbutton(frm, text="VSync", variable=vsync).grid(row=8, column=0, columnspan=2, sticky="w", pady=(6, 0))
-    x720_box = ttk.Checkbutton(frm, text="Xbox 720p mode (the game runs as on an Xbox with a 720p widescreen TV)",
+    x720_box = ttk.Checkbutton(frm, text="Xbox 720p mode (as on an Xbox with 720p turned on)",
                                variable=x720)
     x720_box.grid(row=9, column=0, columnspan=3, sticky="w")
     note = ttk.Label(frm, text="", wraplength=520, justify="left")
