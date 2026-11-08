@@ -10,7 +10,7 @@ MVP Baseball 2005 on Windows, and on SteamOS through Proton, built on [Mad Dog's
 * **PlayStation controllers** with the PS2 release's full control layout and stick handling, analog button pressure and rumble.
 * **Button art to match your controller**: GameCube or PS2 buttons in menus and in-game, made from your own discs (optional).
 * **MVP05-Plus Launcher**: install from your discs, launch the game, restore save backups, adjust display settings.
-* **Fixes**: a shader cache to prevent mid-game stutter, SteamOS support through Proton (black screen fixed, GameCube adapter via `gcbridge`), and a fix for a crash during stolen bases, found while testing the original port.
+* **Fixes**: a shader cache to prevent mid-game stutter, SteamOS support through Proton, and a fix for a crash during stolen bases, found while testing the original recomp.
 * **Save backups**: a full save backup menu in the Launcher. Your saves are backed up automatically when the game starts, keeping the latest 30 backups by default, and you can view and restore them in the Launcher.
 
 ## Compatible controllers
