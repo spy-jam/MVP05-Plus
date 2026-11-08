@@ -87,7 +87,7 @@ python tools/ps2_layout/make_ps2_icons.py assets/data <PS2 disc's DATA folder> p
 ## Special Thanks
 
 * Special thanks to Mad Dog and Kccitystar for their help in the MVP community and consultation on this project.
-* Also rip to MVPmods.com and a shout out to all the community members that had done valuable work on there over the years.
+* Also RIP to MVPmods.com and a shout out to all the community members that had done valuable work on there over the years.
 
 ## Disclaimer
 
