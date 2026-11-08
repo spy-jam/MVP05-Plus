@@ -81,17 +81,13 @@ python tools/ps2_layout/make_ps2_icons.py assets/data <PS2 disc's DATA folder> p
 
 * [**Mad Dog**](https://github.com/maddog847): the MVP Baseball 2005 PC port this is built on.
 * [**TGP482**](https://github.com/TGP482): [XboxXBERecomp](https://github.com/TGP482/XboxXBERecomp), the static recompiler for original Xbox games that the port is made with.
-* **MVP05-Plus**: spy_jam, with Claude (Anthropic).
+* **MVP05-Plus**: spy_jam.
 * Third-party libraries: see `THIRD_PARTY.txt`.
 
 ## Special Thanks
 
 * Special thanks to Mad Dog and Kccitystar for their help in the MVP community and consultation on this project.
 * Also RIP to MVPmods.com and a shout out to all the community members that had done valuable work on there over the years.
-
-## Disclaimer
-
-* This project was almost entirely vibecoded so take that as you will. But to be clear, everything I added to this project was thoroughly tested and many hours were spent making sure every detail functioned and looked proper.
 
 ## Legal
 
