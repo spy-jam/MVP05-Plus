@@ -20,7 +20,8 @@ param(
     [string]$GameDir = "",          # your current MVP05 folder (with assets\default.xbe); asked for if not given
     [string]$RepoName = "MVP05-Plus",
     [string]$Version = "Beta 1",
-    [switch]$SkipBuild              # use the MVP05.exe already built in the work folder
+    [switch]$SkipBuild,             # use the MVP05.exe already built in the work folder
+    [switch]$Final                  # the real release's draft: tag beta-1, no "(test)" (still a draft until you publish)
 )
 # "Continue": Windows PowerShell 5.1 turns a program's stderr into a stopping error under "Stop" (git and gh write
 # progress there), so each step checks its own result, and the file steps below stop on errors by themselves
@@ -34,7 +35,9 @@ function Need($cmd, $why) { if (-not (Get-Command $cmd -ErrorAction SilentlyCont
 try {
     $work = Join-Path $Downloads "MVP05-Plus-test"
     $repo = Join-Path $work "MVP05-Plus"
-    $tag = "test-" + ($Version -replace '\s', '-').ToLower()
+    $tag = ($Version -replace '\s', '-').ToLower()
+    if (-not $Final) { $tag = "test-" + $tag }
+    $title = "MVP05-Plus $Version" + $(if ($Final) { "" } else { " (test)" })
     $zipName = "MVP05-Plus-" + ($Version -replace '\s', '-') + ".zip"
 
     Step "Checking what's needed"
@@ -240,7 +243,7 @@ try {
     try {
         & gh release view $tag *> $null
         if ($LASTEXITCODE -eq 0) { & gh release delete $tag --yes | Out-Null }
-        & gh release create $tag $zip --draft --prerelease --target main --title "MVP05-Plus $Version (test)" --notes-file RELEASE-NOTES.md
+        & gh release create $tag $zip --draft --prerelease --target main --title $title --notes-file RELEASE-NOTES.md
         if ($LASTEXITCODE -ne 0) { Fail "couldn't make the draft release" }
     } finally { Pop-Location }
 
