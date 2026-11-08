@@ -2,7 +2,7 @@
   ".github/workflows/release-tools.yml": "1352e0d1f05439f8c65f1430e0374f7633e3e10037d88bc1c286760bcfa800f4",
   ".gitignore": "b0a4c7d6006ead5a9e54d6bfdec1771d173415ee8d7b707bdf267253dd882b7d",
   "Build-Source.cmd": "e52b8266f29a7b1a737a7ad36bd84086e6b6fe94b9dc96a164ee7d2923a67b71",
-  "CMakeLists.txt": "9c0885a15f5c35ff1b24ff00094ef599fe001b11eb8fe0ea5a6d47395a7c56d5",
+  "CMakeLists.txt": "bcf0a21e9a6a474f2c541bc1aeb4e4a0a7cd828ec4a4e2e572f864601d4e05a7",
   "CMakePresets.json": "fc11db4b2e539a17a9cc90871bb91a2b0652fddb6b21c11fc4e1191ad49bca91",
   "MICROSOFT-RUNTIME-NOTICE.txt": "3cddbd68dbb2301dc48d162b6b6aba2fcb8df7c8d3bd7ebd00c541f00c3b44b3",
   "README.md": "2e1652c29cb2320bf696dd992c4b10e09e76bc6749cbe97c5545f09b70077994",

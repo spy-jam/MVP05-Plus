@@ -37,4 +37,3 @@ endif()
 
 # target name = GAME_EXE in build.bat, xbe = GAME_XBE
 add_xbe_image(MVP05 default.xbe game.toml ${GAME_PARTITIONS} game)
-
