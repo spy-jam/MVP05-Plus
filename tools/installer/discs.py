@@ -28,10 +28,11 @@ class DiscError(Exception):
 class Image:
     """A disc image file; subclasses fill self.entries {path: (offset, size)}."""
 
-    def __init__(self, path):
+    def __init__(self, path, f=None):
+        """f: a file-like object to read instead of the file itself (a compressed image's contents)."""
         self.path = path
-        self.f = open(path, "rb")
-        self.size = os.fstat(self.f.fileno()).st_size
+        self.f = f or open(path, "rb")
+        self.size = f.size if f is not None else os.fstat(self.f.fileno()).st_size
         self.entries = {}
 
     def close(self):
@@ -194,9 +195,93 @@ def open_xbox(path):
 
 # ---------------------------------------------------------------- GameCube (GCM / FST)
 
-class GameCubeImage(Image):
+class BlockFile:
+    """A compressed image read as the plain one: blocks unpacked as they're read (only the ones asked for)."""
+
+    def __init__(self, path):
+        self.raw = open(path, "rb")
+        self.pos = 0
+        self.cached = (None, b"")
+
+    def block(self, i):  # the i-th block_size bytes of the plain image
+        raise NotImplementedError
+
+    def seek(self, pos):
+        self.pos = pos
+
+    def read(self, n):
+        out = bytearray()
+        while n > 0 and self.pos < self.size:
+            i, off = divmod(self.pos, self.block_size)
+            if self.cached[0] != i:
+                self.cached = (i, self.block(i))
+            piece = self.cached[1][off:off + n]
+            if not piece:
+                break
+            out += piece
+            self.pos += len(piece)
+            n -= len(piece)
+        return bytes(out)
+
+    def close(self):
+        self.raw.close()
+
+
+class GczFile(BlockFile):
+    """Dolphin's .gcz: zlib-compressed blocks (a block stored as it is has the top bit of its pointer set)."""
+
     def __init__(self, path):
         super().__init__(path)
+        h = self.raw.read(32)
+        magic, _, csize, dsize, bsize, nblocks = struct.unpack("<IIQQII", h)
+        if magic != 0xB10BC001:
+            raise DiscError(f"{os.path.basename(path)} isn't a .gcz image")
+        self.size, self.block_size, self.csize = dsize, bsize, csize
+        self.ptrs = struct.unpack(f"<{nblocks}Q", self.raw.read(8 * nblocks))
+        self.data = 32 + 8 * nblocks + 4 * nblocks
+
+    def block(self, i):
+        import zlib
+        p = self.ptrs[i] & ~(1 << 63)
+        end = (self.ptrs[i + 1] & ~(1 << 63)) if i + 1 < len(self.ptrs) else self.csize
+        self.raw.seek(self.data + p)
+        b = self.raw.read(end - p)
+        if self.ptrs[i] >> 63:
+            return b
+        try:
+            return zlib.decompress(b)
+        except zlib.error as e:
+            raise DiscError(f"{os.path.basename(self.raw.name)} is damaged (block {i}: {e})")
+
+
+class CisoFile(BlockFile):
+    """.ciso: a map of which blocks are stored, then the stored ones in order (absent ones read as zeros)."""
+
+    def __init__(self, path):
+        super().__init__(path)
+        h = self.raw.read(0x8000)
+        if h[:4] != b"CISO":
+            raise DiscError(f"{os.path.basename(path)} isn't a .ciso image")
+        self.block_size = struct.unpack_from("<I", h, 4)[0]
+        used = h[8:0x8000]
+        last = max((i for i, v in enumerate(used) if v), default=-1)
+        self.where, n = {}, 0
+        for i in range(last + 1):
+            if used[i]:
+                self.where[i] = n
+                n += 1
+        self.size = 1459978240 if last < 0 else max(1459978240, (last + 1) * self.block_size)  # a whole disc
+
+    def block(self, i):
+        if i not in self.where:
+            return bytes(self.block_size)
+        self.raw.seek(0x8000 + self.where[i] * self.block_size)
+        return self.raw.read(self.block_size)
+
+
+class GameCubeImage(Image):
+    def __init__(self, path, f=None):
+        super().__init__(path, f)
         h = self.at(0, 0x440)
         if struct.unpack_from(">I", h, 0x1C)[0] != 0xC2339F3D:
             raise DiscError(f"{os.path.basename(path)} isn't a GameCube disc image")
@@ -223,12 +308,49 @@ class GameCubeImage(Image):
                 self.entries[stack[-1][1] + nm.lower()] = (a, b)
 
 
-def convert(tool_names, args_for, src, what):
+class ToolMissing(DiscError):
+    """An outside program that a compressed image needs, not found: the Launcher asks where it is."""
+
+    def __init__(self, tool, exe, what, ext):
+        super().__init__(f"reading a {ext} image needs {exe}, which {what}. It wasn't found: choose it, or use a "
+                         f"plain .iso.")
+        self.tool, self.exe = tool, exe
+
+
+TOOL_PATHS = {}  # tool -> the .exe someone chose (the Launcher fills it from its own file)
+TOOLS = {"dolphin": ("DolphinTool.exe", ["DolphinTool", "dolphin-tool"], "*olphin*", "comes with Dolphin"),
+         "chdman": ("chdman.exe", ["chdman"], "*ame*", "comes with MAME")}
+
+
+def find_tool(tool):
+    """The tool's program: chosen before, on PATH, or in the folders it's usually unzipped or installed in."""
+    import glob
+    exe, names, folder, _ = TOOLS[tool]
+    if TOOL_PATHS.get(tool) and os.path.isfile(TOOL_PATHS[tool]):
+        return TOOL_PATHS[tool]
+    for n in names:
+        if shutil.which(n):
+            return shutil.which(n)
+    home = os.path.expanduser("~")
+    bases = [os.environ.get(v) for v in ("ProgramFiles", "ProgramFiles(x86)", "ProgramW6432")]
+    bases += [os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs")]
+    bases += [home] + [os.path.join(home, d) for d in ("Downloads", "Desktop", "Documents", "Games", "Emulators")]
+    bases += ["C:\\", "C:\\Games", "C:\\Emulators"]
+    for base in [b for b in bases if b and os.path.isdir(b)]:
+        for pattern in (os.path.join(base, folder, exe), os.path.join(base, folder, "*", exe)):
+            hits = sorted(glob.glob(pattern), key=os.path.getmtime, reverse=True)
+            if hits:
+                return hits[0]
+    return None
+
+
+def convert(tool, args_for, src):
     """A compressed image converted to a plain one in a temporary folder by an outside tool; (path, folder)."""
-    tool = next((shutil.which(t) for t in tool_names if shutil.which(t)), None)
-    if not tool:
-        raise DiscError(f"reading a {os.path.splitext(src)[1]} image needs {tool_names[0]} ({what}); "
-                        f"or give the installer a plain .iso")
+    exe, _, _, what = TOOLS[tool]
+    found = find_tool(tool)
+    if not found:
+        raise ToolMissing(tool, exe, what, os.path.splitext(src)[1])
+    tool = found
     tmp = tempfile.mkdtemp(prefix="mvp-installer-")
     out = os.path.join(tmp, "disc.iso")
     r = subprocess.run([tool] + args_for(src, out), capture_output=True, text=True,
@@ -262,11 +384,10 @@ class Converted:
 def open_gamecube(path):
     ext = os.path.splitext(path)[1].lower()
     tmp = None
-    if ext in (".rvz", ".gcz", ".ciso", ".wia"):
-        path, tmp = convert(["DolphinTool", "dolphin-tool"],
-                            lambda s, o: ["convert", "-i", s, "-o", o, "-f", "iso"], path, "it comes with Dolphin")
+    if ext in (".rvz", ".wia"):  # zstd / LZMA groups: Dolphin's own converter
+        path, tmp = convert("dolphin", lambda s, o: ["convert", "-i", s, "-o", o, "-f", "iso"], path)
     try:
-        d = GameCubeImage(path)
+        d = GameCubeImage(path, GczFile(path) if ext == ".gcz" else CisoFile(path) if ext == ".ciso" else None)
     except Exception:
         if tmp:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -326,8 +447,7 @@ def ps2_serial(cnf):
 def open_ps2(path):
     tmp = None
     if os.path.splitext(path)[1].lower() == ".chd":
-        path, tmp = convert(["chdman"], lambda s, o: ["extractdvd", "-i", s, "-o", o, "-f"], path,
-                            "from MAME's tools")
+        path, tmp = convert("chdman", lambda s, o: ["extractdvd", "-i", s, "-o", o, "-f"], path)
     try:
         d = Iso9660Image(path)
         serial = ps2_serial(d.read("system.cnf")) if "system.cnf" in d.entries else ""

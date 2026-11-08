@@ -84,6 +84,28 @@ def install_xbox(src, root, log):
 
 
 MANIFEST = "mvp05-plus-install.json"
+LAUNCHER_FILE = "mvp05-plus-launcher.json"  # the Launcher's own: where DolphinTool / chdman are, once chosen
+
+
+def load_tools(root):
+    try:
+        with open(os.path.join(root, LAUNCHER_FILE)) as f:
+            discs.TOOL_PATHS.update(json.load(f).get("tools", {}))
+    except (OSError, ValueError):
+        pass
+
+
+def remember_tool(root, tool, path):
+    discs.TOOL_PATHS[tool] = path
+    p = os.path.join(root, LAUNCHER_FILE)
+    try:
+        with open(p) as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        data = {}
+    data.setdefault("tools", {})[tool] = path
+    with open(p, "w") as f:
+        json.dump(data, f, indent=2)
 
 
 def check_install(root):
@@ -254,6 +276,7 @@ def import_icons(kind, src, root, log):
 
 
 def run(root, xbox=None, gamecube=None, ps2=None, log=None):
+    load_tools(root)
     """gamecube / ps2: a disc image (the art is made from it), or a gc_icons / ps2_icons folder or .zip (copied)."""
     log = log or Log()
     if not (xbox or gamecube or ps2):
@@ -442,12 +465,23 @@ def gui(root):
             r = check_install(root)
             if r["xbox_ok"] and r["exe"]:
                 w.after(1200, lambda: (show(r), [v.set("") for v in vars_.values()]))
+        except discs.ToolMissing as e:
+            w.after(0, lambda: ask_tool(e))
         except discs.DiscError as e:
             say(f"Stopped: {e}")
         except Exception:
             say("Something went wrong:\n" + traceback.format_exc(limit=4))
         finally:
             w.after(0, lambda: go.configure(state="normal"))
+
+    def ask_tool(e):
+        """Where DolphinTool / chdman is, asked once and remembered; then the install goes on."""
+        say(str(e))
+        p = filedialog.askopenfilename(title=f"Where is {e.exe}?", filetypes=[(e.exe, e.exe), ("Programs", "*.exe")])
+        if p:
+            remember_tool(root, e.tool, os.path.normpath(p))
+            say(f"Using {os.path.normpath(p)}")
+            start()
 
     def start():
         go.configure(state="disabled")

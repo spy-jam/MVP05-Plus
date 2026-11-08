@@ -29,8 +29,8 @@ Button art follows the controller connected when the game starts. Without the ar
 2. Run `MVP05-Plus-Launcher.exe` and choose your discs:
 
    * **Xbox** (required): a Redump `.iso`, `.xiso`, or a folder of extracted files.
-   * **GameCube** (optional, for GameCube art): `.iso` / `.gcm`, or `.rvz` / `.gcz` / `.ciso` with Dolphin installed.
-   * **PS2** (optional, for PS2 art): `.iso`, or `.chd` with `chdman` installed.
+   * **GameCube** (optional, for GameCube art): `.iso`, `.gcm`, `.gcz` or `.ciso`, or `.rvz` with Dolphin (the Launcher finds it, or asks where it is).
+   * **PS2** (optional, for PS2 art): `.iso`, or `.chd` with MAME's `chdman` (found or asked for the same way).
    * Already have a `gc_icons` or `ps2_icons` set? Choose its folder or `.zip` instead of the disc.
 
    Only the files the art needs are read from the GameCube and PS2 discs.

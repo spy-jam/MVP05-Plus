@@ -166,3 +166,46 @@ except discs.DiscError as e: print("ps2 serial check:", e)
 open(p, "wb").write(iso(ptree)[:17*S+100])
 try: discs.open_ps2(p); print("FAIL")
 except discs.DiscError as e: print("truncated:", e)
+
+# ---- compressed GameCube images: .gcz and .ciso read directly
+import zlib
+img = gcm(gtree, b"GV4E69")
+def make_gcz(img, bs=0x4000):
+    n = (len(img) + bs - 1) // bs
+    ptrs, data = [], bytearray()
+    for i in range(n):
+        raw = img[i * bs:(i + 1) * bs].ljust(bs, b"\0")
+        z = zlib.compress(raw)
+        ptrs.append(len(data) | ((1 << 63) if len(z) >= len(raw) else 0))
+        data += raw if len(z) >= len(raw) else z
+    return struct.pack("<IIQQII", 0xB10BC001, 0, len(data), len(img), bs, n) + struct.pack(f"<{n}Q", *ptrs) + bytes(4 * n) + data
+def make_ciso(img, bs=0x8000):
+    n = (len(img) + bs - 1) // bs
+    used, data = bytearray(0x8000 - 8), bytearray()
+    for i in range(n):
+        raw = img[i * bs:(i + 1) * bs].ljust(bs, b"\0")
+        if any(raw):
+            used[i] = 1; data += raw
+    return b"CISO" + struct.pack("<I", bs) + bytes(used) + bytes(data)
+gw = dict(flat(gtree))
+for ext, maker in ((".gcz", make_gcz), (".ciso", make_ciso)):
+    p = os.path.join(tmp, "g" + ext); open(p, "wb").write(maker(img))
+    with discs.open_gamecube(p) as d:
+        assert set(d.files()) == set(gw), set(gw) ^ set(d.files())
+        for k, v in gw.items(): assert d.read(k) == v, (ext, k)
+        out = os.path.join(tmp, "o" + ext); discs.extract(d, discs.GC_ART_FILES, out)
+    print("gamecube", ext, "ok,", os.path.getsize(p), "bytes for", len(img))
+
+# ---- .rvz needs DolphinTool: found in a usual folder, or ToolMissing
+home = os.path.join(tmp, "home"); os.makedirs(os.path.join(home, "Downloads"))
+old = dict(os.environ); os.environ.update(HOME=home, USERPROFILE=home, PATH=tmp)
+for v in ("ProgramFiles", "ProgramFiles(x86)", "ProgramW6432", "LOCALAPPDATA"): os.environ.pop(v, None)
+try:
+    p = os.path.join(tmp, "g.rvz"); open(p, "wb").write(b"RVZ\x01" + bytes(100))
+    try: discs.open_gamecube(p); print("FAIL no ToolMissing")
+    except discs.ToolMissing as e: print("rvz without Dolphin:", e.exe)
+    t = os.path.join(home, "Downloads", "dolphin-2412-x64", "Dolphin-x64", "DolphinTool.exe")
+    os.makedirs(os.path.dirname(t)); open(t, "w").close()
+    print("found:", os.path.relpath(discs.find_tool("dolphin"), home))
+finally:
+    os.environ.clear(); os.environ.update(old)
