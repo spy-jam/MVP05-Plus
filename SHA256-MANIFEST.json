@@ -127,7 +127,7 @@
   "src/game/ps2_layout_table.h": "2be52e6c99647c5d90bea2377a33243adf023de8eb0d5fe35306fdbf17a91bcf",
   "tools/Make-Final-Release.cmd": "a0ec1c8e018e09dabdebb6458c77dd3e8432933981154090d4ceac1dc454ca18",
   "tools/Make-Test-Release.cmd": "566955742d4519cb278cf0bd314f686950b3346ec71c4d45907080414ae29984",
-  "tools/Make-Test-Release.ps1": "1cea07df1c4d6a5139505ec73b557a59f13150ca5c3c608eb1cac1fce8594f53",
+  "tools/Make-Test-Release.ps1": "f13b0b91c216a70e31ea0071a3adce4f83207fa74c8a3ba6145255384cce465a",
   "tools/gc_layout/gamecube_vs_xbox.txt": "c0134e21dcd1f224133df1423c9ef4bf98ed223c590a4ba7c95fb015c9eb7eb1",
   "tools/gc_layout/gc_extract.py": "477d916929b78f58b2fa92acde589309821f67eb9768e9126bd56104c5117950",
   "tools/gc_layout/gc_tables.json": "b9bb78a3ce7822abcaa800a4e33e3d976f679305bd355301c608128003985dab",

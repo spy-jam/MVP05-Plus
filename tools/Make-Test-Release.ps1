@@ -27,7 +27,8 @@ param(
 # progress there), so each step checks its own result, and the file steps below stop on errors by themselves
 $ErrorActionPreference = "Continue"
 $PSDefaultParameterValues = @{ "*-Item:ErrorAction" = "Stop"; "Expand-Archive:ErrorAction" = "Stop"; "Copy-Item:ErrorAction" = "Stop" }
-$env:MVP_NO_PAUSE = "1"   # Build-Source.cmd: don't wait for a key at the end
+$env:MVP_NO_PAUSE = "1"
+$script:rewritten = $false   # Build-Source.cmd: don't wait for a key at the end
 function Step($t) { Write-Host ""; Write-Host "== $t" -ForegroundColor Cyan }
 function Fail($t) { Write-Host ""; Write-Host "Stopped: $t" -ForegroundColor Red; throw "stopped" }
 function Need($cmd, $why) { if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) { Fail "$cmd isn't installed ($why)" } }
@@ -69,9 +70,14 @@ try {
             Push-Location $repo
             try {
                 & git fetch -q (Join-Path $in "MVP05-Plus") main
-                & git merge -q --ff-only FETCH_HEAD
+                & git merge -q --ff-only FETCH_HEAD 2>$null
                 if ($LASTEXITCODE -ne 0) {
-                    Fail "$($repoZip.Name) doesn't follow on from $repo (delete that folder and run this again)"
+                    # the zip's history was rewritten (as when the commits' email changed): take it as it is. Only
+                    # files git keeps are replaced; assets and the build, which it ignores, stay.
+                    & git reset -q --hard FETCH_HEAD
+                    if ($LASTEXITCODE -ne 0) { Fail "couldn't take the history in $($repoZip.Name)" }
+                    $script:rewritten = $true
+                    Write-Host "The history in $($repoZip.Name) was rewritten: using it"
                 }
                 Write-Host "Updated from $($repoZip.Name): $(& git log -1 --format=%s)"
             } finally { Pop-Location }
@@ -158,8 +164,13 @@ try {
             $vis = (& gh repo view "$me/$RepoName" --json visibility --jq .visibility).Trim()
             Write-Host "$me/$RepoName is there ($vis)"
             if (-not (& git remote)) { & git remote add origin "https://github.com/$me/$RepoName.git" }
-            & git push -u origin main
-            if ($LASTEXITCODE -ne 0) { Fail "couldn't push (if the GitHub one has changes of its own, sort that out first)" }
+            & git push -u origin main 2>$null
+            if ($LASTEXITCODE -ne 0) {
+                if (-not $script:rewritten) { Fail "couldn't push (if the GitHub one has changes of its own, sort that out first)" }
+                Write-Host "Replacing the history on GitHub with the rewritten one"
+                & git push -u --force-with-lease origin main
+                if ($LASTEXITCODE -ne 0) { Fail "couldn't push the rewritten history" }
+            }
         }
 
         Step "Building the Launcher and gcbridge on GitHub"
