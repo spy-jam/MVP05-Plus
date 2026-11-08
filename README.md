@@ -91,7 +91,7 @@ python tools/ps2_layout/make_ps2_icons.py assets/data <PS2 disc's DATA folder> p
 
 ## Disclaimer
 
-* This project was entirely vibecoded so take that as you will. But to be clear, everything I added to this project was thoroughly tested and many hours were spent making sure every detail functioned and looked proper.
+* This project was almost entirely vibecoded so take that as you will. But to be clear, everything I added to this project was thoroughly tested and many hours were spent making sure every detail functioned and looked proper.
 
 ## Legal
 
