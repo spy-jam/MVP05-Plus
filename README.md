@@ -1,6 +1,6 @@
 # MVP05-Plus
 
-MVP Baseball 2005 on Windows, and on SteamOS (Linux) through Proton, built on [Mad Dog's](#credits) PC port of the Original Xbox game. spy_jam's MVP05-Plus adds GameCube and PlayStation controller support with full control layouts and button labels. Includes a launcher for easy installation, also providing a save backup menu and display settings.
+MVP Baseball 2005 on Windows, and on SteamOS (Linux) through Proton, built on [Mad Dog's](#credits) PC port of the Original Xbox game. spy_jam's MVP05-Plus keeps Xbox controller support and adds GameCube and PlayStation controller support with full control layouts and button labels. Includes a launcher for easy installation, also providing a save backup menu and display settings.
 
 > **You need your own copy of the Xbox game.** No game files or game art are included. The Launcher builds what's needed from your own discs.
 
