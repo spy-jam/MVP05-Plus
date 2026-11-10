@@ -967,27 +967,26 @@ def schedule_tab(tabs, root, tk, ttk):
         row=1, column=0, sticky="w", pady=(0, 8))
     have = ttk.Label(frm, font=("Segoe UI", 9, "bold"))
     have.grid(row=2, column=0, sticky="w", pady=(0, 6))
-    pick = tk.StringVar()
-    groups = (("original", "The game's own"), ("mvp2004", "From MVP Baseball 2004, brought over to 2005"),
-              ("custom", "Made for MVP05-Plus"))
     cat = SCH.catalog(root)
-    row = 3
-    for kind, heading in groups:
-        entries = [e for e in cat if e["kind"] == kind]
-        if not entries:
-            continue
-        ttk.Label(frm, text=heading, foreground="#444").grid(row=row, column=0, sticky="w", pady=(8, 2))
-        row += 1
-        for e in entries:
-            ttk.Radiobutton(frm, variable=pick, value=e["id"], text=e["name"]).grid(row=row, column=0, sticky="w",
-                                                                                   padx=(12, 0))
-            ttk.Label(frm, text=e["about"], foreground="#666", wraplength=560, justify="left").grid(
-                row=row + 1, column=0, sticky="w", padx=(34, 0), pady=(0, 4))
-            row += 2
-    note = ttk.Label(frm, wraplength=600, justify="left")
-    note.grid(row=row + 1, column=0, sticky="w", pady=(6, 0))
+    kinds = {"original": "the game's own", "mvp2004": "from MVP Baseball 2004", "custom": "made for MVP05-Plus"}
+    label = {e["id"]: f"{e['name']}  ({kinds.get(e['kind'], e['kind'])})" for e in cat}
+    by_label = {v: k for k, v in label.items()}
+    pick = tk.StringVar()
+    box = ttk.Combobox(frm, state="readonly", width=46, values=[label[e["id"]] for e in cat])
+    box.grid(row=3, column=0, sticky="w")
+    blurb = ttk.Label(frm, foreground="#555", wraplength=600, justify="left")
+    blurb.grid(row=4, column=0, sticky="w", pady=(4, 0))
+
+    def shown(*_):
+        sid = by_label.get(box.get())
+        e = next((x for x in cat if x["id"] == sid), None)
+        pick.set(sid or "")
+        blurb.configure(text=(e.get("short") or e.get("about", "")) if e else "")
+    box.bind("<<ComboboxSelected>>", shown)
     use = ttk.Button(frm, text="Use this schedule")
-    use.grid(row=row, column=0, sticky="e", pady=(10, 0))
+    use.grid(row=5, column=0, sticky="w", pady=(10, 0))
+    note = ttk.Label(frm, wraplength=600, justify="left")
+    note.grid(row=6, column=0, sticky="w", pady=(6, 0))
 
     def refresh(*_):
         now = SCH.current(root)
@@ -995,13 +994,17 @@ def schedule_tab(tabs, root, tk, ttk):
         if now:
             have.configure(text=f"Your game has: {names.get(now, now)}" +
                                 (" (the original)" if now == SCH.ORIGINAL else ""))
-            if not pick.get():
-                pick.set(now)
+            if not pick.get() and now in label:
+                box.set(label[now])
+                shown()
         elif SCH.find_big(root):
             have.configure(text="Your game has another schedule (changed outside the Launcher).")
         else:
             have.configure(text="Install the Xbox game first (the Play tab).")
     refresh()
+    if not pick.get() and SCH.ORIGINAL in label:  # nothing installed yet: the game's own to start with
+        box.set(label[SCH.ORIGINAL])
+        shown()
     frm.bind("<Map>", refresh)
 
     def go():
