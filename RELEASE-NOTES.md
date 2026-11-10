@@ -1,3 +1,17 @@
+# MVP05-Plus Beta 2
+
+Work in progress: more is coming before this is released.
+
+## New
+- **Updates from the Launcher:** *Settings → Updates* shows your version, checks GitHub for a newer release (also when the Launcher opens, unless you turn that off), shows what's new, and installs it: the program files only, checked against the release's manifest. Your game files, saves, backups, button art and shader cache are never touched; your settings are kept, with any new options added. *Back to* undoes the last update. From Beta 2 on: going from Beta 1 to Beta 2 is still by hand.
+- **Install progress:** one bar across the whole install, with "Step 2 of 3: making the PS2 button art" and the time so far.
+
+## Changed
+- Esc asks "Quit MVP05-Plus?".
+
+## Fixed
+- The Launcher's *Settings* no longer drops the note after a text setting (such as `display_mode`) in `mvp05-settings.toml`.
+
 # MVP05-Plus Beta 1
 
 First release of MVP05-Plus by spy_jam, built on Mad Dog's MVP05 Public Beta 3 (made with TGP482's XboxXBERecomp).

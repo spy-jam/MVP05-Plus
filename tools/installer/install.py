@@ -33,7 +33,7 @@ for sub in ("gc_layout", "ps2_layout"):  # the art builders (bundled beside this
 
 import discs  # noqa: E402
 
-VERSION = "Beta 1"
+VERSION = "Beta 2"
 GAME = "MVP05-Plus"
 
 
@@ -45,8 +45,73 @@ def game_dir():
 
 
 class Log:
-    def __init__(self, say=print, progress=None):
-        self.say, self.progress = say, progress
+    """Messages, and one progress bar across the whole install: the steps (plan) each get a share of the bar by how
+    long they usually take; status shows "Step 2 of 3: ..." with the time so far."""
+    def __init__(self, say=print, progress=None, status=None):
+        self.say, self.progress, self.status = say, progress, status
+        self.steps, self.at, self.label, self.started = [], -1, "", 0.0
+        self._timer = None
+
+    def plan(self, steps):
+        """steps: [(label, seconds it usually takes)]"""
+        self.steps, self.at = list(steps), -1
+
+    def step(self, label=None):
+        """On to the next step of the plan."""
+        import time
+        if self.at >= 0:
+            self.part(1.0)
+        self.at = min(self.at + 1, len(self.steps) - 1)
+        self.label = label or (self.steps[self.at][0] if self.steps else "")
+        self.started = time.monotonic()
+        self.part(0.0)
+        self.show_status()
+
+    def show_status(self):
+        if self.status and self.steps:
+            import time
+            t = int(time.monotonic() - self.started)
+            self.status(f"Step {self.at + 1} of {len(self.steps)}: {self.label}  ({t // 60}:{t % 60:02d})")
+
+    def part(self, f):
+        """This far (0 to 1) through the current step."""
+        if not self.progress:
+            return
+        if not self.steps or self.at < 0:
+            return self.progress(f)
+        total = sum(s for _, s in self.steps)
+        before = sum(s for _, s in self.steps[:self.at])
+        self.progress((before + min(max(f, 0.0), 1.0) * self.steps[self.at][1]) / total)
+
+    def timed(self, seconds):
+        """For work that can't say how far it is: the bar moves on by the time it usually takes, slowing as it nears the
+        end of the step's share so it never sits full while there's still work."""
+        log = self
+
+        class Timer:
+            def __enter__(self):
+                import threading, time, math
+                self.stop = threading.Event()
+
+                def tick():
+                    t0 = time.monotonic()
+                    while not self.stop.wait(0.25):
+                        t = time.monotonic() - t0
+                        f = 0.9 * t / seconds if t < seconds else 0.9 + 0.08 * (1 - math.exp(-(t - seconds) / seconds))
+                        log.part(f)
+                        log.show_status()
+                threading.Thread(target=tick, daemon=True).start()
+                return self
+
+            def __exit__(self, *a):
+                self.stop.set()
+        return Timer()
+
+    def finish(self, text):
+        if self.progress:
+            self.progress(1.0)
+        if self.status:
+            self.status(text)
 
 
 def need_space(folder, nbytes):
@@ -73,8 +138,7 @@ def install_xbox(src, root, log):
 
         def step(n):
             done[0] += n
-            if log.progress:
-                log.progress(done[0] / total)
+            log.part(done[0] / total)
 
         for p, (dest, _) in sorted(todo.items()):
             d.copy(p, dest, step)
@@ -84,6 +148,9 @@ def install_xbox(src, root, log):
 
 
 MANIFEST = "mvp05-plus-install.json"
+# about how long each step takes (seconds), for its share of the progress bar; the art steps can't report progress, so
+# the bar moves by these. A faster PC just finishes early
+SECONDS = {"xbox": 40, "gamecube": 20, "ps2": 20}
 LAUNCHER_FILE = "mvp05-plus-launcher.json"  # the Launcher's own: where DolphinTool / chdman are, once chosen
 
 
@@ -104,6 +171,26 @@ def remember_tool(root, tool, path):
     except (OSError, ValueError):
         data = {}
     data.setdefault("tools", {})[tool] = path
+    with open(p, "w") as f:
+        json.dump(data, f, indent=2)
+
+
+def launcher_option(root, key, default=None):
+    try:
+        with open(os.path.join(root, LAUNCHER_FILE)) as f:
+            return json.load(f).get(key, default)
+    except (OSError, ValueError):
+        return default
+
+
+def set_launcher_option(root, key, value):
+    p = os.path.join(root, LAUNCHER_FILE)
+    try:
+        with open(p) as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        data = {}
+    data[key] = value
     with open(p, "w") as f:
         json.dump(data, f, indent=2)
 
@@ -178,7 +265,7 @@ def build_art(kind, src, root, log):
         argv, sys.argv = sys.argv, [builder.__file__, xbox_data, disc_data, built]
         words = io.StringIO()
         try:
-            with contextlib.redirect_stdout(words):
+            with contextlib.redirect_stdout(words), log.timed(SECONDS[kind]):
                 builder.main()
         except SystemExit as e:
             raise discs.DiscError(f"making {out_name} stopped: {e}")
@@ -281,17 +368,26 @@ def run(root, xbox=None, gamecube=None, ps2=None, log=None):
     log = log or Log()
     if not (xbox or gamecube or ps2):
         raise discs.DiscError("choose your Xbox disc, and any GameCube or PS2 disc or icons")
+    names = {"gamecube": "GameCube", "ps2": "PS2"}
+    steps = [("copying the Xbox game", SECONDS["xbox"])] if xbox else []
+    for kind, src in (("gamecube", gamecube), ("ps2", ps2)):
+        if src:
+            steps.append((f"copying the {names[kind]} button art", 2) if is_icons_source(src) else
+                         (f"making the {names[kind]} button art", SECONDS[kind]))
+    log.plan(steps)
     if xbox:
+        log.step()
         install_xbox(xbox, root, log)
     for kind, src in (("gamecube", gamecube), ("ps2", ps2)):
-        if src and is_icons_source(src):
-            import_icons(kind, src, root, log)
-        elif src:
-            build_art(kind, src, root, log)
+        if src:
+            log.step()
+            (import_icons if is_icons_source(src) else build_art)(kind, src, root, log)
     if not os.path.isfile(os.path.join(root, "assets", "default.xbe")):
         log.say("The Xbox files aren't in assets yet: choose your Xbox disc too, the game needs it.")
+        log.finish("Done (the Xbox game still needs installing)")
     else:
         log.say("Done. Run MVP05.exe.")
+        log.finish("Done")
 
 
 # ---------------------------------------------------------------- the window
@@ -412,12 +508,15 @@ def gui(root):
                 v.set(os.path.normpath(p))
         ttk.Button(frm, text="Folder…", command=pickdir).grid(row=3 + 2 * i, column=2, padx=(6, 0), pady=(0, 6))
 
+    status_text = tk.StringVar(value="")
+    ttk.Label(frm, textvariable=status_text, foreground="#444").grid(row=8, column=0, columnspan=3, sticky="w",
+                                                                     pady=(8, 0))
     bar = ttk.Progressbar(frm, length=440, mode="determinate", maximum=1.0)
-    bar.grid(row=8, column=0, columnspan=3, sticky="we", pady=(8, 4))
+    bar.grid(row=9, column=0, columnspan=3, sticky="we", pady=(2, 4))
     out = tk.Text(frm, width=72, height=8, state="disabled", wrap="word", relief="flat", background="#f4f4f4")
-    out.grid(row=9, column=0, columnspan=3, pady=4)
+    out.grid(row=10, column=0, columnspan=3, pady=4)
     fb = ttk.Frame(frm)
-    fb.grid(row=10, column=0, columnspan=3, sticky="we", pady=(6, 0))
+    fb.grid(row=11, column=0, columnspan=3, sticky="we", pady=(6, 0))
     go = ttk.Button(fb, text="Install")
     go.pack(side="right")
     back = ttk.Button(fb, text="← Back")
@@ -455,9 +554,12 @@ def gui(root):
     def progress(x):
         w.after(0, lambda: bar.configure(value=x))
 
+    def status(t):
+        w.after(0, lambda: status_text.set(t))
+
     def work():
         try:
-            run(root, **{k: (v.get().strip() or None) for k, v in vars_.items()}, log=Log(say, progress))
+            run(root, **{k: (v.get().strip() or None) for k, v in vars_.items()}, log=Log(say, progress, status))
             w.after(0, lambda: bar.configure(value=1.0))
             import title_icon
             if title_icon.ensure(root, say):
@@ -507,6 +609,10 @@ def gui(root):
     back.configure(command=lambda: show())
     show()
     watch_pads()
+    import updater
+    updater.tidy(root)
+    if launcher_option(root, "check_updates", True):
+        check_for_update(w, root, tk, ttk, quiet=True)
     w.mainloop()
 
 
@@ -809,6 +915,7 @@ def settings_tab(tabs, root, tk, ttk):
         lbl.grid(row=13 + i, column=1, columnspan=2, sticky="w", padx=(12, 0))
         sc_buttons[name] = (b, lbl)
     sc_refresh()
+    updates_section(frm, root, tk, ttk, 16)
 
     bar = ttk.Frame(frm)
     bar.grid(row=10, column=0, columnspan=3, sticky="we", pady=(14, 0))
@@ -817,6 +924,131 @@ def settings_tab(tabs, root, tk, ttk):
     ttk.Button(bar, text="Open the settings file", command=lambda: os.startfile(os.path.join(root, ST.FILE))
                if os.name == "nt" else None).pack(side="left")
     load()
+
+
+def updates_section(frm, root, tk, ttk, row):
+    """Settings tab: this version, Check for updates, the check at start, and undoing the last update."""
+    import updater
+    ttk.Label(frm, text="Updates", font=("Segoe UI", 10, "bold")).grid(row=row, column=0, columnspan=3, sticky="w",
+                                                                      pady=(18, 4))
+    line = ttk.Frame(frm)
+    line.grid(row=row + 1, column=0, columnspan=3, sticky="w")
+    status = ttk.Label(frm, foreground="#555", wraplength=520, justify="left")
+    status.grid(row=row + 3, column=0, columnspan=3, sticky="w", pady=(4, 0))
+    auto = tk.BooleanVar(value=launcher_option(root, "check_updates", True))
+    ttk.Label(line, text=f"This is {GAME} {VERSION}.").pack(side="left")
+    ttk.Button(line, text="Check for updates",
+               command=lambda: check_for_update(frm.winfo_toplevel(), root, tk, ttk, status=status)).pack(
+        side="left", padx=(12, 0))
+    ttk.Checkbutton(frm, text="Check when the Launcher opens", variable=auto,
+                    command=lambda: set_launcher_option(root, "check_updates", auto.get())).grid(
+        row=row + 2, column=0, columnspan=3, sticky="w", pady=(4, 0))
+    last = updater.last_update(root)
+    if last:
+        def do_undo():
+            from tkinter import messagebox
+            if not messagebox.askyesno("Undo the update", f"Go back to {GAME} {last['from']}?\n\n"
+                                       "Your game files, saves and settings stay as they are.", parent=frm):
+                return
+            try:
+                back = updater.undo(root)
+            except updater.UpdateError as e:
+                status.configure(text=f"Couldn't undo it: {e}", foreground="#a33")
+                return
+            messagebox.showinfo("Undo the update", f"Back to {GAME} {back}. The Launcher restarts now.", parent=frm)
+            updater.restart()
+            frm.winfo_toplevel().destroy()
+        ttk.Button(line, text=f"Back to {last['from']}", command=do_undo).pack(side="left", padx=(6, 0))
+
+
+def check_for_update(w, root, tk, ttk, quiet=False, status=None):
+    """Asks GitHub in the background; a newer release opens the update window. quiet: say nothing otherwise."""
+    import updater
+
+    def say(text, colour="#555"):
+        if status is not None:
+            w.after(0, lambda: status.configure(text=text, foreground=colour))
+
+    def work():
+        try:
+            info = updater.check(VERSION)
+        except updater.UpdateError as e:
+            if not quiet:
+                say(f"Couldn't check: {e}", "#a33")
+            return
+        if info:
+            say(f"{GAME} {info['version']} is out.", "#1a7f37")
+            w.after(0, lambda: update_window(w, root, tk, ttk, info))
+        elif not quiet:
+            say(f"{VERSION} is the latest.", "#1a7f37")
+
+    say("Checking...")
+    threading.Thread(target=work, daemon=True).start()
+
+
+def update_window(w, root, tk, ttk, info):
+    """What's new in the release, and Update now: download, check, install, restart."""
+    import updater
+    import webbrowser
+    win = tk.Toplevel(w)
+    win.title(f"{GAME} {info['version']}")
+    win.transient(w)
+    win.resizable(False, False)
+    f = ttk.Frame(win, padding=14)
+    f.grid()
+    ttk.Label(f, text=f"{GAME} {info['version']} is out", font=("Segoe UI", 12, "bold")).grid(row=0, column=0,
+                                                                                           columnspan=3, sticky="w")
+    ttk.Label(f, foreground="#555", text=f"You have {VERSION}. Your game files, saves, backups, button art and "
+              "settings stay as they are.", wraplength=520, justify="left").grid(row=1, column=0, columnspan=3,
+                                                                                sticky="w", pady=(2, 8))
+    notes = tk.Text(f, width=72, height=14, wrap="word", relief="solid", borderwidth=1, font=("Segoe UI", 9))
+    import re
+    text = "\n".join(re.sub(r"^\s*[-*] ", "\u2022 ", re.sub(r"^#+\s*", "", line)).replace("**", "")
+                     for line in info["notes"].strip().splitlines())
+    notes.insert("1.0", text or "(no notes)")
+    notes.configure(state="disabled")
+    notes.grid(row=2, column=0, columnspan=3, sticky="we")
+    bar = ttk.Progressbar(f, length=520, mode="determinate", maximum=1.0)
+    bar.grid(row=3, column=0, columnspan=3, sticky="we", pady=(10, 2))
+    note = ttk.Label(f, foreground="#555", wraplength=520, justify="left")
+    note.grid(row=4, column=0, columnspan=3, sticky="w")
+    buttons = ttk.Frame(f)
+    buttons.grid(row=5, column=0, columnspan=3, sticky="e", pady=(10, 0))
+    go = ttk.Button(buttons, text="Update now")
+    later = ttk.Button(buttons, text="Later", command=win.destroy)
+    ttk.Button(buttons, text="See it on GitHub", command=lambda: webbrowser.open(info["page"])).pack(side="left")
+    later.pack(side="right")
+    go.pack(side="right", padx=6)
+
+    def say(text, colour="#555"):
+        win.after(0, lambda: note.configure(text=text, foreground=colour))
+
+    def work():
+        try:
+            mb = info["size"] / 2**20 if info.get("size") else 0
+            say(f"Downloading {info['name']}" + (f" ({mb:.0f} MB)..." if mb else "..."))
+            z = updater.download(root, info, lambda d, t: win.after(0, lambda: bar.configure(
+                value=min(d / t, 1.0) * 0.9 if t else 0)))
+            say("Checking the download...")
+            files = updater.verify(z)
+            say("Installing...")
+            updater.apply(root, files, VERSION)
+            win.after(0, lambda: bar.configure(value=1.0))
+        except updater.UpdateError as e:
+            say(f"Not updated: {e}", "#a33")
+            win.after(0, lambda: (go.configure(state="normal"), later.configure(state="normal")))
+            return
+        say(f"Updated to {info['version']}. The Launcher restarts now.", "#1a7f37")
+        win.after(1500, lambda: (updater.restart(), w.destroy()))
+
+    def start():
+        if updater.game_running():
+            note.configure(text="MVP05 is running: quit the game first, then Update now.", foreground="#a33")
+            return
+        go.configure(state="disabled")
+        later.configure(state="disabled")
+        threading.Thread(target=work, daemon=True).start()
+    go.configure(command=start)
 
 
 def backups_tab(nb, root, tk, ttk, refresh_current):

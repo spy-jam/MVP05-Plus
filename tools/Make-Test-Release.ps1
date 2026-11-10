@@ -19,7 +19,7 @@ param(
     [string]$Downloads = (Join-Path $env:USERPROFILE "Downloads"),
     [string]$GameDir = "",          # your current MVP05 folder (with assets\default.xbe); asked for if not given
     [string]$RepoName = "MVP05-Plus",
-    [string]$Version = "Beta 1",
+    [string]$Version = "Beta 2",
     [switch]$SkipBuild,             # use the MVP05.exe already built in the work folder
     [switch]$Final,                 # the real release's draft: tag beta-1, no "(test)" (still a draft until you publish)
     [switch]$Refresh                # with -Final, on a release that's already published: rebuild and replace its zip,
