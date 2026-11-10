@@ -4,6 +4,8 @@ Work in progress: more is coming before this is released.
 
 ## New
 - **Updates from the Launcher:** *Settings → Updates* shows your version, checks GitHub for a newer release (also when the Launcher opens, unless you turn that off), shows what's new, and installs it: the program files only, checked against the release's manifest. Your game files, saves, backups, button art and shader cache are never touched; your settings are kept, with any new options added. *Back to* undoes the last update. From Beta 2 on: going from Beta 1 to Beta 2 is still by hand.
+- **Tools menu in the game:** F10, or hold Back + Start (Z + Start on a GameCube controller) for a second. Any controller or the mouse moves around it, and the game gets no controller input while it's open. Esc closes it.
+  - *Short season:* at the end of a season shorter than 162 games, it finds the standings in the game and writes them projected to 162 games, as the standings patcher does, so the season can go on to the playoffs. The season length comes from `season_games` in `mvp05-settings.toml` (162 by default) and can be changed in the menu.
 - **Install progress:** one bar across the whole install, with "Step 2 of 3: making the PS2 button art" and the time so far.
 
 ## Changed

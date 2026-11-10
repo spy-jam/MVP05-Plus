@@ -17,3 +17,5 @@ playstation_layout = true
 playstation_icons = true
 # How many save backups to keep in "save backups" (0: off).
 save_backups = 30
+# Games in a season's schedule, for the Tools menu's short season (F10 in the game). The Launcher's Schedule tab sets it.
+season_games = 162

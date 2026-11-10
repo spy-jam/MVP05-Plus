@@ -193,6 +193,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             return 0;
         }
         if (wp == VK_ESCAPE && !alt) {
+            // the game's own overlay first (MVP05-Plus Tools closes on Esc)
+            if (intptr_t r = 0; kGame.message && kGame.message(hwnd, msg, wp, lp, &r)) return r;
             if (!repeated) AskQuit(hwnd);
             return 0;
         }
