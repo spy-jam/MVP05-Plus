@@ -5,7 +5,7 @@
     "games": 162,
     "kind": "original",
     "about": "MVP Baseball 2005's own schedule: the real 2005 season, then 2006 and 2007.",
-    "short": "The real 2005 season, then 2006 and 2007, as the game ships."
+    "short": "Default schedule from the MVP 05 disc: the real 2005 season, then 2006 and 2007."
   },
   {
     "id": "64",
@@ -21,7 +21,7 @@
     "games": 60,
     "kind": "mvp2004",
     "about": "MVP Baseball 2004's 60-game schedule, brought over by MVP05-Plus (Montreal's games are Washington's). 30 games from early April, the All-Star Game in July, 30 more from August 1, after the trade deadline. No interleague games; a few teams play 28 at home and 32 away, as in 2004.",
-    "short": "MVP 2004's own: 30 games before the trade deadline, the All-Star Game, 30 after. No interleague."
+    "short": "From the MVP 2004 disc: 30 games before the trade deadline, the All-Star Game, 30 after. No interleague."
   },
   {
     "id": "30",
@@ -29,7 +29,7 @@
     "games": 30,
     "kind": "mvp2004",
     "about": "MVP Baseball 2004's 30-game schedule, brought over by spy_jam. 15 games in April, 15 more from mid-August, after the trade deadline. No interleague games.",
-    "short": "MVP 2004's own: 15 games in April, 15 after the trade deadline. No interleague."
+    "short": "From the MVP 2004 disc: 15 games in April, 15 after the trade deadline. No interleague."
   },
   {
     "id": "15",
@@ -37,6 +37,6 @@
     "games": 15,
     "kind": "mvp2004",
     "about": "MVP Baseball 2004's 15-game schedule, brought over by MVP05-Plus: the whole season in April, with the All-Star Game in the middle. No interleague games; a few teams play 9 at home and 6 away, as in 2004.",
-    "short": "MVP 2004's own: the whole season in April. No interleague."
+    "short": "From the MVP 2004 disc: the whole season in April. No interleague."
   }
 ]
