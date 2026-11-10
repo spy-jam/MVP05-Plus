@@ -968,7 +968,7 @@ def schedule_tab(tabs, root, tk, ttk):
     have = ttk.Label(frm, font=("Segoe UI", 9, "bold"))
     have.grid(row=2, column=0, sticky="w", pady=(0, 6))
     cat = SCH.catalog(root)
-    kinds = {"original": "default, MVP 05 disc", "mvp2004": "from the MVP 2004 disc", "custom": "made for MVP05-Plus"}
+    kinds = {"original": "default, MVP 2005 disc", "mvp2004": "from the MVP 2004 disc", "custom": "made for MVP05-Plus"}
     label = {e["id"]: f"{e['name']}  ({kinds.get(e['kind'], e['kind'])})" for e in cat}
     by_label = {v: k for k, v in label.items()}
     pick = tk.StringVar()

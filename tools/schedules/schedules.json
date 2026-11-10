@@ -5,7 +5,7 @@
     "games": 162,
     "kind": "original",
     "about": "MVP Baseball 2005's own schedule: the real 2005 season, then 2006 and 2007.",
-    "short": "Default schedule from the MVP 05 disc: the real 2005 season, then 2006 and 2007."
+    "short": "Default schedule from the MVP 2005 disc: the real 2005 season."
   },
   {
     "id": "64",
@@ -13,7 +13,7 @@
     "games": 64,
     "kind": "custom",
     "about": "Made for MVP05-Plus by spy_jam. Every team plays 32 at home and 32 away, about a third of its games in its division, two against its interleague rival and 13 to 15 other interleague games. First half from early April to mid-May, All-Star Game in July, second half from August 1, after the trade deadline.",
-    "short": "Made for MVP05-Plus: even home and away for everyone, the All-Star Game in July, a real trade deadline."
+    "short": "Made for MVP05-Plus: a short season that still plays like a full one. Even home and away for everyone, the All-Star Game in July, a real trade deadline."
   },
   {
     "id": "60",
