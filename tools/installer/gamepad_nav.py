@@ -82,6 +82,7 @@ class GameCubeAdapter:
         self.lock = threading.Lock()
         self.state = (0, 0, 0)
         self.stop = threading.Event()
+        self.hand_over = threading.Event()  # let go for the game: taken again once it has started and closed
         self.file = self.usb = None
         self.thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
@@ -173,11 +174,17 @@ class GameCubeAdapter:
     def _run(self):
         from ctypes import wintypes
         buf = (ctypes.c_uint8 * 37)()
+        import time as _t
+        held_until = 0.0
         while not self.stop.is_set():
+            if self.hand_over.is_set():
+                self._close()
+                self.hand_over.clear()
+                held_until = _t.monotonic() + 20  # the game's start: not taken back before it can open it
             if not self.usb:
                 try:
                     import updater
-                    if updater.game_running() or not self._open():
+                    if _t.monotonic() < held_until or updater.game_running() or not self._open():
                         self.stop.wait(3)
                         continue
                 except Exception:
@@ -216,9 +223,12 @@ class GameCubeAdapter:
             return self.state
 
     def release(self):
-        """Let go of the adapter (before the game starts), waiting for the reader to finish."""
-        self.stop.set()
-        self.thread.join(timeout=2)
+        """Let go of the adapter before the game starts; it's taken again only after the game has closed."""
+        self.hand_over.set()
+        for _ in range(40):  # the reader notices within a read's timeout (0.5 s)
+            if not self.usb:
+                return
+            time.sleep(0.05)
 
 
 _gc = None

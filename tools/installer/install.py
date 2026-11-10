@@ -600,7 +600,8 @@ def gui(root):
         except OSError as e:
             launch_note.configure(text=f"MVP05.exe wouldn't start: {e}")
             return
-        w.after(800, w.destroy)
+        # the Launcher stays, minimized: alt-tab to it for the Tools while the game runs
+        w.after(800, w.iconify)
 
     def do_change():
         ready.grid_remove()
