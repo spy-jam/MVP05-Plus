@@ -592,6 +592,8 @@ def gui(root):
 
     def do_launch():
         exe = os.path.join(root, "MVP05.exe")
+        import gamepad_nav
+        gamepad_nav.release()  # the GameCube adapter, if the Launcher was reading it: the game needs it
         try:
             subprocess.Popen([exe], cwd=root, close_fds=True)
         except OSError as e:
