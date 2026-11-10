@@ -30,7 +30,8 @@ SETTINGS = "mvp05-settings.toml"
 MANIFEST = "SHA256-MANIFEST.json"
 WORK = ".update"  # in the game folder: the download, and the files the last update replaced
 # yours, never written by an update (a release zip holding any of these is refused)
-PROTECTED = ("assets", "hdd", "save backups", "gc_icons", "ps2_icons", "shader_cache", "logs", WORK)
+PROTECTED = ("assets", "hdd", "save backups", "gc_icons", "ps2_icons", "shader_cache", "logs", WORK,
+             "schedules/original")
 
 
 class UpdateError(Exception):
@@ -107,8 +108,9 @@ def download(root, info, progress=None):
 
 def _safe(name):
     parts = name.replace("\\", "/").split("/")
+    low = "/".join(parts).lower()
     return name and not name.startswith("/") and ":" not in name and ".." not in parts and \
-        parts[0].lower() not in (p.lower() for p in PROTECTED)
+        not any(low == p.lower() or low.startswith(p.lower() + "/") for p in PROTECTED)
 
 
 def verify(zip_path):

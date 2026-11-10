@@ -68,6 +68,13 @@ try:
     U.verify(z); raise SystemExit("protected file accepted")
 except U.UpdateError as e:
     assert "mustn't" in str(e)
+release_zip(z, dict(new, **{"schedules/original/schedule.big": b"evil"}))
+try:
+    U.verify(z); raise SystemExit("the player's original schedule accepted")
+except U.UpdateError:
+    pass
+release_zip(z, dict(new, **{"schedules/64/mlb162_1.dat": b"ok"}))
+U.verify(z)  # the shipped schedules are program files
 release_zip(z, {"README.md": b"x"})
 try:
     U.verify(z); raise SystemExit("zip without the game accepted")

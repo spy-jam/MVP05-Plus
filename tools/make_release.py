@@ -19,7 +19,7 @@ BUILT = ["MVP05.exe", "d3dcompiler_ms.dll", "msvcp140.dll", "vcruntime140.dll", 
          "MVP05-Plus-Launcher.exe", "gcbridge"]
 FROM_REPO = ["README.md", "RELEASE-NOTES.md", "START-HERE.txt", "mvp05-settings.toml", "SDK-LICENSE.txt",
              "THIRD_PARTY.txt", "MICROSOFT-RUNTIME-NOTICE.txt", "assets/PUT-GAME-FILES-HERE.txt"]
-NEVER = ("gc_icons", "ps2_icons", "shader_cache", "save backups")
+NEVER = ("gc_icons", "ps2_icons", "shader_cache", "save backups", "schedules/original")
 
 
 def main():
@@ -43,6 +43,12 @@ def main():
             files[n] = p
         else:
             print("(no", n + ")")
+    # the season schedules the Launcher's Schedule tab offers: text files, spy_jam's and MVP 2004's ported ones
+    sched = os.path.join(ROOT, "tools", "schedules")
+    for dp, _, fs in os.walk(sched):
+        for f in fs:
+            p = os.path.join(dp, f)
+            files["schedules/" + os.path.relpath(p, sched).replace(os.sep, "/")] = p
     assert not any(n.split("/")[0] in NEVER for n in files)
     manifest = {}
     for n, p in sorted(files.items()):

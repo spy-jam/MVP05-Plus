@@ -217,7 +217,7 @@ def check_install(root):
                     f = os.path.join(assets, *p.split("/"))
                     if not os.path.isfile(f):
                         gone.append(p)
-                    elif os.path.getsize(f) != n:
+                    elif os.path.getsize(f) != n and not p.lower().endswith("/schedule.big"):  # the Schedule tab's
                         bad.append(p)
                 if bad or gone:
                     r["xbox"], r["xbox_ok"] = f"incomplete: {len(bad) + len(gone)} of {len(want)} files missing or " \
@@ -415,6 +415,7 @@ def gui(root):
     tab = ttk.Frame(tabs, padding=12)
     tabs.add(tab, text="Install")
     saves_tab(tabs, root, tk, ttk)
+    schedule_tab(tabs, root, tk, ttk)
     tools_tab(tabs, root, tk, ttk)
     settings_tab(tabs, root, tk, ttk)
 
@@ -948,6 +949,80 @@ def settings_tab(tabs, root, tk, ttk):
     ttk.Button(bar, text="Open the settings file", command=lambda: os.startfile(os.path.join(root, ST.FILE))
                if os.name == "nt" else None).pack(side="left")
     load()
+
+
+def schedule_tab(tabs, root, tk, ttk):
+    """The season schedule the game uses: its own 162 games, MVP 2004's shorter ones, or ones made for Plus."""
+    import schedules as SCH
+    import settings as ST
+    from tkinter import messagebox
+
+    frm = ttk.Frame(tabs, padding=12)
+    tabs.add(frm, text="Schedule")
+    ttk.Label(frm, text="Season schedule", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, sticky="w")
+    ttk.Label(frm, foreground="#666", wraplength=600, justify="left", text=(
+        "The game takes the schedule when a season goes from spring training to the regular season: a season "
+        "that's already started keeps its own. A season shorter than 162 games needs the Short season tool after "
+        "its last regular season game (the Tools tab, or F10 in the game), or it stops there.")).grid(
+        row=1, column=0, sticky="w", pady=(0, 8))
+    have = ttk.Label(frm, font=("Segoe UI", 9, "bold"))
+    have.grid(row=2, column=0, sticky="w", pady=(0, 6))
+    pick = tk.StringVar()
+    groups = (("original", "The game's own"), ("mvp2004", "From MVP Baseball 2004, brought over to 2005"),
+              ("custom", "Made for MVP05-Plus"))
+    cat = SCH.catalog(root)
+    row = 3
+    for kind, heading in groups:
+        entries = [e for e in cat if e["kind"] == kind]
+        if not entries:
+            continue
+        ttk.Label(frm, text=heading, foreground="#444").grid(row=row, column=0, sticky="w", pady=(8, 2))
+        row += 1
+        for e in entries:
+            ttk.Radiobutton(frm, variable=pick, value=e["id"], text=e["name"]).grid(row=row, column=0, sticky="w",
+                                                                                   padx=(12, 0))
+            ttk.Label(frm, text=e["about"], foreground="#666", wraplength=560, justify="left").grid(
+                row=row + 1, column=0, sticky="w", padx=(34, 0), pady=(0, 4))
+            row += 2
+    note = ttk.Label(frm, wraplength=600, justify="left")
+    note.grid(row=row + 1, column=0, sticky="w", pady=(6, 0))
+    use = ttk.Button(frm, text="Use this schedule")
+    use.grid(row=row, column=0, sticky="e", pady=(10, 0))
+
+    def refresh(*_):
+        now = SCH.current(root)
+        names = {e["id"]: e["name"] for e in cat}
+        if now:
+            have.configure(text=f"Your game has: {names.get(now, now)}" +
+                                (" (the original)" if now == SCH.ORIGINAL else ""))
+            if not pick.get():
+                pick.set(now)
+        elif SCH.find_big(root):
+            have.configure(text="Your game has another schedule (changed outside the Launcher).")
+        else:
+            have.configure(text="Install the Xbox game first (the Play tab).")
+    refresh()
+    frm.bind("<Map>", refresh)
+
+    def go():
+        sid = pick.get()
+        if not sid:
+            return
+        import updater
+        if updater.game_running():
+            note.configure(text="Quit MVP05 first: the game reads the schedule while it runs.", foreground="#a33")
+            return
+        try:
+            games = SCH.apply(root, sid)
+        except (SCH.ScheduleError, OSError) as e:
+            note.configure(text=f"Not changed: {e}", foreground="#a33")
+            return
+        ST.write(root, {"season_games": games})  # the Short season tools' season length
+        note.configure(foreground="#1a7f37", text=(
+            f"Done: new seasons play {games} games." + ("" if games == 162 else
+            " At the end of each regular season, run Short season (Tools tab, or F10 in the game).")))
+        refresh()
+    use.configure(command=go)
 
 
 def tools_tab(tabs, root, tk, ttk):

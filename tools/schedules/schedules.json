@@ -1,0 +1,37 @@
+[
+  {
+    "id": "162",
+    "name": "162 games",
+    "games": 162,
+    "kind": "original",
+    "about": "MVP Baseball 2005's own schedule: the real 2005 season, then 2006 and 2007."
+  },
+  {
+    "id": "64",
+    "name": "64 games",
+    "games": 64,
+    "kind": "custom",
+    "about": "Made for MVP05-Plus by spy_jam. Every team plays 32 at home and 32 away, about a third of its games in its division, two against its interleague rival and 13 to 15 other interleague games. First half from early April to mid-May, All-Star Game in July, second half from August 1, after the trade deadline."
+  },
+  {
+    "id": "60",
+    "name": "60 games",
+    "games": 60,
+    "kind": "mvp2004",
+    "about": "MVP Baseball 2004's 60-game schedule, brought over by MVP05-Plus (Montreal's games are Washington's). 30 games from early April, the All-Star Game in July, 30 more from August 1, after the trade deadline. No interleague games; a few teams play 28 at home and 32 away, as in 2004."
+  },
+  {
+    "id": "30",
+    "name": "30 games",
+    "games": 30,
+    "kind": "mvp2004",
+    "about": "MVP Baseball 2004's 30-game schedule, brought over by spy_jam. 15 games in April, 15 more from mid-August, after the trade deadline. No interleague games."
+  },
+  {
+    "id": "15",
+    "name": "15 games",
+    "games": 15,
+    "kind": "mvp2004",
+    "about": "MVP Baseball 2004's 15-game schedule, brought over by MVP05-Plus: the whole season in April, with the All-Star Game in the middle. No interleague games; a few teams play 9 at home and 6 away, as in 2004."
+  }
+]
