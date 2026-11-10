@@ -5,6 +5,9 @@ height = 0
 render_percent = 100
 fps_cap = 60
 vsync = true
+# At most one finished frame waits for the screen, for less delay between a button and the screen. Turn it off
+# if the game stutters on a slower PC. Restart after changing.
+low_latency = true
 anisotropic_filtering = 16
 # Advertise Xbox 720p and HDTV AV pack on widescreen output. Restart after changing.
 xbox_720p = true

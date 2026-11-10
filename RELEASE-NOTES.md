@@ -8,6 +8,7 @@ Work in progress: more is coming before this is released.
   - *Short season:* at the end of a season shorter than 162 games, it finds the standings in the game and writes them projected to 162 games, as the standings patcher does, so the season can go on to the playoffs. The season length comes from `season_games` in `mvp05-settings.toml` (162 by default) and can be changed in the menu.
 - **Tools tab in the Launcher**, with the same *Short season* tool: in the running game (alt-tab to the Launcher), or in a saved dynasty with the game closed (it reads the season's length from the save, backs the save up, then writes it).
 - **The Launcher by controller:** an Xbox-style controller, or a GameCube controller on the adapter (with its WinUSB driver), moves around it (d-pad or stick), A presses, B goes back, LB / RB (L / R) switch tabs, Start launches the game from *Play*.
+- **Low latency** (on by default; *Settings* or `low_latency` in `mvp05-settings.toml`): at most one finished frame waits for the screen instead of up to three, for up to about two frames (~33 ms at 60 Hz) less delay between a button and the screen. Turn it off if the game stutters on a slower PC.
 - **Install progress:** one bar across the whole install, with "Step 2 of 3: making the PS2 button art" and the time so far.
 
 ## Changed

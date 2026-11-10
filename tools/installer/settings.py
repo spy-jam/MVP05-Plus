@@ -8,7 +8,7 @@ FILE = "mvp05-settings.toml"
 # what the Settings tab offers, with the shipped file's values as the defaults
 DISPLAY_MODES = ["windowed", "borderless", "fullscreen"]
 DEFAULTS = {"display_mode": "fullscreen", "width": 0, "height": 0, "render_percent": 100, "fps_cap": 60,
-            "vsync": True, "anisotropic_filtering": 16, "xbox_720p": True}
+            "vsync": True, "low_latency": True, "anisotropic_filtering": 16, "xbox_720p": True}
 
 
 def _parse(v):

@@ -763,6 +763,7 @@ def settings_tab(tabs, root, tk, ttk):
     fps = tk.StringVar()
     aniso = tk.StringVar()
     vsync = tk.BooleanVar()
+    low_latency = tk.BooleanVar()
     x720 = tk.BooleanVar()
     desk = desktop_resolution()
     # The game plays widescreen when the resolution is 3:2 or wider (app::Widescreen), else 4:3, with black bars at
@@ -795,6 +796,8 @@ def settings_tab(tabs, root, tk, ttk):
     x720_box = ttk.Checkbutton(frm, text="Xbox 720p mode (as on an Xbox console with 720p enabled in the dashboard)",
                                variable=x720)
     x720_box.grid(row=9, column=0, columnspan=3, sticky="w")
+    ttk.Checkbutton(frm, text="Low latency (less delay between a button and the screen; off if the game stutters)",
+                    variable=low_latency).grid(row=10, column=0, columnspan=3, sticky="w")
     note = ttk.Label(frm, text="", wraplength=520, justify="left")
     note.grid(row=11, column=0, columnspan=3, sticky="w", pady=(10, 0))
 
@@ -862,6 +865,7 @@ def settings_tab(tabs, root, tk, ttk):
         fps.set(name_of(fps_names, s["fps_cap"]))
         aniso.set(name_of(aniso_names, s["anisotropic_filtering"]))
         vsync.set(bool(s["vsync"]))
+        low_latency.set(bool(s.get("low_latency", True)))
         wide_720[0] = bool(s["xbox_720p"]) if aspect.get() == WIDE else True
         x720.set(wide_720[0] if aspect.get() == WIDE else False)
 
@@ -882,7 +886,8 @@ def settings_tab(tabs, root, tk, ttk):
         fp = fps_names.get(fps.get(), 60) if fps.get() in fps_names else int(fps.get())
         an = aniso_names.get(aniso.get(), 0) if aniso.get() in aniso_names else int(aniso.get().rstrip("x"))
         ST.write(root, {"display_mode": mode.get().lower(), "width": w, "height": h, "render_percent": sc,
-                        "fps_cap": fp, "vsync": vsync.get(), "anisotropic_filtering": an,
+                        "fps_cap": fp, "vsync": vsync.get(), "low_latency": low_latency.get(),
+                        "anisotropic_filtering": an,
                         "xbox_720p": x720.get()})
         note.configure(text="Saved. Restart the game if it's running.", foreground="#1a7f37")
 

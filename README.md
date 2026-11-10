@@ -62,7 +62,9 @@ sh -c 'B="/home/deck/Games/MVP05-Plus/gcbridge"; chmod +x "$B"; "$B" & exec "$@"
 
 * **Install**, which becomes **Play** once the game's installed: your discs in, then what's installed (checked each start), **Launch MVP 05**, and which controllers Windows sees right now, including whether the GameCube adapter has the WinUSB driver it needs.
 * **Saves**: *Current saves*, and *Backups* by date. Restore single saves or a whole date; your saves become a backup first, so a restore can be undone.
-* **Settings**: display mode, aspect ratio (16:9, or 4:3 with black bars at the sides), resolution (default: fullscreen at your desktop's resolution), render scale, frame rate cap, texture filtering, VSync, Xbox 720p mode; and desktop shortcuts for the game ("MVP 05 Plus") and the Launcher, if you want them.
+* **Settings**: display mode, aspect ratio (16:9, or 4:3 with black bars at the sides), resolution (default: fullscreen at your desktop's resolution), render scale, frame rate cap, texture filtering, VSync, low latency, Xbox 720p mode; and desktop shortcuts for the game ("MVP 05 Plus") and the Launcher, if you want them.
+
+For the least delay between a button and the screen, as on a console: keep *Low latency* on (turn it off only if the game stutters), and use your monitor's G-Sync / FreeSync or your TV's game mode if it has one.
 
 Everything is also in `mvp05-settings.toml`. Plus adds `gamecube_layout`, `gamecube_icons`, `playstation_layout`, `playstation_icons` (all on) and `save_backups` (30).
 
