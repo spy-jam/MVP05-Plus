@@ -609,6 +609,10 @@ def gui(root):
     back.configure(command=lambda: show())
     show()
     watch_pads()
+    import gamepad_nav  # a controller moves around the Launcher too
+    gamepad_nav.attach(w, tabs, on_start=lambda: do_launch() if ready.winfo_ismapped() and
+                       tabs.index(tabs.select()) == 0 else None)
+    tabs.focus_set()
     import updater
     updater.tidy(root)
     if launcher_option(root, "check_updates", True):
