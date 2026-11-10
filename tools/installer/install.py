@@ -26,7 +26,7 @@ import threading
 import traceback
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-for sub in ("gc_layout", "ps2_layout"):  # the art builders (bundled beside this when frozen)
+for sub in ("gc_layout", "ps2_layout", "saves", os.path.join("saves", "mvp05", "lib")):  # bundled beside this when frozen
     for base in (os.path.join(HERE, "..", sub), os.path.join(getattr(sys, "_MEIPASS", HERE), sub)):
         if os.path.isdir(base) and base not in sys.path:
             sys.path.insert(0, base)
@@ -415,6 +415,7 @@ def gui(root):
     tab = ttk.Frame(tabs, padding=12)
     tabs.add(tab, text="Install")
     saves_tab(tabs, root, tk, ttk)
+    tools_tab(tabs, root, tk, ttk)
     settings_tab(tabs, root, tk, ttk)
 
     # --- what's installed, with Launch: shown when the game is ready to play
@@ -930,6 +931,154 @@ def settings_tab(tabs, root, tk, ttk):
     ttk.Button(bar, text="Open the settings file", command=lambda: os.startfile(os.path.join(root, ST.FILE))
                if os.name == "nt" else None).pack(side="left")
     load()
+
+
+def tools_tab(tabs, root, tk, ttk):
+    """Short season: every MLB team's record projected to 162 games, in the running game or in a dynasty save.
+    The game's own Tools menu (F10) does the first in the game."""
+    import saves05 as S
+    import settings as ST
+    from tkinter import messagebox
+
+    frm = ttk.Frame(tabs, padding=12)
+    tabs.add(frm, text="Tools")
+    ttk.Label(frm, text="Short season", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=3, sticky="w")
+    ttk.Label(frm, foreground="#666", wraplength=560, justify="left", text=(
+        "A season shorter than 162 games stops at the end of the regular season until the standings are made "
+        "162 games long. This keeps every team's winning percentage. In the game, F10 (or Back + Start) opens the "
+        "same tool without leaving it.")).grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 8))
+    how = tk.StringVar(value="game")
+    ttk.Radiobutton(frm, variable=how, value="game", text=(
+        "In the running game: save the dynasty after the last regular season game and stay on the season screen")).grid(
+        row=2, column=0, columnspan=3, sticky="w")
+    ttk.Radiobutton(frm, variable=how, value="save", text=(
+        "In a saved dynasty, with the game closed:")).grid(row=3, column=0, sticky="w")
+    save_box = ttk.Combobox(frm, state="readonly", width=44)
+    save_box.grid(row=3, column=1, columnspan=2, sticky="w", padx=(6, 0))
+    row = ttk.Frame(frm)
+    row.grid(row=4, column=0, columnspan=3, sticky="w", pady=6)
+    ttk.Label(row, text="Games in the season:").pack(side="left")
+    games = tk.StringVar(value=str(ST.read(root).get("season_games", 162)))
+    ttk.Spinbox(row, textvariable=games, from_=1, to=162, width=6).pack(side="left", padx=6)
+    ttk.Label(row, foreground="#666", text="(a saved dynasty's is read from it)").pack(side="left")
+    tree = ttk.Treeview(frm, columns=("t", "now", "full"), show="headings", height=10)
+    for c, t, wd in (("t", "Team", 90), ("now", "Now", 110), ("full", "162 games", 110)):
+        tree.heading(c, text=t)
+        tree.column(c, width=wd, anchor="center")
+    tree.grid(row=5, column=0, columnspan=3, sticky="w")
+    note = ttk.Label(frm, wraplength=560, justify="left")
+    note.grid(row=6, column=0, columnspan=3, sticky="w", pady=4)
+    buttons = ttk.Frame(frm)
+    buttons.grid(row=7, column=0, columnspan=3, sticky="e")
+    find_b = ttk.Button(buttons, text="Find the standings")
+    write_b = ttk.Button(buttons, text="Write them, 162 games long", state="disabled")
+    find_b.pack(side="left")
+    write_b.pack(side="left", padx=6)
+    state, saves = {}, []
+
+    def say(text, colour="#555"):
+        frm.after(0, lambda: note.configure(text=text, foreground=colour))
+
+    def load_saves(*_):
+        saves[:] = [s for s in S.list_saves(root) if s["type"] == "Dynasty"]
+        save_box.configure(values=[f"{s['name']} ({when_text(s['when'])})" for s in saves])
+        if saves and save_box.current() < 0:
+            save_box.current(0)
+        if not saves:
+            save_box.set("(no dynasty saves yet)")
+    load_saves()
+    frm.bind("<Map>", load_saves)  # the list again each time the tab is shown
+
+    def forget():
+        if state.get("kind") == "game":
+            import standings_mem as M
+            M.close(state["h"])
+        state.clear()
+        write_b.configure(state="disabled")
+
+    def show(records):
+        tree.delete(*tree.get_children())
+        for t, wn, ls in records:
+            pw, pl = S.project(wn, ls)
+            tree.insert("", "end", values=(t, f"{wn}-{ls}", f"{pw}-{pl}"))
+
+    def season_games():
+        try:
+            n = int(games.get())
+        except ValueError:
+            n = 0
+        if not 1 <= n <= 162:
+            messagebox.showinfo("Short season", "Enter how many games the season has (1 to 162).", parent=frm)
+            return None
+        return n
+
+    def find():
+        forget()
+        if how.get() == "save":
+            if not saves or save_box.current() < 0:
+                return say("No dynasty save to choose: save one in the game first.", "#a33")
+            s = saves[save_box.current()]
+            try:
+                r = S.read_standings(s["folder"])
+            except Exception as e:
+                show([])
+                return say(f"Stopped: {e}", "#a33")
+            if r["season"]:
+                games.set(str(r["season"]))
+            left = r["scheduled"] - r["played"] if r["scheduled"] else None
+            show(r["records"])
+            if left:
+                say(f"{r['name']}: {left} of the season's games aren't played yet. Write this after the last one.",
+                    "#a33")
+            else:
+                say(f"{r['name']}" + (f": a {r['season']}-game season, all played." if r["season"] else ".") +
+                    " Check the records, then write them.")
+            state.update(kind="save", save=s)
+            write_b.configure(state="normal")
+            return
+        n = season_games()
+        if not n:
+            return
+        find_b.configure(state="disabled")
+        say(f"Looking for {n}-game standings in the running game...")
+
+        def work():
+            import standings_mem as M
+            try:
+                h, addr, fmt, recs = M.find(n, root, lambda t: say(t))
+            except Exception as e:
+                frm.after(0, lambda: (show([]), find_b.configure(state="normal")))
+                return say(f"Stopped: {e}", "#a33")
+
+            def done():
+                state.update(kind="game", h=h, addr=addr, fmt=fmt, n=n)
+                show([(t, a, b) for t, (a, b) in zip(S.MLB_TEAMS, recs)])
+                say("Found in the running game. Check the records, then write them.")
+                find_b.configure(state="normal")
+                write_b.configure(state="normal")
+            frm.after(0, done)
+        threading.Thread(target=work, daemon=True).start()
+
+    def write():
+        kind = state.get("kind")
+        try:
+            if kind == "save":
+                S.patch_standings(root, state["save"]["folder"], say=lambda t: say(t, "#1a7f37"))
+                load_saves()
+            elif kind == "game":
+                import standings_mem as M
+                ok = M.apply(state["h"], state["addr"], state["fmt"], state["n"])
+                state.clear()
+                say("Written. In the game: advance to the playoffs, then save the dynasty." if ok else
+                    "Couldn't write to the game's memory: try opening the Launcher as administrator.",
+                    "#1a7f37" if ok else "#a33")
+        except Exception as e:
+            say(f"Stopped: {e}", "#a33")
+        forget()
+
+    find_b.configure(command=find)
+    write_b.configure(command=write)
+    how.trace_add("write", lambda *_: (forget(), show([]), say("")))
 
 
 def updates_section(frm, root, tk, ttk, row):
