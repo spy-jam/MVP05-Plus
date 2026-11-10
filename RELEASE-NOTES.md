@@ -12,7 +12,7 @@ Work in progress: more is coming before this is released.
 
 ## Changed
 - Esc asks "Quit MVP05-Plus?".
-- *Launch MVP 05* minimizes the Launcher instead of closing it, so it's an alt-tab away while you play.
+- *Launch MVP 05* minimizes the Launcher instead of closing it, so it's an alt-tab away while you play. It closes when the game does, unless you've brought it back up.
 
 ## Fixed
 - The Launcher's *Settings* no longer drops the note after a text setting (such as `display_mode`) in `mvp05-settings.toml`.

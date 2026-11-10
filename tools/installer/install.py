@@ -596,12 +596,23 @@ def gui(root):
         import gamepad_nav
         gamepad_nav.release()  # the GameCube adapter, if the Launcher was reading it: the game needs it
         try:
-            subprocess.Popen([exe], cwd=root, close_fds=True)
+            game = subprocess.Popen([exe], cwd=root, close_fds=True)
         except OSError as e:
             launch_note.configure(text=f"MVP05.exe wouldn't start: {e}")
             return
-        # the Launcher stays, minimized: alt-tab to it for the Tools while the game runs
+        # the Launcher stays, minimized: alt-tab to it for the Tools while the game runs. It closes with the game,
+        # unless it was brought back up (to patch a save after quitting, say): then it stays until it's closed.
         w.after(800, w.iconify)
+
+        def watch():
+            if game.poll() is None:
+                return w.after(1000, watch)
+            import updater
+            if updater.game_running():  # another MVP05.exe took over (a title launch): wait for that one too
+                return w.after(2000, watch)
+            if w.state() == "iconic":
+                w.destroy()
+        w.after(2000, watch)
 
     def do_change():
         ready.grid_remove()
