@@ -952,8 +952,12 @@ def tools_tab(tabs, root, tk, ttk):
     import settings as ST
     from tkinter import messagebox
 
-    frm = ttk.Frame(tabs, padding=12)
-    tabs.add(frm, text="Tools")
+    outer = ttk.Frame(tabs, padding=8)
+    tabs.add(outer, text="Tools")
+    nb = ttk.Notebook(outer)  # one tab per tool: more come here
+    nb.grid()
+    frm = ttk.Frame(nb, padding=12)
+    nb.add(frm, text="Short season")
     ttk.Label(frm, text="Short season", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=3, sticky="w")
     ttk.Label(frm, foreground="#666", wraplength=560, justify="left", text=(
         "A season shorter than 162 games stops at the end of the regular season until the standings are made "
