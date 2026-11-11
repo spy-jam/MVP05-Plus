@@ -1142,7 +1142,7 @@ def schedule_tab(tabs, root, tk, ttk):
     ttk.Label(frm, text="Season schedule", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, sticky="w")
     ttk.Label(frm, foreground="#666", wraplength=600, justify="left", text=(
         "The game takes the schedule when a season goes from spring training to the regular season: a season "
-        "that's already started keeps its own. A season shorter than 162 games needs the Short season tool after "
+        "that's already started keeps its own. A season shorter than 162 games needs the Short season advancer after "
         "its last regular season game (the Tools tab, or F10 in the game), or it stops there.")).grid(
         row=1, column=0, sticky="w", pady=(0, 8))
     have = ttk.Label(frm, font=("Segoe UI", 9, "bold"))
@@ -1201,11 +1201,11 @@ def schedule_tab(tabs, root, tk, ttk):
         except (SCH.ScheduleError, OSError) as e:
             note.configure(text=f"Not changed: {e}", foreground="#a33")
             return
-        ST.write(root, {"season_games": games})  # the Short season tools' season length
+        ST.write(root, {"season_games": games})  # the Short season advancer's season length
         note.configure(foreground="#1a7f37", text=(
             f"Done: new seasons play {games} games." + (" The Launcher deals a new shuffle every time it starts "
             "the game." if sid == SCH.SHUFFLED else "" if games == 162 else
-            " At the end of each regular season, run Short season (Tools tab, or F10 in the game).")))
+            " At the end of each regular season, run the Short season advancer (Tools tab, or F10 in the game).")))
         refresh()
     use.configure(command=go)
 
@@ -1220,10 +1220,10 @@ def tools_tab(tabs, root, tk, ttk):
     ttk.Label(home, text="Tools", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=2, sticky="w")
     ttk.Label(home, foreground="#666", wraplength=560, justify="left", text=(
         "Pick a tool to open it. In the game, F10 (or hold Back + Start, Z + Start on a GameCube controller) opens "
-        "the game's own Tools menu, which has Short season too.")).grid(
+        "the game's own Tools menu, which has the Short season advancer too.")).grid(
         row=1, column=0, columnspan=2, sticky="w", pady=(0, 10))
     tools = [
-        ("Short season", "For seasons shorter than 162 games: at the end of the regular season, the standings "
+        ("Short season advancer", "For seasons shorter than 162 games: at the end of the regular season, the standings "
          "are made 162 games long so the season can go on to the playoffs. Every team keeps its winning percentage.",
          short_season_tool),
         ("Import a save", "Brings a save from another version of MVP 2005 into this one: rosters from the PS2, PC "
@@ -1276,7 +1276,7 @@ def short_season_tool(frm, root, tk, ttk):
     import settings as ST
     from tkinter import messagebox
 
-    ttk.Label(frm, text="Short season", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=3, sticky="w")
+    ttk.Label(frm, text="Short season advancer", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=3, sticky="w")
     ttk.Label(frm, foreground="#666", wraplength=560, justify="left", text=(
         "A season shorter than 162 games stops at the end of the regular season until the standings are made "
         "162 games long. This keeps every team's winning percentage. In the game, F10 (or Back + Start) opens the "
@@ -1346,7 +1346,7 @@ def short_season_tool(frm, root, tk, ttk):
         except ValueError:
             n = 0
         if not 1 <= n <= 162:
-            messagebox.showinfo("Short season", "Enter how many games the season has (1 to 162).", parent=frm)
+            messagebox.showinfo("Short season advancer", "Enter how many games the season has (1 to 162).", parent=frm)
             return None
         return n
 

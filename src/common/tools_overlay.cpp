@@ -190,7 +190,7 @@ void Ui(double) {
         Help("F10 or Esc closes this, or hold Back + Start (Z + Start on a GameCube controller) for a second. The game "
              "gets no controller input while it's open.");
         if (ImGui::BeginTabBar("tools")) {
-            if (ImGui::BeginTabItem("Short season")) {
+            if (ImGui::BeginTabItem("Short season advancer")) {
                 ShortSeason();
                 ImGui::EndTabItem();
             }
