@@ -147,7 +147,27 @@ try {
                   "(or install LLVM from https://github.com/llvm/llvm-project/releases)")
         }
         Write-Host "clang: $llvm"
-        $path = "set `"PATH=$llvm;%PATH%`" && "
+        # CMake and Ninja: Visual Studio's own (the "C++ CMake tools for Windows" component), or installed on PATH
+        $extra = @($llvm)
+        foreach ($tool in "cmake", "ninja") {
+            $found = $null
+            foreach ($c in @((Join-Path $vs "Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin"),
+                             (Join-Path $vs "Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja"),
+                             (Join-Path $env:ProgramFiles "CMake\bin"))) {
+                if (-not $found -and (Test-Path (Join-Path $c "$tool.exe"))) { $found = $c }
+            }
+            if (-not $found) {
+                $onpath = Get-Command $tool -ErrorAction SilentlyContinue
+                if ($onpath) { $found = Split-Path $onpath.Source }
+            }
+            if (-not $found) {
+                Fail ("$tool isn't installed. In Visual Studio Installer: Modify > Individual components > tick " +
+                      "'C++ CMake tools for Windows', Modify, then run this again")
+            }
+            Write-Host "${tool}: $found"
+            $extra += $found
+        }
+        $path = "set `"PATH=$($extra -join ';');%PATH%`" && "
         if (Test-Path $exe) { Remove-Item $exe }
         & cmd /c "call `"$devcmd`" -arch=x64 -host_arch=x64 >nul && $path cd /d `"$repo`" && Build-Source.cmd"
         if (-not (Test-Path $exe)) {
