@@ -677,13 +677,117 @@ def saves_tab(tabs, root, tk, ttk):
     inner.grid(sticky="nwe")
     refresh_current = current_saves_tab(inner, root, tk, ttk)
     refresh_backups = backups_tab(inner, root, tk, ttk, refresh_current)
+    refresh_rosters = rosters_tab(inner, root, tk, ttk)
 
     def on_tab(_):  # each list as it is now when it's looked at
-        if inner.index("current") == 0:
-            refresh_current()
-        else:
-            refresh_backups()
+        (refresh_current, refresh_backups, refresh_rosters)[inner.index("current")]()
     inner.bind("<<NotebookTabChanged>>", on_tab)
+
+
+def rosters_tab(nb, root, tk, ttk):
+    """Import rosters: an MVP 2005 roster save from PS2, PC or another Xbox written into one of your Xbox roster
+    saves (backed up first). The conversion is Mad Dog's (MVP-Roster-Toolkit-Native), ported."""
+    import rosters05 as RO
+    import saves05 as S
+    from tkinter import filedialog, messagebox
+
+    frm = ttk.Frame(nb, padding=10)
+    nb.add(frm, text="Import rosters")
+    ttk.Label(frm, wraplength=540, justify="left", text=(
+        "Bring in an MVP 2005 roster save from the PS2 (a .psu, or the Ps2.sav taken out of one), the PC (.sav) or "
+        "another Xbox (data.dat). It goes into one of your roster saves here, which is backed up first. Rosters "
+        "only: dynasties don't convert this way.")).grid(row=0, column=0, columnspan=3, sticky="w")
+    ttk.Label(frm, foreground="#666", wraplength=540, justify="left", text=(
+        "No roster save yet? In the game, save your rosters once, then pick that save below.")).grid(
+        row=1, column=0, columnspan=3, sticky="w", pady=(4, 10))
+    ttk.Label(frm, text="Roster save to bring in:").grid(row=2, column=0, sticky="w")
+    src_text = ttk.Label(frm, text="(none picked)", foreground="#666", width=46)
+    src_text.grid(row=2, column=1, sticky="w", padx=6)
+    pick_b = ttk.Button(frm, text="Choose...")
+    pick_b.grid(row=2, column=2, sticky="e")
+    ttk.Label(frm, text="Write it into:").grid(row=3, column=0, sticky="w", pady=(8, 0))
+    box = ttk.Combobox(frm, state="readonly", width=44)
+    box.grid(row=3, column=1, columnspan=2, sticky="w", padx=6, pady=(8, 0))
+    note = ttk.Label(frm, wraplength=540, justify="left")
+    note.grid(row=4, column=0, columnspan=3, sticky="w", pady=8)
+    go_b = ttk.Button(frm, text="Import the rosters", state="disabled")
+    go_b.grid(row=5, column=2, sticky="e")
+    ttk.Label(frm, foreground="#888", text="Roster conversion: Mad Dog's MVP Roster Toolkit.").grid(
+        row=6, column=0, columnspan=3, sticky="w", pady=(10, 0))
+    picked, targets = {}, []
+
+    def say(text, colour="#555"):
+        note.configure(text=text, foreground=colour)
+
+    def ready():
+        go_b.configure(state="normal" if picked.get("save") and targets and box.current() >= 0 else "disabled")
+
+    def refresh(*_):
+        old = box.get()
+        targets.clear()
+        for s in S.list_saves(root):
+            p = os.path.join(s["folder"], "data.dat")
+            if os.path.getsize(p) != RO.XBOX_SAVE_SIZE:
+                continue  # dynasties and other saves are bigger
+            targets.append(s)
+        labels = [f"{s['name']} ({when_text(s['when'])})" for s in targets]
+        box.configure(values=labels)
+        if old in labels:
+            box.set(old)
+        elif labels:
+            box.current(0)
+        else:
+            box.set("(no roster saves yet)")
+        ready()
+
+    def pick():
+        p = filedialog.askopenfilename(parent=frm, title="An MVP 2005 roster save", filetypes=[
+            ("Roster saves", "*.psu *.sav *.dat"), ("All files", "*.*")])
+        if not p:
+            return
+        picked.clear()
+        try:
+            with open(p, "rb") as f:
+                save = RO.read(f.read())
+        except (OSError, RO.RosterError) as e:
+            src_text.configure(text=os.path.basename(p), foreground="#a33")
+            say(f"That file can't be brought in: {e}.", "#a33")
+            return ready()
+        picked.update(save=save, path=p)
+        src_text.configure(text=f"{os.path.basename(p)} ({save.platform})", foreground="")
+        say(f"A {save.platform} roster save. Pick the roster save to write it into, then import." if targets else
+            f"A {save.platform} roster save. Save your rosters in the game once, then come back to write it in.")
+        ready()
+
+    def go():
+        save, s = picked.get("save"), targets[box.current()] if box.current() >= 0 else None
+        if not save or not s:
+            return
+        if not messagebox.askyesno("Import rosters", (
+                f"Replace the rosters in \"{s['name']}\" with the ones from {os.path.basename(picked['path'])}?\n\n"
+                "That save is backed up first (Saves > Backups)."), parent=frm):
+            return
+        dat = os.path.join(s["folder"], "data.dat")
+        try:
+            if S.game_running():
+                raise RO.RosterError("close MVP05.exe first: the game keeps its saves open while it runs")
+            with open(dat, "rb") as f:
+                out = RO.to_xbox(save, f.read())
+            kept = S.backup_folder(root, s["folder"], "importing rosters")
+            with open(dat + ".new", "wb") as f:
+                f.write(out)
+            os.replace(dat + ".new", dat)
+        except (OSError, RO.RosterError) as e:
+            return say(f"Nothing was changed: {e}.", "#a33")
+        say(f"Imported into \"{s['name']}\". The save from before is in {os.path.relpath(kept, root)}. In the "
+            "game, load that roster save.", "#1a7f37")
+        refresh()
+
+    pick_b.configure(command=pick)
+    go_b.configure(command=go)
+    box.bind("<<ComboboxSelected>>", lambda _: ready())
+    refresh()
+    return refresh
 
 
 def current_saves_tab(nb, root, tk, ttk):
