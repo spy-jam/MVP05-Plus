@@ -682,22 +682,37 @@ def open_in_explorer(path):
 
 
 def saves_tab(tabs, root, tk, ttk):
-    """Saves: Current saves and Backups, each its own tab inside."""
-    outer = ttk.Frame(tabs, padding=8)
+    """Saves: your saves, or the backups of them, one switch apart."""
+    outer = ttk.Frame(tabs, padding=12)
     tabs.add(outer, text="Saves")
-    inner = ttk.Notebook(outer)
-    inner.grid(sticky="nwe")
-    refresh_current = current_saves_tab(inner, root, tk, ttk)
-    refresh_backups = backups_tab(inner, root, tk, ttk, refresh_current)
-    refresh_import = import_tab(inner, root, tk, ttk)
+    head = ttk.Frame(outer)
+    head.grid(row=0, column=0, sticky="we", pady=(0, 6))
+    outer.columnconfigure(0, weight=1)
+    ttk.Label(head, text="Saves", font=("Segoe UI", 10, "bold")).pack(side="left")
+    view = tk.StringVar(value="saves")
+    switch = ttk.Frame(head)
+    switch.pack(side="right")
+    pages = {"saves": ttk.Frame(outer), "backups": ttk.Frame(outer)}
+    refresh_current = current_saves_tab(pages["saves"], root, tk, ttk)
+    refresh_backups = backups_tab(pages["backups"], root, tk, ttk, refresh_current)
+    refresh = {"saves": refresh_current, "backups": refresh_backups}
 
-    def on_tab(_):  # each list as it is now when it's looked at
-        (refresh_current, refresh_backups, refresh_import)[inner.index("current")]()
-    inner.bind("<<NotebookTabChanged>>", on_tab)
+    def show(*_):
+        for k, f in pages.items():
+            if k == view.get():
+                f.grid(row=1, column=0, sticky="nwe")
+            else:
+                f.grid_remove()
+        refresh[view.get()]()  # each list as it is now when it's looked at
+    for value, text in (("saves", "Your saves"), ("backups", "Backups")):
+        ttk.Radiobutton(switch, text=text, value=value, variable=view, style="Toolbutton", command=show).pack(
+            side="left")
+    show()
+    outer.bind("<Map>", lambda _: refresh[view.get()]())
 
 
-def import_tab(nb, root, tk, ttk):
-    """Import saves: a save from another MVP 2005 written into one of your saves here (backed up first), so it
+def import_tool(frm, root, tk, ttk):
+    """Import a save: a save from another MVP 2005 written into one of your saves here (backed up first), so it
     plays in MVP05-Plus. Rosters from the PS2, PC or another Xbox (Mad Dog's conversion, from his MVP Roster
     Toolkit); dynasties, owner mode ones too, from the GameCube (spy_jam's converter)."""
     import dynasty05 as DY
@@ -705,33 +720,44 @@ def import_tab(nb, root, tk, ttk):
     import saves05 as S
     from tkinter import filedialog, messagebox
 
-    frm = ttk.Frame(nb, padding=10)
-    nb.add(frm, text="Import saves")
-    ttk.Label(frm, wraplength=540, justify="left", text=(
-        "Bring a save from another version of MVP 2005 into MVP05-Plus:\n"
-        "  \u2022  rosters from the PS2 (a .psu, or the Ps2.sav taken out of one), the PC (.sav) or another Xbox\n"
-        "  \u2022  a dynasty (owner mode too) from the GameCube: the .gci Dolphin exports\n"
-        "It goes into one of your saves of the same kind here, which is backed up first.")).grid(
-        row=0, column=0, columnspan=3, sticky="w")
+    frm.columnconfigure(1, weight=1)
+    ttk.Label(frm, text="Import a save", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=2,
+                                                                            sticky="w")
     ttk.Label(frm, foreground="#666", wraplength=540, justify="left", text=(
-        "No save of that kind yet? In the game, save your rosters once, or start a dynasty and save it, then pick "
-        "that save below. A dynasty takes its name from the save it goes into.")).grid(
-        row=1, column=0, columnspan=3, sticky="w", pady=(4, 10))
-    ttk.Label(frm, text="Save to bring in:").grid(row=2, column=0, sticky="w")
-    src_text = ttk.Label(frm, text="(none picked)", foreground="#666", width=46)
-    src_text.grid(row=2, column=1, sticky="w", padx=6)
-    pick_b = ttk.Button(frm, text="Choose...")
-    pick_b.grid(row=2, column=2, sticky="e")
-    ttk.Label(frm, text="Write it into:").grid(row=3, column=0, sticky="w", pady=(8, 0))
-    box = ttk.Combobox(frm, state="readonly", width=44)
-    box.grid(row=3, column=1, columnspan=2, sticky="w", padx=6, pady=(8, 0))
-    note = ttk.Label(frm, wraplength=540, justify="left")
-    note.grid(row=4, column=0, columnspan=3, sticky="w", pady=8)
-    go_b = ttk.Button(frm, text="Import", state="disabled")
-    go_b.grid(row=5, column=2, sticky="e")
-    ttk.Label(frm, foreground="#888", justify="left", text=(
-        "Roster conversion: Mad Dog (MVP Roster Toolkit). GameCube dynasty conversion: spy_jam.")).grid(
-        row=6, column=0, columnspan=3, sticky="w", pady=(10, 0))
+        "Brings a save from another version of MVP 2005 into this one. It works with:\n"
+        "\u2022  rosters from the PS2 (a .psu, or the Ps2.sav inside one), the PC (.sav) or another Xbox\n"
+        "\u2022  a dynasty, owner mode too, from the GameCube (the .gci file Dolphin exports)\n"
+        "The save goes into one of your own saves of the same kind, which is backed up first.")).grid(
+        row=1, column=0, columnspan=2, sticky="w", pady=(0, 12))
+
+    def step(row, n, text):
+        ttk.Label(frm, text=f"{n}.", font=("Segoe UI", 9, "bold")).grid(row=row, column=0, sticky="nw", padx=(0, 8))
+        ttk.Label(frm, text=text, font=("Segoe UI", 9, "bold")).grid(row=row, column=1, sticky="w")
+
+    step(2, 1, "Choose the save to bring in")
+    line = ttk.Frame(frm)
+    line.grid(row=3, column=1, sticky="w", pady=(4, 12))
+    pick_b = ttk.Button(line, text="Choose a save...")
+    pick_b.pack(side="left")
+    src_text = ttk.Label(line, text="", foreground="#666")
+    src_text.pack(side="left", padx=10)
+
+    step(4, 2, "Pick which of your saves it replaces")
+    box = ttk.Combobox(frm, state="readonly", width=48)
+    box.grid(row=5, column=1, sticky="w", pady=(4, 2))
+    hint = ttk.Label(frm, foreground="#666", wraplength=520, justify="left")
+    hint.grid(row=6, column=1, sticky="w", pady=(0, 12))
+
+    step(7, 3, "Import it")
+    go_line = ttk.Frame(frm)
+    go_line.grid(row=8, column=1, sticky="w", pady=(4, 0))
+    go_b = ttk.Button(go_line, text="Import", state="disabled")
+    go_b.pack(side="left")
+    note = ttk.Label(frm, wraplength=520, justify="left")
+    note.grid(row=9, column=1, sticky="w", pady=(8, 0))
+    ttk.Label(frm, foreground="#888", wraplength=540, justify="left", text=(
+        "Roster conversion by Mad Dog (MVP Roster Toolkit). GameCube dynasty conversion by spy_jam.")).grid(
+        row=10, column=0, columnspan=2, sticky="w", pady=(16, 0))
     picked, targets = {}, []
     kinds = {"roster": ("roster save", "rosters"), "dynasty": ("dynasty save", "dynasty")}
 
@@ -750,13 +776,24 @@ def import_tab(nb, root, tk, ttk):
                     (kind == "dynasty" and size == DY.XB_DYNASTY_SIZE and s["type"] == "Dynasty"):
                 targets.append(s)
         labels = [f"{s['name']} ({when_text(s['when'])})" for s in targets]
-        box.configure(values=labels)
+        box.configure(values=labels, state="readonly" if labels else "disabled")
         if old in labels:
             box.set(old)
         elif labels:
             box.current(0)
         else:
-            box.set(f"(no {kinds[kind][0]}s yet)" if kind else "(choose a save to bring in first)")
+            box.set("")
+        if not kind:
+            hint.configure(text="Choose a save first: then your saves of the same kind are listed here.",
+                           foreground="#666")
+        elif labels:
+            hint.configure(text=f"That {kinds[kind][0]} is backed up first. A dynasty keeps the name of the save "
+                                "it goes into." if kind == "dynasty" else
+                           f"That {kinds[kind][0]} is backed up first.", foreground="#666")
+        else:
+            hint.configure(text=f"You don't have a {kinds[kind][0]} yet. In the game, " +
+                           ("save your rosters once" if kind == "roster" else "start a dynasty and save it") +
+                           ", then come back here.", foreground="#a33")
         ready()
 
     def pick():
@@ -765,35 +802,30 @@ def import_tab(nb, root, tk, ttk):
         if not p:
             return
         picked.clear()
+        say("")
         try:
             with open(p, "rb") as f:
                 data = f.read()
             if data[:4] == b"GV4E":
                 meta = DY.read_gc(data)
-                picked.update(kind="dynasty", data=data, what=f"GameCube dynasty {meta['name']}")
+                picked.update(kind="dynasty", data=data, what=f"GameCube dynasty \"{meta['name']}\"")
             else:
                 save = RO.read(data)
                 picked.update(kind="roster", save=save, what=f"{save.platform} rosters")
         except (OSError, RO.RosterError, DY.DynastyError) as e:
-            src_text.configure(text=os.path.basename(p), foreground="#a33")
-            say(f"That file can't be brought in: {e}.", "#a33")
+            src_text.configure(text=f"{os.path.basename(p)}: can't be used ({e})", foreground="#a33")
             return refresh()
         picked["path"] = p
-        src_text.configure(text=f"{os.path.basename(p)} ({picked['what']})", foreground="")
+        src_text.configure(text=f"{os.path.basename(p)}: {picked['what']} \u2713", foreground="#1a7f37")
         refresh()
-        what = kinds[picked["kind"]][0]
-        say(f"{picked['what'][0].upper() + picked['what'][1:]}. Pick the {what} to write it into, then import."
-            if targets else f"{picked['what'][0].upper() + picked['what'][1:]}. You have no {what} here yet: "
-            + ("save your rosters in the game once" if picked["kind"] == "roster" else
-               "start a dynasty in the game and save it") + ", then come back.")
 
     def go():
         kind, s = picked.get("kind"), targets[box.current()] if box.current() >= 0 else None
         if not kind or not s:
             return
-        if not messagebox.askyesno("Import", (
-                f"Replace the {kinds[kind][1]} in \"{s['name']}\" with {picked['what']} from "
-                f"{os.path.basename(picked['path'])}?\n\nThat save is backed up first (Saves > Backups)."),
+        if not messagebox.askyesno("Import a save", (
+                f"Replace the {kinds[kind][1]} in \"{s['name']}\" with the {picked['what']} from "
+                f"{os.path.basename(picked['path'])}?\n\n\"{s['name']}\" is backed up first (Saves > Backups)."),
                 parent=frm):
             return
         dat = os.path.join(s["folder"], "data.dat")
@@ -807,12 +839,12 @@ def import_tab(nb, root, tk, ttk):
                 with open(dat, "rb") as f:
                     mine = f.read()
                 out = RO.to_xbox(picked["save"], mine) if kind == "roster" else DY.gc_to_xbox(picked["data"], mine)
-                kept = S.backup_folder(root, s["folder"], f"importing {kinds[kind][1]}")
+                S.backup_folder(root, s["folder"], f"importing {kinds[kind][1]}")
                 with open(dat + ".new", "wb") as f:
                     f.write(out)
                 os.replace(dat + ".new", dat)
-                msg = (f"Imported into \"{s['name']}\". The save from before is in {os.path.relpath(kept, root)}. "
-                       "In the game, load that save.", "#1a7f37")
+                msg = (f"Done. Load \"{s['name']}\" in the game. The save it replaced is in Saves > Backups.",
+                       "#1a7f37")
             except (OSError, RO.RosterError, DY.DynastyError) as e:
                 msg = (f"Nothing was changed: {e}.", "#a33")
             frm.after(0, lambda: (say(*msg), refresh()))
@@ -825,21 +857,20 @@ def import_tab(nb, root, tk, ttk):
     return refresh
 
 
-def current_saves_tab(nb, root, tk, ttk):
+def current_saves_tab(frm, root, tk, ttk):
     import backups as B
 
-    frm = ttk.Frame(nb, padding=10)
-    nb.add(frm, text="Current saves")
     ttk.Label(frm, wraplength=520, justify="left", text=(
         "The saves the game uses now, in hdd beside MVP05.exe.")).grid(row=0, column=0, sticky="w", pady=(0, 8))
     tree = ttk.Treeview(frm, columns=("when", "size"), show="tree headings", height=12, selectmode="browse")
     tree.heading("#0", text="Save")
     tree.heading("when", text="Last saved")
     tree.heading("size", text="Size")
-    tree.column("#0", width=280, anchor="w")
-    tree.column("when", width=150, anchor="w")
+    tree.column("#0", width=330, anchor="w")
+    tree.column("when", width=160, anchor="w")
     tree.column("size", width=80, anchor="e")
     tree.grid(row=1, column=0, sticky="we")
+    frm.columnconfigure(0, weight=1)
     note = ttk.Label(frm, text="", foreground="#666")
     note.grid(row=3, column=0, sticky="w", pady=(6, 0))
 
@@ -938,8 +969,8 @@ def settings_tab(tabs, root, tk, ttk):
     x720_box.grid(row=9, column=0, columnspan=3, sticky="w")
     ttk.Checkbutton(frm, text="Low latency (less delay between a button and the screen; off if the game stutters)",
                     variable=low_latency).grid(row=10, column=0, columnspan=3, sticky="w")
-    note = ttk.Label(frm, text="", wraplength=520, justify="left")
-    note.grid(row=11, column=0, columnspan=3, sticky="w", pady=(10, 0))
+    note = ttk.Label(frm, text="", wraplength=560, justify="left")
+    note.grid(row=12, column=0, columnspan=3, sticky="w", pady=(6, 0))
 
     def name_of(d, v):
         return next((k for k, x in d.items() if x == v), str(v))
@@ -1039,8 +1070,18 @@ def settings_tab(tabs, root, tk, ttk):
 
     # desktop shortcuts, only when asked for
     import shortcuts as SC
-    ttk.Label(frm, text="Desktop shortcuts", font=("Segoe UI", 10, "bold")).grid(
-        row=12, column=0, columnspan=3, sticky="w", pady=(18, 4))
+    # shortcuts and updates side by side under the display settings
+    lower = ttk.Frame(frm)
+    lower.grid(row=13, column=0, columnspan=3, sticky="nwe", pady=(14, 0))
+    lower.columnconfigure(0, weight=1)
+    lower.columnconfigure(2, weight=1)
+    scf = ttk.Frame(lower)
+    scf.grid(row=0, column=0, sticky="nw")
+    ttk.Separator(lower, orient="vertical").grid(row=0, column=1, sticky="ns", padx=14)
+    upf = ttk.Frame(lower)
+    upf.grid(row=0, column=2, sticky="nw")
+    ttk.Label(scf, text="Desktop shortcuts", font=("Segoe UI", 10, "bold")).grid(
+        row=0, column=0, columnspan=2, sticky="w", pady=(0, 4))
     sc_rows = [(SC.GAME_NAME, lambda: os.path.join(root, "MVP05.exe"), "the game"),
                (SC.TOOLS_NAME, SC.tools_exe, "this Launcher")]
     sc_buttons = {}
@@ -1050,15 +1091,15 @@ def settings_tab(tabs, root, tk, ttk):
             b, lbl = sc_buttons[name]
             if os.name != "nt" or not target() or not os.path.isfile(target()):
                 b.configure(text="Create", state="disabled")
-                lbl.configure(text=f"\"{name}\": " + ("Windows only" if os.name != "nt" else
-                                                       "only from the Launcher's .exe" if not target() else
-                                                       "MVP05.exe isn't here"), foreground="#777")
+                lbl.configure(text=f"{name}: " + ("Windows only" if os.name != "nt" else
+                                                  "only from the Launcher's .exe" if not target() else
+                                                  "MVP05.exe isn't here"), foreground="#777")
             elif SC.exists(name):
                 b.configure(text="Remove", state="normal")
-                lbl.configure(text=f"\"{name}\" is on your desktop", foreground="#1a7f37")
+                lbl.configure(text=f"{name}: on your desktop", foreground="#1a7f37")
             else:
                 b.configure(text="Create", state="normal")
-                lbl.configure(text=f"\"{name}\": not on your desktop", foreground="#555")
+                lbl.configure(text=f"{name}: not on your desktop", foreground="#555")
 
     def sc_toggle(name, target, what):
         try:
@@ -1073,16 +1114,16 @@ def settings_tab(tabs, root, tk, ttk):
         sc_refresh()
 
     for i, (name, target, what) in enumerate(sc_rows):
-        b = ttk.Button(frm, width=9, command=lambda n=name, t=target, w_=what: sc_toggle(n, t, w_))
-        b.grid(row=13 + i, column=0, sticky="w", pady=2)
-        lbl = ttk.Label(frm)
-        lbl.grid(row=13 + i, column=1, columnspan=2, sticky="w", padx=(12, 0))
+        b = ttk.Button(scf, width=8, command=lambda n=name, t=target, w_=what: sc_toggle(n, t, w_))
+        b.grid(row=1 + i, column=0, sticky="w", pady=2)
+        lbl = ttk.Label(scf)
+        lbl.grid(row=1 + i, column=1, sticky="w", padx=(8, 0))
         sc_buttons[name] = (b, lbl)
     sc_refresh()
-    updates_section(frm, root, tk, ttk, 16)
+    updates_section(upf, root, tk, ttk, 0)
 
     bar = ttk.Frame(frm)
-    bar.grid(row=10, column=0, columnspan=3, sticky="we", pady=(14, 0))
+    bar.grid(row=11, column=0, columnspan=3, sticky="we", pady=(10, 0))
     ttk.Button(bar, text="Save", command=save).pack(side="right")
     ttk.Button(bar, text="Defaults", command=defaults).pack(side="right", padx=6)
     ttk.Button(bar, text="Open the settings file", command=lambda: os.startfile(os.path.join(root, ST.FILE))
@@ -1170,18 +1211,71 @@ def schedule_tab(tabs, root, tk, ttk):
 
 
 def tools_tab(tabs, root, tk, ttk):
+    """Tools: a list of them, each opening on its own page here, with a way back to the list."""
+    outer = ttk.Frame(tabs, padding=12)
+    tabs.add(outer, text="Tools")
+    outer.columnconfigure(0, weight=1)
+    home = ttk.Frame(outer)
+    home.columnconfigure(0, weight=1)
+    ttk.Label(home, text="Tools", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=2, sticky="w")
+    ttk.Label(home, foreground="#666", wraplength=560, justify="left", text=(
+        "Pick a tool to open it. In the game, F10 (or hold Back + Start, Z + Start on a GameCube controller) opens "
+        "the game's own Tools menu, which has Short season too.")).grid(
+        row=1, column=0, columnspan=2, sticky="w", pady=(0, 10))
+    tools = [
+        ("Short season", "For seasons shorter than 162 games: at the end of the regular season, the standings "
+         "are made 162 games long so the season can go on to the playoffs. Every team keeps its winning percentage.",
+         short_season_tool),
+        ("Import a save", "Brings a save from another version of MVP 2005 into this one: rosters from the PS2, PC "
+         "or another Xbox, or a dynasty (owner mode too) from the GameCube.", import_tool),
+    ]
+    pages = {}
+
+    def open_tool(i):
+        name, _, build = tools[i]
+        if i not in pages:
+            page = ttk.Frame(outer)
+            page.columnconfigure(0, weight=1)
+            ttk.Button(page, text="\u2039 All tools", command=show_home).grid(row=0, column=0, sticky="w",
+                                                                           pady=(0, 8))
+            body = ttk.Frame(page)
+            body.grid(row=1, column=0, sticky="nwe")
+            pages[i] = (page, build(body, root, tk, ttk))
+        home.grid_remove()
+        for j, (pg, _) in pages.items():
+            if j != i:
+                pg.grid_remove()
+        page, refresh = pages[i]
+        page.grid(row=0, column=0, sticky="nwe")
+        if refresh:
+            refresh()
+
+    def show_home():
+        for pg, _ in pages.values():
+            pg.grid_remove()
+        home.grid(row=0, column=0, sticky="nwe")
+
+    for i, (name, about, _) in enumerate(tools):
+        r = 2 + i * 2
+        ttk.Separator(home).grid(row=r, column=0, columnspan=2, sticky="we")
+        box = ttk.Frame(home, padding=(0, 8))
+        box.grid(row=r + 1, column=0, sticky="we")
+        ttk.Label(box, text=name, font=("Segoe UI", 9, "bold")).grid(row=0, column=0, sticky="w")
+        ttk.Label(box, text=about, foreground="#555", wraplength=440, justify="left").grid(row=1, column=0,
+                                                                                         sticky="w")
+        ttk.Button(home, text="Open", command=lambda i=i: open_tool(i)).grid(row=r + 1, column=1, sticky="e",
+                                                                           padx=(12, 0))
+    ttk.Separator(home).grid(row=2 + len(tools) * 2, column=0, columnspan=2, sticky="we")
+    show_home()
+
+
+def short_season_tool(frm, root, tk, ttk):
     """Short season: every MLB team's record projected to 162 games, in the running game or in a dynasty save.
     The game's own Tools menu (F10) does the first in the game."""
     import saves05 as S
     import settings as ST
     from tkinter import messagebox
 
-    outer = ttk.Frame(tabs, padding=8)
-    tabs.add(outer, text="Tools")
-    nb = ttk.Notebook(outer)  # one tab per tool: more come here
-    nb.grid()
-    frm = ttk.Frame(nb, padding=12)
-    nb.add(frm, text="Short season")
     ttk.Label(frm, text="Short season", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=3, sticky="w")
     ttk.Label(frm, foreground="#666", wraplength=560, justify="left", text=(
         "A season shorter than 162 games stops at the end of the regular season until the standings are made "
@@ -1189,11 +1283,11 @@ def tools_tab(tabs, root, tk, ttk):
         "same tool without leaving it.")).grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 8))
     how = tk.StringVar(value="game")
     ttk.Radiobutton(frm, variable=how, value="game", text=(
-        "In the running game: save the dynasty after the last regular season game and stay on the season screen")).grid(
+        "In the running game (save the dynasty after the last regular season game, stay on that screen)")).grid(
         row=2, column=0, columnspan=3, sticky="w")
     ttk.Radiobutton(frm, variable=how, value="save", text=(
         "In a saved dynasty, with the game closed:")).grid(row=3, column=0, sticky="w")
-    save_box = ttk.Combobox(frm, state="readonly", width=44)
+    save_box = ttk.Combobox(frm, state="readonly", width=34)
     save_box.grid(row=3, column=1, columnspan=2, sticky="w", padx=(6, 0))
     row = ttk.Frame(frm)
     row.grid(row=4, column=0, columnspan=3, sticky="w", pady=6)
@@ -1201,11 +1295,12 @@ def tools_tab(tabs, root, tk, ttk):
     games = tk.StringVar(value=str(ST.read(root).get("season_games", 162)))
     ttk.Spinbox(row, textvariable=games, from_=1, to=162, width=6).pack(side="left", padx=6)
     ttk.Label(row, foreground="#666", text="(a saved dynasty's is read from it)").pack(side="left")
-    tree = ttk.Treeview(frm, columns=("t", "now", "full"), show="headings", height=10)
+    tree = ttk.Treeview(frm, columns=("t", "now", "full"), show="headings", height=8)
     for c, t, wd in (("t", "Team", 90), ("now", "Now", 110), ("full", "162 games", 110)):
         tree.heading(c, text=t)
         tree.column(c, width=wd, anchor="center")
-    tree.grid(row=5, column=0, columnspan=3, sticky="w")
+    tree.grid(row=5, column=0, columnspan=3, sticky="w", pady=(4, 0))
+    tree.grid_remove()  # shown once there are standings to show
     note = ttk.Label(frm, wraplength=560, justify="left")
     note.grid(row=6, column=0, columnspan=3, sticky="w", pady=4)
     buttons = ttk.Frame(frm)
@@ -1227,7 +1322,6 @@ def tools_tab(tabs, root, tk, ttk):
         if not saves:
             save_box.set("(no dynasty saves yet)")
     load_saves()
-    frm.bind("<Map>", load_saves)  # the list again each time the tab is shown
 
     def forget():
         if state.get("kind") == "game":
@@ -1238,6 +1332,10 @@ def tools_tab(tabs, root, tk, ttk):
 
     def show(records):
         tree.delete(*tree.get_children())
+        if records:
+            tree.grid()
+        else:
+            tree.grid_remove()
         for t, wn, ls in records:
             pw, pl = S.project(wn, ls)
             tree.insert("", "end", values=(t, f"{wn}-{ls}", f"{pw}-{pl}"))
@@ -1319,20 +1417,21 @@ def tools_tab(tabs, root, tk, ttk):
     find_b.configure(command=find)
     write_b.configure(command=write)
     how.trace_add("write", lambda *_: (forget(), show([]), say("")))
+    return load_saves  # the dynasty list again each time the tool is opened
 
 
 def updates_section(frm, root, tk, ttk, row):
     """Settings tab: this version, Check for updates, the check at start, and undoing the last update."""
     import updater
     ttk.Label(frm, text="Updates", font=("Segoe UI", 10, "bold")).grid(row=row, column=0, columnspan=3, sticky="w",
-                                                                      pady=(18, 4))
+                                                                      pady=(0, 4))
     line = ttk.Frame(frm)
     line.grid(row=row + 1, column=0, columnspan=3, sticky="w")
-    status = ttk.Label(frm, foreground="#555", wraplength=520, justify="left")
+    status = ttk.Label(frm, foreground="#555", wraplength=260, justify="left")
     status.grid(row=row + 3, column=0, columnspan=3, sticky="w", pady=(4, 0))
     auto = tk.BooleanVar(value=launcher_option(root, "check_updates", True))
-    ttk.Label(line, text=f"This is {GAME} {VERSION}.").pack(side="left")
-    ttk.Button(line, text="Check for updates",
+    ttk.Label(line, text=f"This is {VERSION}.").pack(side="left")
+    ttk.Button(line, text="Check now",
                command=lambda: check_for_update(frm.winfo_toplevel(), root, tk, ttk, status=status)).pack(
         side="left", padx=(12, 0))
     ttk.Checkbutton(frm, text="Check when the Launcher opens", variable=auto,
@@ -1446,13 +1545,11 @@ def update_window(w, root, tk, ttk, info):
     go.configure(command=start)
 
 
-def backups_tab(nb, root, tk, ttk, refresh_current):
+def backups_tab(frm, root, tk, ttk, refresh_current):
     from tkinter import messagebox
     import backups as B
     import settings as ST
 
-    frm = ttk.Frame(nb, padding=10)
-    nb.add(frm, text="Backups")
     ttk.Label(frm, wraplength=520, justify="left", text=(
         "A backup is made each time the game starts. Open a date and pick the save to restore. Click the date to "
         "restore every save from that date.")).grid(
@@ -1460,14 +1557,19 @@ def backups_tab(nb, root, tk, ttk, refresh_current):
     tree = ttk.Treeview(frm, columns=("state",), show="tree headings", height=10, selectmode="extended")
     tree.heading("#0", text="Backed up / save")
     tree.heading("state", text="Compared to current saves")
-    tree.column("#0", width=330, anchor="w")
-    tree.column("state", width=190, anchor="w")
+    tree.column("#0", width=370, anchor="w")
+    tree.column("state", width=200, anchor="w")
     tree.grid(row=2, column=0, sticky="we")
-    out = tk.Text(frm, width=72, height=4, state="disabled", wrap="word", relief="flat", background="#f4f4f4")
-    out.grid(row=4, column=0, pady=(8, 0))
+    frm.columnconfigure(0, weight=1)
+    empty = ttk.Label(frm, foreground="#666")
+    empty.grid(row=4, column=0, sticky="w", pady=(6, 0))
+    out = tk.Text(frm, width=10, height=3, state="disabled", wrap="word", relief="flat", background="#f4f4f4")
+    out.grid(row=5, column=0, sticky="we", pady=(6, 0))
+    out.grid_remove()  # shown once a restore has something to say
     rows = {}
 
     def say(t):
+        out.grid()
         out.configure(state="normal")
         out.insert("end", t + "\n")
         out.see("end")
@@ -1484,8 +1586,8 @@ def backups_tab(nb, root, tk, ttk, refresh_current):
             for s in b["items"]:
                 iid = tree.insert(parent, "end", text=s["name"], values=(s["state"],))
                 rows[iid] = ("save", b, s)
-        if not rows:
-            say("No backups yet: the game makes one when it starts, once you have saves.")
+        empty.configure(text="" if rows else "No backups yet: the game makes one when it starts, once you have "
+                                              "saves.")
 
     def do_restore():
         sel = [rows[i] for i in tree.selection()]
