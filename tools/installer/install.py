@@ -677,30 +677,35 @@ def saves_tab(tabs, root, tk, ttk):
     inner.grid(sticky="nwe")
     refresh_current = current_saves_tab(inner, root, tk, ttk)
     refresh_backups = backups_tab(inner, root, tk, ttk, refresh_current)
-    refresh_rosters = rosters_tab(inner, root, tk, ttk)
+    refresh_import = import_tab(inner, root, tk, ttk)
 
     def on_tab(_):  # each list as it is now when it's looked at
-        (refresh_current, refresh_backups, refresh_rosters)[inner.index("current")]()
+        (refresh_current, refresh_backups, refresh_import)[inner.index("current")]()
     inner.bind("<<NotebookTabChanged>>", on_tab)
 
 
-def rosters_tab(nb, root, tk, ttk):
-    """Import rosters: an MVP 2005 roster save from PS2, PC or another Xbox written into one of your Xbox roster
-    saves (backed up first). The conversion is Mad Dog's (MVP-Roster-Toolkit-Native), ported."""
+def import_tab(nb, root, tk, ttk):
+    """Import saves: a save from another MVP 2005 written into one of your saves here (backed up first), so it
+    plays in MVP05-Plus. Rosters from the PS2, PC or another Xbox (Mad Dog's conversion, from his MVP Roster
+    Toolkit); dynasties, owner mode ones too, from the GameCube (spy_jam's converter)."""
+    import dynasty05 as DY
     import rosters05 as RO
     import saves05 as S
     from tkinter import filedialog, messagebox
 
     frm = ttk.Frame(nb, padding=10)
-    nb.add(frm, text="Import rosters")
+    nb.add(frm, text="Import saves")
     ttk.Label(frm, wraplength=540, justify="left", text=(
-        "Bring in an MVP 2005 roster save from the PS2 (a .psu, or the Ps2.sav taken out of one), the PC (.sav) or "
-        "another Xbox (data.dat). It goes into one of your roster saves here, which is backed up first. Rosters "
-        "only: dynasties don't convert this way.")).grid(row=0, column=0, columnspan=3, sticky="w")
+        "Bring a save from another version of MVP 2005 into MVP05-Plus:\n"
+        "  \u2022  rosters from the PS2 (a .psu, or the Ps2.sav taken out of one), the PC (.sav) or another Xbox\n"
+        "  \u2022  a dynasty (owner mode too) from the GameCube: the .gci Dolphin exports\n"
+        "It goes into one of your saves of the same kind here, which is backed up first.")).grid(
+        row=0, column=0, columnspan=3, sticky="w")
     ttk.Label(frm, foreground="#666", wraplength=540, justify="left", text=(
-        "No roster save yet? In the game, save your rosters once, then pick that save below.")).grid(
+        "No save of that kind yet? In the game, save your rosters once, or start a dynasty and save it, then pick "
+        "that save below. A dynasty takes its name from the save it goes into.")).grid(
         row=1, column=0, columnspan=3, sticky="w", pady=(4, 10))
-    ttk.Label(frm, text="Roster save to bring in:").grid(row=2, column=0, sticky="w")
+    ttk.Label(frm, text="Save to bring in:").grid(row=2, column=0, sticky="w")
     src_text = ttk.Label(frm, text="(none picked)", foreground="#666", width=46)
     src_text.grid(row=2, column=1, sticky="w", padx=6)
     pick_b = ttk.Button(frm, text="Choose...")
@@ -710,26 +715,28 @@ def rosters_tab(nb, root, tk, ttk):
     box.grid(row=3, column=1, columnspan=2, sticky="w", padx=6, pady=(8, 0))
     note = ttk.Label(frm, wraplength=540, justify="left")
     note.grid(row=4, column=0, columnspan=3, sticky="w", pady=8)
-    go_b = ttk.Button(frm, text="Import the rosters", state="disabled")
+    go_b = ttk.Button(frm, text="Import", state="disabled")
     go_b.grid(row=5, column=2, sticky="e")
-    ttk.Label(frm, foreground="#888", text="Roster conversion: Mad Dog's MVP Roster Toolkit.").grid(
+    ttk.Label(frm, foreground="#888", justify="left", text=(
+        "Roster conversion: Mad Dog (MVP Roster Toolkit). GameCube dynasty conversion: spy_jam.")).grid(
         row=6, column=0, columnspan=3, sticky="w", pady=(10, 0))
     picked, targets = {}, []
+    kinds = {"roster": ("roster save", "rosters"), "dynasty": ("dynasty save", "dynasty")}
 
     def say(text, colour="#555"):
         note.configure(text=text, foreground=colour)
 
     def ready():
-        go_b.configure(state="normal" if picked.get("save") and targets and box.current() >= 0 else "disabled")
+        go_b.configure(state="normal" if picked.get("kind") and targets and box.current() >= 0 else "disabled")
 
     def refresh(*_):
-        old = box.get()
+        old, kind = box.get(), picked.get("kind")
         targets.clear()
         for s in S.list_saves(root):
-            p = os.path.join(s["folder"], "data.dat")
-            if os.path.getsize(p) != RO.XBOX_SAVE_SIZE:
-                continue  # dynasties and other saves are bigger
-            targets.append(s)
+            size = os.path.getsize(os.path.join(s["folder"], "data.dat"))
+            if (kind == "roster" and size == RO.XBOX_SAVE_SIZE) or \
+                    (kind == "dynasty" and size == DY.XB_DYNASTY_SIZE and s["type"] == "Dynasty"):
+                targets.append(s)
         labels = [f"{s['name']} ({when_text(s['when'])})" for s in targets]
         box.configure(values=labels)
         if old in labels:
@@ -737,51 +744,67 @@ def rosters_tab(nb, root, tk, ttk):
         elif labels:
             box.current(0)
         else:
-            box.set("(no roster saves yet)")
+            box.set(f"(no {kinds[kind][0]}s yet)" if kind else "(choose a save to bring in first)")
         ready()
 
     def pick():
-        p = filedialog.askopenfilename(parent=frm, title="An MVP 2005 roster save", filetypes=[
-            ("Roster saves", "*.psu *.sav *.dat"), ("All files", "*.*")])
+        p = filedialog.askopenfilename(parent=frm, title="A save from another MVP 2005", filetypes=[
+            ("MVP 2005 saves", "*.gci *.psu *.sav *.dat"), ("All files", "*.*")])
         if not p:
             return
         picked.clear()
         try:
             with open(p, "rb") as f:
-                save = RO.read(f.read())
-        except (OSError, RO.RosterError) as e:
+                data = f.read()
+            if data[:4] == b"GV4E":
+                meta = DY.read_gc(data)
+                picked.update(kind="dynasty", data=data, what=f"GameCube dynasty {meta['name']}")
+            else:
+                save = RO.read(data)
+                picked.update(kind="roster", save=save, what=f"{save.platform} rosters")
+        except (OSError, RO.RosterError, DY.DynastyError) as e:
             src_text.configure(text=os.path.basename(p), foreground="#a33")
             say(f"That file can't be brought in: {e}.", "#a33")
-            return ready()
-        picked.update(save=save, path=p)
-        src_text.configure(text=f"{os.path.basename(p)} ({save.platform})", foreground="")
-        say(f"A {save.platform} roster save. Pick the roster save to write it into, then import." if targets else
-            f"A {save.platform} roster save. Save your rosters in the game once, then come back to write it in.")
-        ready()
+            return refresh()
+        picked["path"] = p
+        src_text.configure(text=f"{os.path.basename(p)} ({picked['what']})", foreground="")
+        refresh()
+        what = kinds[picked["kind"]][0]
+        say(f"{picked['what'][0].upper() + picked['what'][1:]}. Pick the {what} to write it into, then import."
+            if targets else f"{picked['what'][0].upper() + picked['what'][1:]}. You have no {what} here yet: "
+            + ("save your rosters in the game once" if picked["kind"] == "roster" else
+               "start a dynasty in the game and save it") + ", then come back.")
 
     def go():
-        save, s = picked.get("save"), targets[box.current()] if box.current() >= 0 else None
-        if not save or not s:
+        kind, s = picked.get("kind"), targets[box.current()] if box.current() >= 0 else None
+        if not kind or not s:
             return
-        if not messagebox.askyesno("Import rosters", (
-                f"Replace the rosters in \"{s['name']}\" with the ones from {os.path.basename(picked['path'])}?\n\n"
-                "That save is backed up first (Saves > Backups)."), parent=frm):
+        if not messagebox.askyesno("Import", (
+                f"Replace the {kinds[kind][1]} in \"{s['name']}\" with {picked['what']} from "
+                f"{os.path.basename(picked['path'])}?\n\nThat save is backed up first (Saves > Backups)."),
+                parent=frm):
             return
         dat = os.path.join(s["folder"], "data.dat")
-        try:
-            if S.game_running():
-                raise RO.RosterError("close MVP05.exe first: the game keeps its saves open while it runs")
-            with open(dat, "rb") as f:
-                out = RO.to_xbox(save, f.read())
-            kept = S.backup_folder(root, s["folder"], "importing rosters")
-            with open(dat + ".new", "wb") as f:
-                f.write(out)
-            os.replace(dat + ".new", dat)
-        except (OSError, RO.RosterError) as e:
-            return say(f"Nothing was changed: {e}.", "#a33")
-        say(f"Imported into \"{s['name']}\". The save from before is in {os.path.relpath(kept, root)}. In the "
-            "game, load that roster save.", "#1a7f37")
-        refresh()
+        go_b.configure(state="disabled")
+        say("Converting...")
+
+        def work():
+            try:
+                if S.game_running():
+                    raise RO.RosterError("close MVP05.exe first: the game keeps its saves open while it runs")
+                with open(dat, "rb") as f:
+                    mine = f.read()
+                out = RO.to_xbox(picked["save"], mine) if kind == "roster" else DY.gc_to_xbox(picked["data"], mine)
+                kept = S.backup_folder(root, s["folder"], f"importing {kinds[kind][1]}")
+                with open(dat + ".new", "wb") as f:
+                    f.write(out)
+                os.replace(dat + ".new", dat)
+                msg = (f"Imported into \"{s['name']}\". The save from before is in {os.path.relpath(kept, root)}. "
+                       "In the game, load that save.", "#1a7f37")
+            except (OSError, RO.RosterError, DY.DynastyError) as e:
+                msg = (f"Nothing was changed: {e}.", "#a33")
+            frm.after(0, lambda: (say(*msg), refresh()))
+        threading.Thread(target=work, daemon=True).start()
 
     pick_b.configure(command=pick)
     go_b.configure(command=go)

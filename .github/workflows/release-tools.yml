@@ -24,7 +24,8 @@ jobs:
         run: >
           pyinstaller --onefile --windowed --name MVP05-Plus-Launcher
           --paths tools/installer --paths tools/gc_layout --paths tools/ps2_layout --paths tools/saves --paths tools/saves/mvp05/lib
-          --hidden-import make_icons --hidden-import make_ps2_icons --hidden-import backups --hidden-import settings --hidden-import title_icon --hidden-import shortcuts --hidden-import controllers --hidden-import updater --hidden-import gamepad_nav --hidden-import schedules --hidden-import saves05 --hidden-import rosters05 --hidden-import standings_mem --hidden-import standings_patcher --hidden-import containers --hidden-import gc_checksums
+          --hidden-import make_icons --hidden-import make_ps2_icons --hidden-import backups --hidden-import settings --hidden-import title_icon --hidden-import shortcuts --hidden-import controllers --hidden-import updater --hidden-import gamepad_nav --hidden-import schedules --hidden-import saves05 --hidden-import rosters05 --hidden-import standings_mem --hidden-import standings_patcher --hidden-import containers --hidden-import gc_checksums --hidden-import dynasty05 --hidden-import gc2xb_v0 --hidden-import xb2gc --hidden-import tablesconv --hidden-import postconv
+          --add-data "tools/saves/mvp05/lib/*.json;mvp05/lib"
           --collect-submodules iconlib
           tools/installer/install.py
       - uses: actions/upload-artifact@v4

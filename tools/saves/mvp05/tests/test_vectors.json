@@ -1,0 +1,118 @@
+{
+ "inputs": {
+  "mvp05/69-GV4E-Dynasty_KCR.dat.gci": {
+   "description": "your newer KC save (Royals, April 2007)",
+   "sha1": "d7acf4185ccf1328b1361b55b4a43c1acbe322ba"
+  },
+  "mvp05/69-GV4E-Dynasty_MATCHED.dat.gci": {
+   "description": "fresh Dodgers GameCube dynasty (GC template)",
+   "sha1": "68d92bd81158f6fefcee9a3105352fd8c4eb3fdb"
+  },
+  "mvp05/dodgers_template_data.dat": {
+   "description": "fresh Dodgers Xbox dynasty (the first data.dat you uploaded; Xbox template)",
+   "sha1": "1b19a4fb213c248fdff3dde0a1dbbe8ddd3e4479"
+  },
+  "mvp05/astros_2006_data.dat": {
+   "description": "native Xbox Astros dynasty, 2006 season (UDATA/45410056/6DB953F758F1 as uploaded Oct 26)",
+   "sha1": "a6fcb2ed636d466a2b70bbc5ddba425d6f6bd9d9"
+  },
+  "mvp06/SLUS-21367_MVP_06_Matched.psu": {
+   "description": "MVP 06 PS2 \"Matched\" fresh dynasty",
+   "sha1": "7eca88938126815d8ae227f932cb389d750f0ccc"
+  },
+  "mvp06/CF56F1B2E6CF/data.dat": {
+   "description": "MVP 06 Xbox \"Matched\" fresh dynasty (+ its SaveMeta.xbx/saveimage.xbx)",
+   "sha1": "a6521ff6e818db42930823964e48db7c09504f0b"
+  },
+  "mvp06/7F2226DFFF1E/data.dat": {
+   "description": "MVP 06 Xbox \"Dyna2\" progressed dynasty",
+   "sha1": "e49396e758dbd715d59d99900b94d8e463d1486a"
+  }
+ },
+ "cases": [
+  {
+   "id": "t1",
+   "game": "mvp05",
+   "direction": "gc-to-xbox",
+   "args": [
+    "mvp05/69-GV4E-Dynasty_KCR.dat.gci",
+    "mvp05/dodgers_template_data.dat",
+    "--name",
+    "STROS"
+   ],
+   "output": "data.dat",
+   "file_sha1": "6170bb1af2688b8101358d89f95570d40e4fa505",
+   "payload_sha1": "8334687f4deda3ab8ed634d764cbb44710e0a7c9",
+   "tested_in_game": "same payload as v16, loaded and played in the recomp"
+  },
+  {
+   "id": "t2",
+   "game": "mvp05",
+   "direction": "xbox-to-gc",
+   "args": [
+    "<t1 output data.dat>",
+    "mvp05/69-GV4E-Dynasty_KCR.dat.gci",
+    "--name",
+    "KCR"
+   ],
+   "output": "69-GV4E-Dynasty_KCR.dat.gci",
+   "file_sha1": "43fb02c111174fca5235f133da8ab856ce2276af",
+   "payload_sha1": "cd1af52b21e37c168e7b8a1a0eb7b08574372870",
+   "tested_in_game": "same payload as roundtrip_test, loaded in Dolphin"
+  },
+  {
+   "id": "t3",
+   "game": "mvp05",
+   "direction": "xbox-to-gc",
+   "args": [
+    "mvp05/astros_2006_data.dat",
+    "mvp05/69-GV4E-Dynasty_MATCHED.dat.gci",
+    "--name",
+    "STROS"
+   ],
+   "output": "69-GV4E-Dynasty_STROS.dat.gci",
+   "file_sha1": "daaf0990292cb501235854671b0115de18ff2b61",
+   "payload_sha1": "3189737bfa74e8f53d81e0ca80f4f9784bea89d2",
+   "tested_in_game": "identical file loaded in Dolphin"
+  },
+  {
+   "id": "t4",
+   "game": "mvp06",
+   "direction": "ps2-to-xbox",
+   "args": [
+    "mvp06/SLUS-21367_MVP_06_Matched.psu",
+    "mvp06/CF56F1B2E6CF/data.dat"
+   ],
+   "output": "data.dat",
+   "file_sha1": "984e1ce7eb9178ddc17702e22a2b6a18a64beb54",
+   "payload_sha1": "830c98aa661cb63cc2ef53e9fdc5493350f8227c",
+   "tested_in_game": "identical file loaded in the MVP 06 recomp"
+  },
+  {
+   "id": "t5",
+   "game": "mvp06",
+   "direction": "xbox-to-ps2",
+   "args": [
+    "mvp06/CF56F1B2E6CF/data.dat",
+    "mvp06/SLUS-21367_MVP_06_Matched.psu"
+   ],
+   "output": "SLUS-21367_MVP_06_Matched.psu",
+   "file_sha1": "5020084f10e2a1949ff485f3128fc820f4a03d4e",
+   "payload_sha1": "03628476c599809101c6355ad52e7428236f7315",
+   "tested_in_game": "identical file loaded in PCSX2"
+  },
+  {
+   "id": "t6",
+   "game": "mvp06",
+   "direction": "xbox-to-ps2",
+   "args": [
+    "mvp06/7F2226DFFF1E/data.dat",
+    "mvp06/SLUS-21367_MVP_06_Matched.psu"
+   ],
+   "output": "SLUS-21367_MVP_06_Matched.psu",
+   "file_sha1": "7038c9edf70672854f669e5c756e4a59ee127747",
+   "payload_sha1": "61f61c27b6e29737c220ac5cec7bf9e3130dd833",
+   "tested_in_game": "identical file loaded in PCSX2 (start of season; contents not fully compared)"
+  }
+ ]
+}
