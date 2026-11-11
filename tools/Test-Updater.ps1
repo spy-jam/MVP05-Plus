@@ -34,7 +34,7 @@ try {
     if (-not $vis) { Fail "$repo isn't there: run Make-Test-Release.cmd first" }
     if ($vis.Trim() -ne "PRIVATE") { Fail "$repo isn't private: this test only uses a private repository" }
     $draft = (& gh release view $tag --repo $repo --json isDraft --jq .isDraft 2>$null)
-    if (-not $draft) { Fail "there's no $tag release in $repo: run Make-Test-Release.cmd first" }
+    if (-not $draft) { Fail "there's no $tag release in ${repo}: run Make-Test-Release.cmd first" }
     if ($draft.Trim() -eq "true") {
         & gh release edit $tag --repo $repo --draft=false | Out-Null
         if ($LASTEXITCODE -ne 0) { Fail "couldn't publish $tag in $repo" }
@@ -46,7 +46,7 @@ try {
     Step "A copy to test in"
     $build = Join-Path $Downloads ("MVP05-Plus-" + ($Version -replace '\s', '-'))
     $launcher = Join-Path $build "MVP05-Plus-Launcher.exe"
-    if (-not (Test-Path $launcher)) { Fail "there's no test build in $build: run Make-Test-Release.cmd first" }
+    if (-not (Test-Path $launcher)) { Fail "there's no test build in ${build}: run Make-Test-Release.cmd first" }
     $test = Join-Path $Downloads "MVP05-Plus-updater-test"
     if (Test-Path $test) { Remove-Item $test -Recurse -Force }
     New-Item -ItemType Directory $test | Out-Null
