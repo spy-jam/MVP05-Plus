@@ -191,21 +191,46 @@ def merged_settings(new_text, old_values):
         shutil.rmtree(d, ignore_errors=True)
 
 
+def _put(dest, data, moved):
+    """data written as dest. A file Windows has open (the running Launcher, a DLL it loaded) can't be replaced, but
+    it can be renamed: it goes to dest.old (removed at the next start) and the new one takes its name."""
+    with open(dest + ".new", "wb") as f:
+        f.write(data)
+    try:
+        os.replace(dest + ".new", dest)
+    except PermissionError:
+        old = dest + ".old"
+        if os.path.exists(old):
+            os.remove(old)
+        os.replace(dest, old)
+        moved.append(dest)
+        os.replace(dest + ".new", dest)
+
+
+def _same(dest, data):
+    try:
+        return os.path.getsize(dest) == len(data) and open(dest, "rb").read() == data
+    except OSError:
+        return False
+
+
 def apply(root, files, version_from):
-    """The program files written; the ones replaced kept in .update/previous (one update back) to undo."""
+    """The program files written; the ones replaced kept in .update/previous (one update back) to undo. A file
+    that's the same in both versions is left alone."""
     import settings as ST
     if game_running():
         raise UpdateError("MVP05 is running: quit the game first")
     prev = os.path.join(root, WORK, "previous")
     shutil.rmtree(prev, ignore_errors=True)
     os.makedirs(prev)
-    me = own_exe()
-    written, added = [], []
+    written, added, moved = [], [], []
     try:
         for name, data in sorted(files.items()):
             dest = os.path.join(root, *name.split("/"))
             if name == SETTINGS and os.path.isfile(dest):
                 data = merged_settings(data.decode("utf-8"), ST.read(root)).encode("utf-8")
+            if _same(dest, data):
+                continue
             if os.path.isfile(dest):
                 keep = os.path.join(prev, *name.split("/"))
                 os.makedirs(os.path.dirname(keep), exist_ok=True)
@@ -214,29 +239,21 @@ def apply(root, files, version_from):
             else:
                 added.append(name)
             os.makedirs(os.path.dirname(dest), exist_ok=True)
-            if me and os.path.normcase(dest) == os.path.normcase(me):
-                # Windows won't overwrite a running .exe, but it can be renamed out of the way
-                old = dest + ".old"
-                if os.path.exists(old):
-                    os.remove(old)
-                os.replace(dest, old)
-            with open(dest + ".new", "wb") as f:
-                f.write(data)
-            os.replace(dest + ".new", dest)
+            _put(dest, data, moved)
     except OSError as e:
-        _restore(root, prev, written, added)
+        _restore(root, prev, written, added, moved)
         raise UpdateError(f"couldn't write the new files ({e}); nothing was changed")
     with open(os.path.join(prev, "update.json"), "w") as f:
         json.dump({"from": version_from, "replaced": written, "added": added}, f, indent=2)
 
 
-def _restore(root, prev, written, added):
-    me = own_exe()
+def _restore(root, prev, written, added, moved):
+    """A failed update undone: each file as it was (one that was moved aside gets its name back)."""
+    moved = {os.path.normcase(m) for m in moved}
     for name in written:
         dest = os.path.join(root, *name.split("/"))
         try:
-            if me and os.path.normcase(dest) == os.path.normcase(me) and os.path.exists(dest + ".old"):
-                # the new Launcher isn't running (this one is, renamed): drop it and take this one's name back
+            if os.path.normcase(dest) in moved and os.path.exists(dest + ".old"):
                 if os.path.exists(dest):
                     os.remove(dest)
                 os.replace(dest + ".old", dest)
@@ -268,7 +285,6 @@ def undo(root):
     if game_running():
         raise UpdateError("MVP05 is running: quit the game first")
     prev = os.path.join(root, WORK, "previous")
-    me = own_exe()
     files = {}
     for name in info["replaced"]:
         if name == SETTINGS:
@@ -277,14 +293,7 @@ def undo(root):
             files[name] = f.read()
     try:
         for name, data in files.items():
-            dest = os.path.join(root, *name.split("/"))
-            if me and os.path.normcase(dest) == os.path.normcase(me):
-                if os.path.exists(dest + ".old"):
-                    os.remove(dest + ".old")
-                os.replace(dest, dest + ".old")
-            with open(dest + ".new", "wb") as f:
-                f.write(data)
-            os.replace(dest + ".new", dest)
+            _put(os.path.join(root, *name.split("/")), data, [])
         for name in info["added"]:
             if name != SETTINGS:
                 try:
@@ -299,12 +308,13 @@ def undo(root):
 
 def tidy(root):
     """At start: the renamed old Launcher and a finished download removed."""
-    me = own_exe()
-    if me and os.path.exists(me + ".old"):
-        try:
-            os.remove(me + ".old")
-        except OSError:
-            pass  # still closing; next time
+    for d in (root, os.path.dirname(own_exe() or root)):  # files moved aside by an update, now closed
+        for n in os.listdir(d) if os.path.isdir(d) else ():
+            if n.endswith(".old"):
+                try:
+                    os.remove(os.path.join(d, n))
+                except OSError:
+                    pass  # still in use; next time
     w = os.path.join(root, WORK)
     for n in os.listdir(w) if os.path.isdir(w) else ():
         if n.endswith(".zip") or n.endswith(".part"):

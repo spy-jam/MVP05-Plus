@@ -94,13 +94,61 @@ try:
 except U.UpdateError as e:
     assert "damaged" in str(e)
 
-# the running Launcher: renamed out of the way, its name back on a failed write
+# files Windows has open (the running Launcher, a DLL it loaded) can't be replaced, only renamed: as on Windows
+real_replace = os.replace
+locked = set()
+
+
+def windows_replace(src, dst):
+    if os.path.normcase(dst) in locked and os.path.exists(dst):
+        raise PermissionError(5, "Access is denied", dst)
+    real_replace(src, dst)
+    if os.path.normcase(src) in locked:  # the open file went with its new name
+        locked.discard(os.path.normcase(src))
+        locked.add(os.path.normcase(dst))
+
+
+U.os.replace = windows_replace
 U.own_exe = lambda: os.path.join(root, U.LAUNCHER_EXE)
-release_zip(z, new)
+put(root, U.LAUNCHER_EXE, b"old launcher")
+put(root, "vcruntime140.dll", b"old dll")
+put(root, "msvcp140.dll", b"same dll")
+locked |= {os.path.normcase(os.path.join(root, n)) for n in (U.LAUNCHER_EXE, "vcruntime140.dll")}
+both = dict(new, **{"vcruntime140.dll": b"new dll", "msvcp140.dll": b"same dll"})
+release_zip(z, both)
 U.apply(root, U.verify(z), "Beta 1")
 assert get(root, U.LAUNCHER_EXE) == b"new launcher" and get(root, U.LAUNCHER_EXE + ".old") == b"old launcher"
+assert get(root, "vcruntime140.dll") == b"new dll" and get(root, "vcruntime140.dll.old") == b"old dll"
+assert "msvcp140.dll" not in U.last_update(root)["replaced"]  # the same in both: left alone
+locked.clear()  # the old Launcher closed
 U.tidy(root)
 assert not os.path.exists(os.path.join(root, U.LAUNCHER_EXE + ".old"))
+assert not os.path.exists(os.path.join(root, "vcruntime140.dll.old"))
+
+# a write failing part way: everything back as it was, the moved files under their own names again
+put(root, U.LAUNCHER_EXE, b"old launcher")
+put(root, "vcruntime140.dll", b"old dll")
+locked |= {os.path.normcase(os.path.join(root, n)) for n in (U.LAUNCHER_EXE, "vcruntime140.dll")}
+blocked = os.path.normcase(os.path.join(root, "README.md"))
+before = U.os.replace
+
+
+def failing_replace(src, dst):
+    if os.path.normcase(dst) == blocked:
+        raise OSError(28, "No space left on device", dst)
+    before(src, dst)
+
+
+U.os.replace = failing_replace
+release_zip(z, dict(both, **{"README.md": b"newer readme"}))
+try:
+    U.apply(root, U.verify(z), "Beta 1"); raise SystemExit("a failed write went through")
+except U.UpdateError as e:
+    assert "nothing was changed" in str(e)
+assert get(root, U.LAUNCHER_EXE) == b"old launcher" and get(root, "vcruntime140.dll") == b"old dll"
+assert not os.path.exists(os.path.join(root, "vcruntime140.dll.old"))
+U.os.replace = real_replace
+locked.clear()
 
 # check(): GitHub's answer read
 class R(io.BytesIO):
