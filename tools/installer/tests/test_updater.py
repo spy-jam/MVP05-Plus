@@ -38,11 +38,14 @@ put(root, "hdd/E/UDATA/x/save", b"save")
 
 new = {"MVP05.exe": b"new game", U.LAUNCHER_EXE: b"new launcher", "README.md": b"new readme",
        "NEW-FILE.txt": b"added", U.SETTINGS: b"# display\r\ndisplay_mode = \"fullscreen\"  # how\r\nwidth = 0\r\n"
-       b"save_backups = 30\r\nnew_option = true  # new\r\n"}
+       b"save_backups = 30\r\nnew_option = true  # new\r\n",
+       "assets/PUT-GAME-FILES-HERE.txt": b"in every release zip"}
 z = os.path.join(root, "rel.zip")
 release_zip(z, new)
 files = U.verify(z)
+assert "assets/PUT-GAME-FILES-HERE.txt" not in files  # checked, then left out: nothing goes into assets
 U.apply(root, files, "Beta 1")
+assert not os.path.exists(os.path.join(root, "assets", "PUT-GAME-FILES-HERE.txt"))
 assert get(root, "MVP05.exe") == b"new game" and get(root, "NEW-FILE.txt") == b"added"
 s = get(root, U.SETTINGS).decode()
 assert 'display_mode = "windowed"  # how' in s and "width = 1920" in s and "save_backups = 100" in s, s

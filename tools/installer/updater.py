@@ -36,6 +36,8 @@ WORK = ".update"  # in the game folder: the download, and the files the last upd
 # yours, never written by an update (a release zip holding any of these is refused)
 PROTECTED = ("assets", "hdd", "save backups", "gc_icons", "ps2_icons", "shader_cache", "logs", WORK,
              "schedules/original", "schedules/imported", "schedules/current.json")
+# in every release zip, but nothing an update needs: checked against the manifest like the rest, then left out
+SKIP = ("assets/PUT-GAME-FILES-HERE.txt",)
 
 
 class UpdateError(Exception):
@@ -142,12 +144,14 @@ def verify(zip_path):
                 raise UpdateError("the zip's files don't match its manifest")
             out = {}
             for n in names:
-                if not _safe(n):
+                skip = n in SKIP
+                if not skip and not _safe(n):
                     raise UpdateError(f"the zip has a file it mustn't: {n}")
                 data = z.read(n)
                 if hashlib.sha256(data).hexdigest() != manifest[n]:
                     raise UpdateError(f"{n} in the download is damaged")
-                out[n] = data
+                if not skip:
+                    out[n] = data
     except (zipfile.BadZipFile, KeyError, ValueError) as e:
         raise UpdateError(f"the download isn't a release zip ({e})")
     if GAME_EXE not in out or LAUNCHER_EXE not in out:
