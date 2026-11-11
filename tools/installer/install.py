@@ -682,7 +682,7 @@ def open_in_explorer(path):
 
 
 def saves_tab(tabs, root, tk, ttk):
-    """Saves: your saves, or the backups of them, one switch apart."""
+    """Saves: your saves, their backups, or a save from another MVP 2005 brought in, one switch apart."""
     outer = ttk.Frame(tabs, padding=12)
     tabs.add(outer, text="Saves")
     head = ttk.Frame(outer)
@@ -692,10 +692,11 @@ def saves_tab(tabs, root, tk, ttk):
     view = tk.StringVar(value="saves")
     switch = ttk.Frame(head)
     switch.pack(side="right")
-    pages = {"saves": ttk.Frame(outer), "backups": ttk.Frame(outer)}
+    pages = {"saves": ttk.Frame(outer), "backups": ttk.Frame(outer), "import": ttk.Frame(outer)}
     refresh_current = current_saves_tab(pages["saves"], root, tk, ttk)
     refresh_backups = backups_tab(pages["backups"], root, tk, ttk, refresh_current)
-    refresh = {"saves": refresh_current, "backups": refresh_backups}
+    refresh_import = import_tool(pages["import"], root, tk, ttk)
+    refresh = {"saves": refresh_current, "backups": refresh_backups, "import": refresh_import}
 
     def show(*_):
         for k, f in pages.items():
@@ -704,7 +705,7 @@ def saves_tab(tabs, root, tk, ttk):
             else:
                 f.grid_remove()
         refresh[view.get()]()  # each list as it is now when it's looked at
-    for value, text in (("saves", "Your saves"), ("backups", "Backups")):
+    for value, text in (("saves", "Your saves"), ("backups", "Backups"), ("import", "Import")):
         ttk.Radiobutton(switch, text=text, value=value, variable=view, style="Toolbutton", command=show).pack(
             side="left")
     show()
@@ -721,8 +722,6 @@ def import_tool(frm, root, tk, ttk):
     from tkinter import filedialog, messagebox
 
     frm.columnconfigure(1, weight=1)
-    ttk.Label(frm, text="Import a save", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=2,
-                                                                            sticky="w")
     ttk.Label(frm, foreground="#666", wraplength=540, justify="left", text=(
         "Brings a save from another version of MVP 2005 into this one. It works with:\n"
         "\u2022  rosters from the PS2 (a .psu, or the Ps2.sav inside one), the PC (.sav) or another Xbox\n"
@@ -967,7 +966,7 @@ def settings_tab(tabs, root, tk, ttk):
     x720_box = ttk.Checkbutton(frm, text="Xbox 720p mode (as on an Xbox console with 720p enabled in the dashboard)",
                                variable=x720)
     x720_box.grid(row=9, column=0, columnspan=3, sticky="w")
-    ttk.Checkbutton(frm, text="Low latency (less delay between a button and the screen; off if the game stutters)",
+    ttk.Checkbutton(frm, text="Low latency (1 frame queued for the screen, not 3: less input delay, may stutter)",
                     variable=low_latency).grid(row=10, column=0, columnspan=3, sticky="w")
     note = ttk.Label(frm, text="", wraplength=560, justify="left")
     note.grid(row=12, column=0, columnspan=3, sticky="w", pady=(6, 0))
@@ -1036,7 +1035,7 @@ def settings_tab(tabs, root, tk, ttk):
         fps.set(name_of(fps_names, s["fps_cap"]))
         aniso.set(name_of(aniso_names, s["anisotropic_filtering"]))
         vsync.set(bool(s["vsync"]))
-        low_latency.set(bool(s.get("low_latency", True)))
+        low_latency.set(bool(s.get("low_latency", False)))
         wide_720[0] = bool(s["xbox_720p"]) if aspect.get() == WIDE else True
         x720.set(wide_720[0] if aspect.get() == WIDE else False)
 
@@ -1226,8 +1225,6 @@ def tools_tab(tabs, root, tk, ttk):
         ("Short season advancer", "For seasons shorter than 162 games: at the end of the regular season, the standings "
          "are made 162 games long so the season can go on to the playoffs. Every team keeps its winning percentage.",
          short_season_tool),
-        ("Import a save", "Brings a save from another version of MVP 2005 into this one: rosters from the PS2, PC "
-         "or another Xbox, or a dynasty (owner mode too) from the GameCube.", import_tool),
     ]
     pages = {}
 
