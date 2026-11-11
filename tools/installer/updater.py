@@ -17,10 +17,14 @@ import re
 import shutil
 import subprocess
 import sys
+import urllib.parse
 import urllib.request
 import zipfile
 
-REPO = "spy-jam/MVP05-Plus"
+# For testing an update before it's public (Test-Updater.cmd sets these; players never do): another repository,
+# a private one read with a GitHub token
+REPO = os.environ.get("MVP05_UPDATE_REPO") or "spy-jam/MVP05-Plus"
+TOKEN = os.environ.get("MVP05_UPDATE_TOKEN") or ""
 RELEASES = f"https://api.github.com/repos/{REPO}/releases?per_page=20"  # betas are pre-releases, which /latest skips
 PAGE = f"https://github.com/{REPO}/releases/latest"
 AGENT = "MVP05-Plus-Launcher"
@@ -50,9 +54,23 @@ def newer(latest, current):
     return version_key(latest) > version_key(current)
 
 
-def _get(url, timeout=15):
-    req = urllib.request.Request(url, headers={"User-Agent": AGENT, "Accept": "application/vnd.github+json"})
-    return urllib.request.urlopen(req, timeout=timeout)
+class _DropAuthOnRedirect(urllib.request.HTTPRedirectHandler):
+    """A private release's download goes from GitHub to its file host, which refuses GitHub's token."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        new = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if new is not None and urllib.parse.urlparse(newurl).hostname != urllib.parse.urlparse(req.full_url).hostname:
+            new.headers.pop("Authorization", None)
+            new.unredirected_hdrs.pop("Authorization", None)
+        return new
+
+
+def _get(url, timeout=15, accept="application/vnd.github+json"):
+    headers = {"User-Agent": AGENT, "Accept": accept}
+    if TOKEN and urllib.parse.urlparse(url).hostname == "api.github.com":
+        headers["Authorization"] = f"Bearer {TOKEN}"
+    req = urllib.request.Request(url, headers=headers)
+    return urllib.request.build_opener(_DropAuthOnRedirect).open(req, timeout=timeout)
 
 
 def check(current):
@@ -76,8 +94,9 @@ def check(current):
     if not zips:
         raise UpdateError(f"{version} has no MVP05-Plus zip to download")
     a = zips[0]
+    # a private repository's files come through the API, with the token
     return {"version": version, "tag": rel.get("tag_name", ""), "notes": rel.get("body") or "",
-            "url": a["browser_download_url"], "size": a.get("size", 0), "name": a["name"],
+            "url": a["url"] if TOKEN else a["browser_download_url"], "size": a.get("size", 0), "name": a["name"],
             "page": rel.get("html_url") or PAGE}
 
 
@@ -87,7 +106,7 @@ def download(root, info, progress=None):
     dest = os.path.join(root, WORK, info["name"])
     part = dest + ".part"
     try:
-        with _get(info["url"], timeout=60) as r, open(part, "wb") as f:
+        with _get(info["url"], timeout=60, accept="application/octet-stream") as r, open(part, "wb") as f:
             total = int(r.headers.get("Content-Length") or info.get("size") or 0)
             done = 0
             while True:
@@ -295,4 +314,6 @@ def restart():
     """The (new) Launcher started again; the caller then closes."""
     me = own_exe()
     args = [me] if me else [sys.executable, os.path.abspath(sys.argv[0])]
-    subprocess.Popen(args, close_fds=True)
+    env = dict(os.environ)
+    env.pop("MVP05_TEST_VERSION", None)  # a test: the new Launcher is the version it says it is
+    subprocess.Popen(args, close_fds=True, env=env)
