@@ -262,6 +262,8 @@ try {
             if (Test-Path (Join-Path $repo $n)) { Copy-Item (Join-Path $repo $n) $pack }
         }
         Copy-Item (Join-Path $repo "assets\PUT-GAME-FILES-HERE.txt") (Join-Path $pack "assets")
+        # the Schedule tab's schedules (never schedules\original: that's the player's own, made by the Launcher)
+        Copy-Item (Join-Path $repo "tools\schedules") (Join-Path $pack "schedules") -Recurse
         $m = [ordered]@{}
         Get-ChildItem $pack -Recurse -File | Sort-Object FullName | ForEach-Object {
             $m[$_.FullName.Substring($pack.Length + 1).Replace('\', '/')] = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
