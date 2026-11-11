@@ -434,7 +434,8 @@ def gui(root):
     ready = ttk.Frame(tab)
     ttk.Label(ready, text=f"{GAME} is installed", font=("Segoe UI", 12, "bold")).grid(
         row=0, column=0, columnspan=2, sticky="w")
-    ttk.Label(ready, text=root, foreground="#555").grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 10))
+    ttk.Label(ready, text=root, foreground="#555", wraplength=400, justify="left").grid(
+        row=1, column=0, columnspan=2, sticky="w", pady=(0, 10))
     lines = {}
     for i, (k, label) in enumerate((("xbox", "Xbox game"), ("gamecube", "GameCube button art"),
                                     ("ps2", "PS2 button art"))):
@@ -442,8 +443,26 @@ def gui(root):
         text = ttk.Label(ready)
         text.grid(row=2 + i, column=0, columnspan=2, sticky="w", pady=1)
         lines[k] = (mark, text, label)
+    # the game's own title art from your Xbox disc (default.xbe's title image), in the top right corner
+    art = ttk.Label(ready)
+    art.grid(row=0, column=2, rowspan=6, sticky="ne", padx=(12, 0))
+    ready.columnconfigure(1, weight=1)
+
+    def show_art():
+        if getattr(art, "picture", None):
+            return
+        try:
+            import base64
+            with open(os.path.join(root, "assets", "default.xbe"), "rb") as f:
+                im = title_icon.title_image(f.read())
+            buf = io.BytesIO()
+            im.save(buf, format="PNG")
+            art.picture = tk.PhotoImage(data=base64.b64encode(buf.getvalue()))
+            art.configure(image=art.picture)
+        except Exception:  # no picture is fine: the rest of the tab is as it was
+            pass
     rb = ttk.Frame(ready)
-    rb.grid(row=6, column=0, columnspan=2, sticky="we", pady=(16, 0))
+    rb.grid(row=6, column=0, columnspan=3, sticky="we", pady=(16, 0))
     launch = ttk.Button(rb, text="Launch MVP 05")
     launch.pack(side="left", ipadx=18, ipady=6)
     change = ttk.Button(rb, text="Add or change button art, or reinstall…")
@@ -552,7 +571,9 @@ def gui(root):
                 good = r[k].startswith("installed")
                 text.configure(text=f"{label}: {r[k]}", foreground="#1a7f37" if good else "#777")
             frm.grid_remove()
-            ready.grid(row=0, column=0, sticky="nw")
+            ready.grid(row=0, column=0, sticky="nwe")
+            tab.columnconfigure(0, weight=1)
+            show_art()
             back.pack(side="left")
             labels["xbox"].configure(text="Xbox disc (installed: leave empty, or choose one to install again)")
         else:
@@ -1176,7 +1197,7 @@ def schedule_tab(tabs, root, tk, ttk):
     ttk.Label(frm, text="Season schedule", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, sticky="w")
     ttk.Label(frm, foreground="#666", wraplength=600, justify="left", text=(
         "The game takes the schedule when a season goes from spring training to the regular season: a season "
-        "that's already started keeps its own. A season shorter than 162 games needs the Short season advancer after "
+        "that's already started keeps its own. A season shorter than 162 games needs the Short Season Advancer after "
         "its last regular season game (the Tools tab, or F10 in the game), or it stops there.")).grid(
         row=1, column=0, sticky="w", pady=(0, 8))
     have = ttk.Label(frm, font=("Segoe UI", 9, "bold"))
@@ -1235,11 +1256,11 @@ def schedule_tab(tabs, root, tk, ttk):
         except (SCH.ScheduleError, OSError) as e:
             note.configure(text=f"Not changed: {e}", foreground="#a33")
             return
-        ST.write(root, {"season_games": games})  # the Short season advancer's season length
+        ST.write(root, {"season_games": games})  # the Short Season Advancer's season length
         note.configure(foreground="#1a7f37", text=(
             f"Done: new seasons play {games} games." + (" The Launcher deals a new shuffle every time it starts "
             "the game." if sid == SCH.SHUFFLED else "" if games == 162 else
-            " At the end of each regular season, run the Short season advancer (Tools tab, or F10 in the game).")))
+            " At the end of each regular season, run the Short Season Advancer (Tools tab, or F10 in the game).")))
         refresh()
     use.configure(command=go)
 
@@ -1254,10 +1275,10 @@ def tools_tab(tabs, root, tk, ttk):
     ttk.Label(home, text="Tools", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=2, sticky="w")
     ttk.Label(home, foreground="#666", wraplength=560, justify="left", text=(
         "Pick a tool to open it. In the game, F10 (or hold Back + Start, Z + Start on a GameCube controller) opens "
-        "the game's own Tools menu, which has the Short season advancer too.")).grid(
+        "the game's own Tools menu, which has the Short Season Advancer too.")).grid(
         row=1, column=0, columnspan=2, sticky="w", pady=(0, 10))
     tools = [
-        ("Short season advancer", "For seasons shorter than 162 games: at the end of the regular season, the standings "
+        ("Short Season Advancer", "For seasons shorter than 162 games: at the end of the regular season, the standings "
          "are made 162 games long so the season can go on to the playoffs. Every team keeps its winning percentage.",
          short_season_tool),
     ]
@@ -1308,7 +1329,7 @@ def short_season_tool(frm, root, tk, ttk):
     import settings as ST
     from tkinter import messagebox
 
-    ttk.Label(frm, text="Short season advancer", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=3, sticky="w")
+    ttk.Label(frm, text="Short Season Advancer", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=3, sticky="w")
     ttk.Label(frm, foreground="#666", wraplength=560, justify="left", text=(
         "A season shorter than 162 games stops at the end of the regular season until the standings are made "
         "162 games long. This keeps every team's winning percentage. In the game, F10 (or Back + Start) opens the "
@@ -1378,7 +1399,7 @@ def short_season_tool(frm, root, tk, ttk):
         except ValueError:
             n = 0
         if not 1 <= n <= 162:
-            messagebox.showinfo("Short season advancer", "Enter how many games the season has (1 to 162).", parent=frm)
+            messagebox.showinfo("Short Season Advancer", "Enter how many games the season has (1 to 162).", parent=frm)
             return None
         return n
 
