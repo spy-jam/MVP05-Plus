@@ -11,12 +11,17 @@ put back for the original 162-game schedule.
 import hashlib
 import json
 import os
+import random
 import shutil
 import struct
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SEASON_FILES = ("mlb162_1.dat", "mlb162_2.dat", "mlb162_3.dat")
 ORIGINAL = "162"
+SHUFFLED = "162s"  # the game's own, its teams dealt new slates within their divisions: made here, every launch
+# 2005's divisions, as the schedules name the teams
+DIVISIONS = {"AL East": "Bal Bos NYY TB Tor", "AL Central": "CWS Cle Det KC Min", "AL West": "Ana Oak Sea Tex",
+             "NL East": "Atl Fla NYM Phi Was", "NL Central": "ChC Cin Hou Mil Pit StL", "NL West": "Ari Col LA SD SF"}
 
 
 class ScheduleError(Exception):
@@ -31,7 +36,7 @@ def catalog(root):
             with open(p, encoding="utf-8") as f:
                 out = json.load(f)
             for s in out:
-                s["folder"] = os.path.join(base, s["id"])
+                s["folder"] = None if s.get("shuffle") else os.path.join(base, s["id"])
             return out
     return [{"id": ORIGINAL, "name": "162 games (the original)", "games": 162, "kind": "original", "about": "",
              "folder": None}]
@@ -49,6 +54,10 @@ def find_big(root):
 
 def original_copy(root):
     return os.path.join(root, "schedules", "original", "schedule.big")
+
+
+def _marker(root):
+    return os.path.join(root, "schedules", "current.json")  # which schedule the Launcher last wrote, by digest
 
 
 # --- the BIG archive and EA's RefPack compression its files are in
@@ -170,6 +179,34 @@ def _digest(texts):
     return hashlib.sha1(b"".join(texts)).hexdigest()
 
 
+def shuffled(text, rng):
+    """A season file with the teams of each division dealt one another's slates at random: every game, date, start
+    time and half stays where it is, only the team names move. Each team ends up with a division rival's 81 home
+    games and its division, league and interleague games; the order of who it plays when is new."""
+    lines = text.decode("latin-1").split("\n")
+    deal = {}
+    for teams in DIVISIONS.values():
+        teams = teams.split()
+        dealt = teams[:]
+        rng.shuffle(dealt)
+        deal.update(zip(teams, dealt))
+    seen = set()
+    for i, line in enumerate(lines[1:], 1):
+        f = line.split(",")
+        if len(f) < 5 or not f[0].strip() or f[2].strip() in ("AL", "NL"):
+            continue
+        for c in (2, 3):
+            name = f[c].strip()
+            if name not in deal:
+                raise ScheduleError(f"the schedule has a team this doesn't know ({name})")
+            seen.add(name)
+            f[c] = f[c].replace(name, deal[name])
+        lines[i] = ",".join(f)
+    if len(seen) != len(deal):
+        raise ScheduleError("the schedule doesn't have all 30 teams")
+    return "\n".join(lines).encode("latin-1")
+
+
 def current(root):
     """The schedule the installed game has: a catalog id, ORIGINAL, or None (another one, or not installed)."""
     big = find_big(root)
@@ -182,8 +219,15 @@ def current(root):
     except (OSError, KeyError, ScheduleError):
         return None
     d = _digest(texts)
+    try:
+        with open(_marker(root)) as f:
+            m = json.load(f)
+        if m.get("digest") == d and m.get("id"):
+            return m["id"]
+    except (OSError, ValueError):
+        pass
     for s in catalog(root):
-        if s["id"] != ORIGINAL and s.get("folder") and os.path.isdir(s["folder"]):
+        if s["id"] != ORIGINAL and not s.get("shuffle") and s.get("folder") and os.path.isdir(s["folder"]):
             try:
                 if _digest(season_files(s)) == d:
                     return s["id"]
@@ -200,8 +244,9 @@ def current(root):
     return ORIGINAL if set(games_per_team(texts[0]).values()) == {162} else None
 
 
-def apply(root, schedule_id):
-    """The schedule swapped into the game's schedule.big; the game's own kept first. Returns its games per team."""
+def apply(root, schedule_id, seed=None):
+    """The schedule swapped into the game's schedule.big; the game's own kept first. Returns its games per team.
+    The shuffled one is dealt anew each time (seed: the same deal again, for tests)."""
     big = find_big(root)
     if not big:
         raise ScheduleError("the game isn't installed yet (no schedule.big in assets)")
@@ -215,16 +260,22 @@ def apply(root, schedule_id):
     entry = next((s for s in catalog(root) if s["id"] == schedule_id), None)
     if entry is None:
         raise ScheduleError(f"there's no schedule {schedule_id}")
+    with open(orig, "rb") as f:
+        base = read_big(f.read())
     if schedule_id == ORIGINAL:
         data = open(orig, "rb").read()
+        texts = None
     else:
-        texts = season_files(entry)
+        if entry.get("shuffle"):
+            have = dict(base)
+            rng = random.Random(seed)
+            texts = [shuffled(unpacked(have[n]), rng) for n in SEASON_FILES]
+        else:
+            texts = season_files(entry)
         for t in texts:
             g = set(games_per_team(t).values())
             if g != {entry["games"]}:
                 raise ScheduleError(f"{entry['name']}'s files don't give every team {entry['games']} games")
-        with open(orig, "rb") as f:
-            base = read_big(f.read())
         swap = dict(zip(SEASON_FILES, texts))
         data = write_big([(n, refpack(swap[n]) if n in swap else d) for n, d in base])
         check = dict(read_big(data))
@@ -233,4 +284,12 @@ def apply(root, schedule_id):
     with open(big + ".new", "wb") as f:
         f.write(data)
     os.replace(big + ".new", big)
+    try:
+        if texts is None:
+            os.remove(_marker(root))
+        else:
+            with open(_marker(root), "w") as f:
+                json.dump({"id": schedule_id, "digest": _digest(texts)}, f)
+    except OSError:
+        pass
     return entry["games"]

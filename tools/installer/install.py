@@ -195,6 +195,17 @@ def set_launcher_option(root, key, value):
         json.dump(data, f, indent=2)
 
 
+def reshuffle(root):
+    """The shuffled 162-game schedule dealt anew before the game starts, if it's the one chosen. A season already
+    under way keeps the schedule it started with, so this only changes seasons still to come."""
+    try:
+        import schedules as SCH
+        if SCH.current(root) == SCH.SHUFFLED:
+            SCH.apply(root, SCH.SHUFFLED)
+    except Exception as e:  # never in the way of starting the game
+        print(f"schedule: not reshuffled ({e})")
+
+
 def check_install(root):
     """What's installed, for the window: {exe, xbox, xbox_ok, gamecube, ps2} (texts; xbox_ok True when playable)."""
     assets = os.path.join(root, "assets")
@@ -596,6 +607,7 @@ def gui(root):
         exe = os.path.join(root, "MVP05.exe")
         import gamepad_nav
         gamepad_nav.release()  # the GameCube adapter, if the Launcher was reading it: the game needs it
+        reshuffle(root)  # the shuffled schedule, if chosen: a new deal for the seasons to come
         try:
             game = subprocess.Popen([exe], cwd=root, close_fds=True)
         except OSError as e:
@@ -1095,7 +1107,8 @@ def schedule_tab(tabs, root, tk, ttk):
     have = ttk.Label(frm, font=("Segoe UI", 9, "bold"))
     have.grid(row=2, column=0, sticky="w", pady=(0, 6))
     cat = SCH.catalog(root)
-    kinds = {"original": "default, MVP 2005 disc", "mvp2004": "from the MVP 2004 disc", "custom": "made for MVP05-Plus"}
+    kinds = {"original": "default, MVP 2005 disc", "mvp2004": "from the MVP 2004 disc", "custom": "made for MVP05-Plus",
+             "shuffled": "MVP 2005 disc, reshuffled each season"}
     label = {e["id"]: f"{e['name']}  ({kinds.get(e['kind'], e['kind'])})" for e in cat}
     by_label = {v: k for k, v in label.items()}
     pick = tk.StringVar()
@@ -1149,7 +1162,8 @@ def schedule_tab(tabs, root, tk, ttk):
             return
         ST.write(root, {"season_games": games})  # the Short season tools' season length
         note.configure(foreground="#1a7f37", text=(
-            f"Done: new seasons play {games} games." + ("" if games == 162 else
+            f"Done: new seasons play {games} games." + (" The Launcher deals a new shuffle every time it starts "
+            "the game." if sid == SCH.SHUFFLED else "" if games == 162 else
             " At the end of each regular season, run Short season (Tools tab, or F10 in the game).")))
         refresh()
     use.configure(command=go)

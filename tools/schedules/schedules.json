@@ -8,6 +8,15 @@
     "short": "Default schedule from the MVP 2005 disc: the real 2005 season."
   },
   {
+    "id": "162s",
+    "name": "162 games, shuffled",
+    "games": 162,
+    "kind": "shuffled",
+    "shuffle": true,
+    "about": "The MVP 2005 disc's own three seasons, with the teams in each division dealt one another's schedules at random. Every game date, start time and the All-Star break stay put; each team plays a division rival's season, so it keeps 81 home games and the same number of division, league and interleague games, against opponents in a new order. Interleague rivalry series land wherever the deal puts them. The Launcher deals a new shuffle every time it starts the game, so each new season is different; a season already under way keeps the schedule it started with.",
+    "short": "Default 162 games, shuffled within each division: same home and away, division and interleague games, in a new order. A new shuffle every time the Launcher starts the game."
+  },
+  {
     "id": "64",
     "name": "64 games",
     "games": 64,
