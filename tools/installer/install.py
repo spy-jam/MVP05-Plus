@@ -682,7 +682,7 @@ def open_in_explorer(path):
 
 
 def saves_tab(tabs, root, tk, ttk):
-    """Saves: your saves, their backups, or a save from another MVP 2005 brought in, one switch apart."""
+    """Saves: your saves or their backups, one switch apart. Import a save opens from your saves."""
     outer = ttk.Frame(tabs, padding=12)
     tabs.add(outer, text="Saves")
     head = ttk.Frame(outer)
@@ -692,11 +692,10 @@ def saves_tab(tabs, root, tk, ttk):
     view = tk.StringVar(value="saves")
     switch = ttk.Frame(head)
     switch.pack(side="right")
-    pages = {"saves": ttk.Frame(outer), "backups": ttk.Frame(outer), "import": ttk.Frame(outer)}
+    pages = {"saves": ttk.Frame(outer), "backups": ttk.Frame(outer)}
     refresh_current = current_saves_tab(pages["saves"], root, tk, ttk)
     refresh_backups = backups_tab(pages["backups"], root, tk, ttk, refresh_current)
-    refresh_import = import_tool(pages["import"], root, tk, ttk)
-    refresh = {"saves": refresh_current, "backups": refresh_backups, "import": refresh_import}
+    refresh = {"saves": refresh_current, "backups": refresh_backups}
 
     def show(*_):
         for k, f in pages.items():
@@ -705,11 +704,45 @@ def saves_tab(tabs, root, tk, ttk):
             else:
                 f.grid_remove()
         refresh[view.get()]()  # each list as it is now when it's looked at
-    for value, text in (("saves", "Your saves"), ("backups", "Backups"), ("import", "Import")):
+    for value, text in (("saves", "Your saves"), ("backups", "Backups")):
         ttk.Radiobutton(switch, text=text, value=value, variable=view, style="Toolbutton", command=show).pack(
             side="left")
     show()
     outer.bind("<Map>", lambda _: refresh[view.get()]())
+
+
+def import_window(parent, root, tk, ttk, on_close=None):
+    """Import a save, in a window of its own over the Launcher; your saves listed again when it closes."""
+    w = parent.winfo_toplevel()
+    for c in w.winfo_children():  # one at a time
+        if isinstance(c, tk.Toplevel) and getattr(c, "_import", False):
+            c.lift()
+            return
+    win = tk.Toplevel(w)
+    win._import = True
+    win.title("Import a save")
+    win.transient(w)
+    win.resizable(False, False)
+    f = ttk.Frame(win, padding=14)
+    f.grid()
+    ttk.Label(f, text="Import a save", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, sticky="w",
+                                                                          pady=(0, 2))
+    body = ttk.Frame(f)
+    body.grid(row=1, column=0, sticky="nwe")
+    import_tool(body, root, tk, ttk)
+    bar = ttk.Frame(f)
+    bar.grid(row=2, column=0, sticky="e", pady=(12, 0))
+
+    def close():
+        win.destroy()
+        if on_close:
+            on_close()
+    ttk.Button(bar, text="Close", command=close).pack(side="right")
+    win.protocol("WM_DELETE_WINDOW", close)
+    win.update_idletasks()  # centred over the Launcher
+    x = w.winfo_rootx() + (w.winfo_width() - win.winfo_width()) // 2
+    y = w.winfo_rooty() + (w.winfo_height() - win.winfo_height()) // 3
+    win.geometry(f"+{max(x, 0)}+{max(y, 0)}")
 
 
 def import_tool(frm, root, tk, ttk):
@@ -892,6 +925,8 @@ def current_saves_tab(frm, root, tk, ttk):
 
     bar = ttk.Frame(frm)
     bar.grid(row=2, column=0, sticky="we", pady=(8, 0))
+    ttk.Button(bar, text="Import a save\u2026", command=lambda: import_window(frm, root, tk, ttk, refresh)).pack(
+        side="left")
     ttk.Button(bar, text="Open saves folder",
                command=lambda: open_in_explorer(os.path.join(root, "hdd", B.TITLE_UDATA))).pack(side="right")
     ttk.Button(bar, text="Refresh", command=refresh).pack(side="right", padx=6)
