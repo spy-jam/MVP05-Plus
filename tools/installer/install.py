@@ -1187,7 +1187,8 @@ def settings_tab(tabs, root, tk, ttk):
 
 
 def schedule_tab(tabs, root, tk, ttk):
-    """The season schedule the game uses: its own 162 games, MVP 2004's shorter ones, or ones made for Plus."""
+    """The season schedule the game uses: its own 162 games, MVP 2004's shorter ones, ones made for Plus, or one you
+    imported from any version of MVP 2005."""
     import schedules as SCH
     import settings as ST
     from tkinter import messagebox
@@ -1195,22 +1196,29 @@ def schedule_tab(tabs, root, tk, ttk):
     frm = ttk.Frame(tabs, padding=12)
     tabs.add(frm, text="Schedule")
     ttk.Label(frm, text="Season schedule", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, sticky="w")
-    ttk.Label(frm, foreground="#666", wraplength=600, justify="left", text=(
+    ttk.Label(frm, foreground="#666", wraplength=560, justify="left", text=(
         "The game takes the schedule when a season goes from spring training to the regular season: a season "
         "that's already started keeps its own. A season shorter than 162 games needs the Short Season Advancer after "
         "its last regular season game (the Tools tab, or F10 in the game), or it stops there.")).grid(
         row=1, column=0, sticky="w", pady=(0, 8))
     have = ttk.Label(frm, font=("Segoe UI", 9, "bold"))
     have.grid(row=2, column=0, sticky="w", pady=(0, 6))
-    cat = SCH.catalog(root)
     kinds = {"original": "default, MVP 2005 disc", "mvp2004": "from the MVP 2004 disc", "custom": "made for MVP05-Plus",
-             "shuffled": "MVP 2005 disc, reshuffled each season"}
-    label = {e["id"]: f"{e['name']}  ({kinds.get(e['kind'], e['kind'])})" for e in cat}
-    by_label = {v: k for k, v in label.items()}
+             "shuffled": "MVP 2005 disc, reshuffled each season", "imported": "imported by you"}
+    cat, label, by_label = [], {}, {}
     pick = tk.StringVar()
-    box = ttk.Combobox(frm, state="readonly", width=46, values=[label[e["id"]] for e in cat])
+    box = ttk.Combobox(frm, state="readonly", width=46)
     box.grid(row=3, column=0, sticky="w")
-    blurb = ttk.Label(frm, foreground="#555", wraplength=600, justify="left")
+
+    def load_catalog():
+        cat[:] = SCH.catalog(root)
+        label.clear()
+        label.update({e["id"]: f"{e['name']}  ({kinds.get(e['kind'], e['kind'])})" for e in cat})
+        by_label.clear()
+        by_label.update({v: k for k, v in label.items()})
+        box.configure(values=[label[e["id"]] for e in cat])
+    load_catalog()
+    blurb = ttk.Label(frm, foreground="#555", wraplength=560, justify="left")
     blurb.grid(row=4, column=0, sticky="w", pady=(4, 0))
 
     def shown(*_):
@@ -1218,10 +1226,20 @@ def schedule_tab(tabs, root, tk, ttk):
         e = next((x for x in cat if x["id"] == sid), None)
         pick.set(sid or "")
         blurb.configure(text=(e.get("short") or e.get("about", "")) if e else "")
+        remove.configure(state="normal" if e and e.get("kind") == "imported" else "disabled")
     box.bind("<<ComboboxSelected>>", shown)
-    use = ttk.Button(frm, text="Use this schedule")
-    use.grid(row=5, column=0, sticky="w", pady=(10, 0))
-    note = ttk.Label(frm, wraplength=600, justify="left")
+    buttons = ttk.Frame(frm)
+    buttons.grid(row=5, column=0, sticky="we", pady=(10, 0))
+    use = ttk.Button(buttons, text="Use this schedule")
+    use.pack(side="left")
+    remove = ttk.Button(buttons, text="Remove", state="disabled")
+    remove.pack(side="right")
+    add = ttk.Button(buttons, text="Import a schedule\u2026")
+    add.pack(side="right", padx=6)
+    ttk.Label(frm, foreground="#777", wraplength=560, justify="left", text=(
+        "Import a schedule: a schedule.big, or its mlb162_1/2/3.dat files, from any version of MVP 2005 (Xbox, PS2, "
+        "GameCube or PC: the schedules are the same everywhere).")).grid(row=7, column=0, sticky="w", pady=(14, 0))
+    note = ttk.Label(frm, wraplength=560, justify="left")
     note.grid(row=6, column=0, sticky="w", pady=(6, 0))
 
     def refresh(*_):
@@ -1263,6 +1281,52 @@ def schedule_tab(tabs, root, tk, ttk):
             " At the end of each regular season, run the Short Season Advancer (Tools tab, or F10 in the game).")))
         refresh()
     use.configure(command=go)
+
+    def do_import():
+        from tkinter import filedialog, simpledialog
+        paths = filedialog.askopenfilenames(parent=frm, title="A schedule.big, or mlb162 .dat files", filetypes=[
+            ("MVP 2005 schedules", "*.big *.dat"), ("All files", "*.*")])
+        if not paths:
+            return
+        try:
+            games = SCH.check_season(SCH.read_schedule_files(list(paths)))
+        except (SCH.ScheduleError, OSError) as e:
+            note.configure(text=f"Not imported: {e}", foreground="#a33")
+            return
+        name = simpledialog.askstring("Import a schedule", f"{games} games a team. A name for it:",
+                                      initialvalue=f"{games} games", parent=frm)
+        if not name:
+            return
+        try:
+            e = SCH.import_schedule(root, list(paths), name)
+        except (SCH.ScheduleError, OSError) as e:
+            note.configure(text=f"Not imported: {e}", foreground="#a33")
+            return
+        load_catalog()
+        box.set(label[e["id"]])
+        shown()
+        note.configure(text=f"Imported \"{e['name']}\". Use this schedule to put it in the game.",
+                       foreground="#1a7f37")
+
+    def do_remove():
+        sid = pick.get()
+        e = next((x for x in cat if x["id"] == sid), None)
+        if not e or e.get("kind") != "imported":
+            return
+        if SCH.current(root) == sid:
+            note.configure(text="That's the schedule your game has: use another one first, then remove it.",
+                           foreground="#a33")
+            return
+        if not messagebox.askyesno("Remove the schedule", f"Remove \"{e['name']}\" from the list?", parent=frm):
+            return
+        SCH.remove_imported(root, sid)
+        load_catalog()
+        pick.set("")
+        box.set(label[SCH.ORIGINAL])
+        shown()
+        note.configure(text=f"Removed \"{e['name']}\".", foreground="#555")
+    add.configure(command=do_import)
+    remove.configure(command=do_remove)
 
 
 def tools_tab(tabs, root, tk, ttk):

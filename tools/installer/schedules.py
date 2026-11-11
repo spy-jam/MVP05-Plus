@@ -37,9 +37,120 @@ def catalog(root):
                 out = json.load(f)
             for s in out:
                 s["folder"] = None if s.get("shuffle") else os.path.join(base, s["id"])
-            return out
+            return out + imported(root)
     return [{"id": ORIGINAL, "name": "162 games (the original)", "games": 162, "kind": "original", "about": "",
-             "folder": None}]
+             "folder": None}] + imported(root)
+
+
+# --- schedules you bring in: the season files of any MVP 2005's schedule.big (Xbox, PS2, GameCube, PC: they're the
+# same text everywhere), or the .dat files themselves. Kept in schedules/imported/, which updates never touch.
+
+def _imported_dir(root):
+    return os.path.join(root, "schedules", "imported")
+
+
+def imported(root):
+    try:
+        with open(os.path.join(_imported_dir(root), "imported.json"), encoding="utf-8") as f:
+            out = json.load(f)
+    except (OSError, ValueError):
+        return []
+    for s in out:
+        s["folder"] = os.path.join(_imported_dir(root), s["id"])
+    return [s for s in out if os.path.isdir(s["folder"])]
+
+
+def read_schedule_files(paths):
+    """The three season files from a schedule.big, or from one to three .dat files (one: every year the same)."""
+    if len(paths) == 1 and paths[0].lower().endswith(".big"):
+        with open(paths[0], "rb") as f:
+            have = {n.replace("\\", "/").split("/")[-1].lower(): d for n, d in read_big(f.read())}
+        missing = [n for n in SEASON_FILES if n not in have]
+        if missing:
+            raise ScheduleError("that schedule.big has no " + ", ".join(missing))
+        return [unpacked(have[n]) for n in SEASON_FILES]
+    if not 1 <= len(paths) <= 3:
+        raise ScheduleError("pick a schedule.big, or one to three mlb162 .dat files")
+    texts = {}
+    for p in paths:
+        with open(p, "rb") as f:
+            data = f.read()
+        if data[1:2] == b"\xfb":
+            data = unpacked(data)
+        year = next((y for y in (1, 2, 3) if f"_{y}" in os.path.basename(p)), None)
+        texts[year or len(texts) + 1] = data
+    if len(texts) == 1:
+        return [next(iter(texts.values()))] * 3
+    if sorted(texts) != [1, 2, 3]:
+        raise ScheduleError("pick the three files mlb162_1, _2 and _3 (or just one, for every year)")
+    return [texts[1], texts[2], texts[3]]
+
+
+def check_season(texts):
+    """Games per team, the same for every team and year, every team known, or ScheduleError."""
+    known = {t for ts in DIVISIONS.values() for t in ts.split()}
+    games = set()
+    for i, text in enumerate(texts, 1):
+        g = games_per_team(text)
+        if not g:
+            raise ScheduleError(f"year {i} has no games in it (not a schedule file?)")
+        odd = sorted(set(g) - known)
+        if odd:
+            raise ScheduleError(f"year {i} has teams the game doesn't: {', '.join(odd[:3])}")
+        if set(g) != known:
+            raise ScheduleError(f"year {i} doesn't have all 30 teams")
+        if len(set(g.values())) != 1:
+            raise ScheduleError(f"in year {i} the teams play different numbers of games "
+                                f"({min(g.values())} to {max(g.values())})")
+        games |= set(g.values())
+    if len(games) != 1:
+        raise ScheduleError("the years have different season lengths")
+    n = games.pop()
+    if not 1 <= n <= 162:
+        raise ScheduleError(f"{n} games is more than a season can have")
+    return n
+
+
+def import_schedule(root, paths, name):
+    """A schedule brought in under name: checked, then kept in schedules/imported/. Returns its catalog entry."""
+    texts = read_schedule_files(paths)
+    games = check_season(texts)
+    name = " ".join(name.split())[:40] or f"{games} games"
+    have = imported(root)
+    d = _digest(texts)
+    for s in have:
+        if s.get("digest") == d:
+            raise ScheduleError(f"that schedule is already here, as \"{s['name']}\"")
+    n = 1
+    while any(s["id"] == f"imported-{n}" for s in have):
+        n += 1
+    sid = f"imported-{n}"
+    folder = os.path.join(_imported_dir(root), sid)
+    os.makedirs(folder, exist_ok=True)
+    for fn, text in zip(SEASON_FILES, texts):
+        with open(os.path.join(folder, fn), "wb") as f:
+            f.write(text)
+    same = texts[0] == texts[1] == texts[2]
+    entry = {"id": sid, "name": name, "games": games, "kind": "imported", "digest": d,
+             "short": f"Imported from {', '.join(os.path.basename(p) for p in paths)}: {games} games a team" +
+                      (", the same schedule every year." if same else ", a schedule for each of the three years.")}
+    _save_imported(root, [{k: v for k, v in s.items() if k != "folder"} for s in have] + [entry])
+    entry["folder"] = folder
+    return entry
+
+
+def remove_imported(root, sid):
+    have = [{k: v for k, v in s.items() if k != "folder"} for s in imported(root) if s["id"] != sid]
+    _save_imported(root, have)
+    shutil.rmtree(os.path.join(_imported_dir(root), sid), ignore_errors=True)
+
+
+def _save_imported(root, entries):
+    os.makedirs(_imported_dir(root), exist_ok=True)
+    p = os.path.join(_imported_dir(root), "imported.json")
+    with open(p + ".new", "w", encoding="utf-8") as f:
+        json.dump(entries, f, indent=2)
+    os.replace(p + ".new", p)
 
 
 def find_big(root):
