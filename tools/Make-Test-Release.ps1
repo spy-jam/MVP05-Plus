@@ -4,7 +4,8 @@ MVP05-Plus: a test release, made the way a real one is, in your Downloads folder
   1. unzips MVP05-Plus-repo.zip into Downloads\MVP05-Plus-test\MVP05-Plus (or reuses it)
   2. copies your Xbox game files into its assets (from your current game folder), for the build
   3. builds MVP05.exe (Visual Studio's x64 tools, LLVM clang, CMake, Ninja)
-  4. puts the repository on your GitHub as a PRIVATE repository and runs the "release tools" build there
+  4. puts the repository on your GitHub as a PRIVATE repository (MVP05-Plus-test; -Final: MVP05-Plus) and runs
+     the "release tools" build there
      (MVP05-Plus-Launcher.exe, gcbridge), then downloads them
   5. packs MVP05-Plus-Beta-1.zip as a release is packed, with Mad Dog's three runtime DLLs from his Beta 3 zip
   6. makes a DRAFT release on GitHub with it (only you can see a draft)
@@ -18,7 +19,7 @@ Nothing from the game is ever pushed: assets, gc_icons and ps2_icons are in .git
 param(
     [string]$Downloads = (Join-Path $env:USERPROFILE "Downloads"),
     [string]$GameDir = "",          # your current MVP05 folder (with assets\default.xbe); asked for if not given
-    [string]$RepoName = "MVP05-Plus",
+    [string]$RepoName = "",         # default: MVP05-Plus for -Final, a private MVP05-Plus-test for a test
     [string]$Version = "Beta 2",
     [switch]$SkipBuild,             # use the MVP05.exe already built in the work folder
     [switch]$Final,                 # the real release's draft: tag beta-1, no "(test)" (still a draft until you publish)
@@ -37,6 +38,8 @@ function Fail($t) { Write-Host ""; Write-Host "Stopped: $t" -ForegroundColor Red
 function Need($cmd, $why) { if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) { Fail "$cmd isn't installed ($why)" } }
 
 try {
+    # a test never goes to the public repository: its code would be public before its release
+    if (-not $RepoName) { $RepoName = if ($Final) { "MVP05-Plus" } else { "MVP05-Plus-test" } }
     $work = Join-Path $Downloads "MVP05-Plus-test"
     $repo = Join-Path $work "MVP05-Plus"
     $tag = ($Version -replace '\s', '-').ToLower()
@@ -161,12 +164,16 @@ try {
         & gh repo view "$me/$RepoName" *> $null
         if ($LASTEXITCODE -ne 0) {
             Write-Host "Making $me/$RepoName (private)"
+            if (& git remote) { & git remote remove origin }
             & gh repo create $RepoName --private --source . --remote origin --push
             if ($LASTEXITCODE -ne 0) { Fail "couldn't make the repository" }
         } else {
             $vis = (& gh repo view "$me/$RepoName" --json visibility --jq .visibility).Trim()
             Write-Host "$me/$RepoName is there ($vis)"
-            if (-not (& git remote)) { & git remote add origin "https://github.com/$me/$RepoName.git" }
+            if (-not $Final -and $vis -ne "PRIVATE") { Fail "$me/$RepoName isn't private: a test goes to a private repository (-RepoName)" }
+            # origin is always this run's repository (a test's private one, or the public one for -Final)
+            if (& git remote) { & git remote set-url origin "https://github.com/$me/$RepoName.git" }
+            else { & git remote add origin "https://github.com/$me/$RepoName.git" }
             & git push -u origin main 2>$null
             if ($LASTEXITCODE -ne 0) {
                 # GitHub's main isn't behind this one: look at what it has. If every change on it is already here
