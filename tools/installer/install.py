@@ -1226,7 +1226,8 @@ def schedule_tab(tabs, root, tk, ttk):
         sid = by_label.get(box.get())
         e = next((x for x in cat if x["id"] == sid), None)
         pick.set(sid or "")
-        blurb.configure(text=(e.get("short") or e.get("about", "")) if e else "")
+        # an imported schedule has no blurb: its name and "(imported by you)" say what it is
+        blurb.configure(text=(e.get("short") or e.get("about", "")) if e and e.get("kind") != "imported" else "")
         remove.configure(state="normal" if e and e.get("kind") == "imported" else "disabled")
     box.bind("<<ComboboxSelected>>", shown)
     buttons = ttk.Frame(frm)
