@@ -15,12 +15,8 @@
 namespace dbtools {
 namespace {
 
-// tywiggins' Team Changer: each organization's id, in its menu's order (Angels ... Yankees, alphabetical by name)
-constexpr const char* kOrgs[30] = {"Angels",    "Astros",       "Athletics", "Blue Jays", "Braves",    "Brewers",
-                                   "Cardinals", "Cubs",         "Devil Rays", "Diamondbacks", "Dodgers", "Giants",
-                                   "Indians",   "Mariners",     "Marlins",   "Mets",      "Nationals", "Orioles",
-                                   "Padres",    "Phillies",     "Pirates",   "Rangers",   "Reds",      "Red Sox",
-                                   "Rockies",   "Royals",       "Tigers",    "Twins",     "White Sox", "Yankees"};
+// tywiggins' Team Changer: each organization's id, in its menu's order (kOrgNames: Angels ... Yankees)
+constexpr const char* const* kOrgs = kOrgNames;
 constexpr uint32_t kOrgIds[30] = {0xb87d5f5, 0xb87f3f1, 0xb880fe0, 0xb8826fa, 0xb87d6c6, 0xb880867, 0xb882338,
                                   0xb87dd93, 0x59755b,  0xb87d681, 0x597452,  0x59753e,  0xb87de39, 0xb88215e,
                                   0xb87eaf8, 0xb880a79, 0xb8831f0, 0xb87d894, 0x59753c,  0xb881506, 0xb881532,
@@ -63,7 +59,40 @@ bool Read(uint32_t va, T& out) {
     return true;
 }
 
+// the loaded attrib.dat's name: followed by its 0 and the database's 0xBB filler, as the Team Changer checks
+uint32_t AttribName() {
+    for (const Found& f : FindAttrib()) {
+        uint8_t b = 0;
+        if (Read(f.name_va + 11, b) && b == 0xBB) return f.name_va;
+    }
+    return 0;
+}
+
 }  // namespace
+
+const char* const kOrgNames[kOrgCount] = {
+    "Angels", "Astros", "Athletics", "Blue Jays", "Braves", "Brewers", "Cardinals", "Cubs", "Devil Rays", "Diamondbacks",
+    "Dodgers", "Giants", "Indians", "Mariners", "Marlins", "Mets", "Nationals", "Orioles", "Padres", "Phillies",
+    "Pirates", "Rangers", "Reds", "Red Sox", "Rockies", "Royals", "Tigers", "Twins", "White Sox", "Yankees"};
+
+int ControlledOrg(uint32_t* where) {
+    uint32_t n = AttribName(), id = 0;
+    if (!n || !Read(n + kTeamChanger + kXboxShift, id)) return -1;
+    for (int k = 0; k < kOrgCount; k++)
+        if (kOrgIds[k] == id) {
+            if (where) *where = n + kTeamChanger + kXboxShift;
+            return k;
+        }
+    return -1;
+}
+
+bool SetControlledOrg(int org) {
+    uint32_t va = 0;
+    if (org < 0 || org >= kOrgCount || ControlledOrg(&va) < 0) return false;
+    std::memcpy(kernel::HostPtr(va), &kOrgIds[org], 4);
+    LOGR("dbtools: Team Changer: control given to the %s", kOrgNames[org]);
+    return true;
+}
 
 std::vector<Found> FindAttrib() {
     static const char kName[] = "attrib.dat";  // with its 0 after it

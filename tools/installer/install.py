@@ -1347,6 +1347,8 @@ def tools_tab(tabs, root, tk, ttk):
         ("Short Season Advancer", "For seasons shorter than 162 games: at the end of the regular season, the standings "
          "are made 162 games long so the season can go on to the playoffs. Every team keeps its winning percentage.",
          short_season_tool),
+        ("Team Changer", "Take over another organization in your dynasty, in the running game. Based on tywiggins' "
+         "Team Changer.", team_changer_tool),
     ]
     pages = {}
 
@@ -1386,6 +1388,71 @@ def tools_tab(tabs, root, tk, ttk):
                                                                            padx=(12, 0))
     ttk.Separator(home).grid(row=2 + len(tools) * 2, column=0, columnspan=2, sticky="we")
     show_home()
+
+
+def team_changer_tool(frm, root, tk, ttk):
+    """Team Changer (tywiggins'): the organization the dynasty's player controls, changed in the running game."""
+    import team_changer as TC
+
+    ttk.Label(frm, text="Team Changer", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=3, sticky="w")
+    ttk.Label(frm, foreground="#666", wraplength=540, justify="left", text=(
+        "Take over another organization in your dynasty. With the game running and the dynasty loaded: find it here, "
+        "pick the organization, and take control. Then save the dynasty in the game to keep it. The same tool is in "
+        "the game's Tools menu (F10).")).grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 10))
+    find_b = ttk.Button(frm, text="Find the dynasty")
+    find_b.grid(row=2, column=0, sticky="w")
+    now = ttk.Label(frm, text="")
+    now.grid(row=2, column=1, columnspan=2, sticky="w", padx=10)
+    box = ttk.Combobox(frm, state="disabled", width=24, values=list(TC.ORGS))
+    box.grid(row=3, column=0, sticky="w", pady=(10, 0))
+    take = ttk.Button(frm, text="Take control", state="disabled")
+    take.grid(row=3, column=1, sticky="w", padx=10, pady=(10, 0))
+    note = ttk.Label(frm, wraplength=540, justify="left")
+    note.grid(row=4, column=0, columnspan=3, sticky="w", pady=(10, 0))
+    ttk.Label(frm, foreground="#888", text="Based on tywiggins' MVP 2005 Team Changer.").grid(
+        row=5, column=0, columnspan=3, sticky="w", pady=(16, 0))
+    found = {}
+
+    def say(text, colour="#555"):
+        note.configure(text=text, foreground=colour)
+
+    def look():
+        found.clear()
+        take.configure(state="disabled")
+        box.configure(state="disabled")
+        try:
+            h, addr, org = TC.find()
+        except TC.TeamError as e:
+            now.configure(text="")
+            return say(f"{e}.", "#a33")
+        import ctypes
+        ctypes.windll.kernel32.CloseHandle(h)
+        found.update(addr=addr, org=org)
+        now.configure(text=f"You control: the {TC.ORGS[org]}")
+        box.configure(state="readonly")
+        box.current(org)
+        say("")
+        pick()
+
+    def pick(*_):
+        take.configure(state="normal" if found and box.current() >= 0 and box.current() != found["org"] else "disabled")
+
+    def go():
+        org = box.current()
+        try:
+            h, addr, cur = TC.find()
+            TC.change(h, addr, org)
+        except TC.TeamError as e:
+            return say(f"Not changed: {e}.", "#a33")
+        found.update(addr=addr, org=org)
+        now.configure(text=f"You control: the {TC.ORGS[org]}")
+        pick()
+        say(f"Done: you control the {TC.ORGS[org]}. Save the dynasty in the game to keep it.", "#1a7f37")
+
+    find_b.configure(command=look)
+    take.configure(command=go)
+    box.bind("<<ComboboxSelected>>", pick)
+    return None
 
 
 def short_season_tool(frm, root, tk, ttk):

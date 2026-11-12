@@ -13,6 +13,14 @@ struct Found {
 };
 
 std::vector<Found> FindAttrib();
+
+// Team Changer (tywiggins): the organization a dynasty's player controls, one of 30 ids, in the database's memory
+constexpr int kOrgCount = 30;
+extern const char* const kOrgNames[kOrgCount];  // Angels ... Yankees, alphabetical by nickname
+// the controlled organization's place in kOrgNames, or -1 (no dynasty loaded, or not found); va: where it is
+int ControlledOrg(uint32_t* va = nullptr);
+// control given to that organization; false if the spot wasn't found or isn't an organization any more
+bool SetControlledOrg(int org);
 // what the ported tools would read, written to the log and returned as text for the Tools menu; changes nothing
 std::string Check();
 // a copy of the game's memory (committed user space and the 64 MB of physical memory) into logs/, for the tools

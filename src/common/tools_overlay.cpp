@@ -45,12 +45,20 @@ struct Season {
     std::thread worker;
 } g_season;
 
+// Team Changer (tywiggins' MVP2005TeamChanger, ported): control of another organization in the dynasty
+struct TeamChange {
+    int current = -2;  // -2 not looked yet, -1 not found
+    int pick = 0;
+    int done = -1;     // the organization just given control, for the message
+} g_team;
+
 void Toggle() {
     bool open = !g_open.load();
     g_open = open;
     ImGuiIO& io = ImGui::GetIO();
     io.MouseDrawCursor = open;  // the game hides the system cursor in fullscreen
     if (open && g_season.state != 1 && g_season.state != 2) g_season.state = 0;
+    if (open) g_team = {};  // the Team Changer looks again
     LOGR("tools: menu %s", open ? "opened" : "closed");
 }
 
@@ -170,6 +178,41 @@ void ShortSeason() {
     }
 }
 
+void TeamChanger() {
+    Help("Take over another organization in your dynasty. Load the dynasty first. After changing, save the dynasty "
+         "to keep it. Based on tywiggins' Team Changer.");
+    ImGui::Spacing();
+    if (g_team.current == -2 || ImGui::Button("Look again")) {
+        g_team.current = dbtools::ControlledOrg();
+        if (g_team.current >= 0 && g_team.done < 0) g_team.pick = g_team.current;
+    }
+    if (g_team.current < 0) {
+        ImGui::TextColored({1, 0.45f, 0.4f, 1}, "No dynasty found: load one, then Look again.");
+        return;
+    }
+    ImGui::Text("You control: the %s", dbtools::kOrgNames[g_team.current]);
+    ImGui::SetNextItemWidth(260 * g_scale);
+    if (ImGui::BeginCombo("##org", dbtools::kOrgNames[g_team.pick])) {
+        for (int k = 0; k < dbtools::kOrgCount; k++)
+            if (ImGui::Selectable(dbtools::kOrgNames[k], k == g_team.pick)) g_team.pick = k;
+        ImGui::EndCombo();
+    }
+    ImGui::SameLine();
+    ImGui::BeginDisabled(g_team.pick == g_team.current);
+    if (ImGui::Button("Take control")) {
+        if (dbtools::SetControlledOrg(g_team.pick)) {
+            g_team.done = g_team.pick;
+            g_team.current = dbtools::ControlledOrg();
+        } else {
+            g_team.current = -1;
+        }
+    }
+    ImGui::EndDisabled();
+    if (g_team.done >= 0 && g_team.done == g_team.current)
+        ImGui::TextColored({0.4f, 0.9f, 0.5f, 1}, "Done: you control the %s. Save the dynasty to keep it.",
+                           dbtools::kOrgNames[g_team.done]);
+}
+
 // the dynasty tools test: whether tywiggins' PC tools' distances hold in this game
 struct DbTest {
     std::atomic<int> state{0};  // 0 idle, 1 working, 2 done
@@ -250,6 +293,10 @@ void Ui(double) {
         if (ImGui::BeginTabBar("tools")) {
             if (ImGui::BeginTabItem("Short Season Advancer")) {
                 ShortSeason();
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Team Changer")) {
+                TeamChanger();
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Dynasty tools (test)")) {
