@@ -1196,19 +1196,19 @@ def schedule_tab(tabs, root, tk, ttk):
 
     frm = ttk.Frame(tabs, padding=12)
     tabs.add(frm, text="Schedule")
-    ttk.Label(frm, text="Season schedule", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, sticky="w")
+    ttk.Label(frm, text="Season Schedule", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, sticky="w")
     ttk.Label(frm, foreground="#666", wraplength=560, justify="left", text=(
-        "The game takes the schedule when a season goes from spring training to the regular season: a season "
-        "that's already started keeps its own. A season shorter than 162 games needs the Short Season Advancer after "
-        "its last regular season game (the Tools tab, or F10 in the game), or it stops there.")).grid(
+        "A new schedule starts with the next season, when spring training ends. Seasons shorter than 162 games need "
+        "the Short Season Advancer after the last regular season game to reach the playoffs (Tools tab, or F10 in "
+        "the game).")).grid(
         row=1, column=0, sticky="w", pady=(0, 8))
     have = ttk.Label(frm, font=("Segoe UI", 9, "bold"))
     have.grid(row=2, column=0, sticky="w", pady=(0, 6))
     kinds = {"original": "default, MVP 2005 disc", "mvp2004": "from the MVP 2004 disc", "custom": "made for MVP05-Plus",
-             "shuffled": "MVP 2005 disc, reshuffled each season", "imported": "imported by you"}
+             "shuffled": "MVP 2005 disc", "imported": "imported by you"}
     cat, label, by_label = [], {}, {}
     pick = tk.StringVar()
-    box = ttk.Combobox(frm, state="readonly", width=46)
+    box = ttk.Combobox(frm, state="readonly", width=58)
     box.grid(row=3, column=0, sticky="w")
 
     def load_catalog():
