@@ -26,6 +26,7 @@ constexpr uint16_t kStart = 1u << 4, kBack = 1u << 5;
 constexpr auto kHold = std::chrono::milliseconds(1000);
 
 std::atomic<bool> g_open{false};
+float g_scale = 1.0f;  // the menu's size for this screen, set each frame
 std::atomic<bool> g_toggle{false};  // asked for from the pad thread, done in Ui
 
 // the pads while the menu is open, for ImGui's gamepad navigation: any controller moves it
@@ -96,7 +97,7 @@ void ShortSeason() {
     int state = g_season.state;
     bool busy = state == 1;
     ImGui::BeginDisabled(busy);
-    ImGui::SetNextItemWidth(160);
+    ImGui::SetNextItemWidth(160 * g_scale);
     if (ImGui::InputInt("games in this season", &g_season.games, 1, 10)) {
         g_season.games = std::clamp(g_season.games, 1, standings::kFullSeason);
         g_season.state = 0;
@@ -139,7 +140,7 @@ void ShortSeason() {
         if (ImGui::Button("Cancel")) g_season.state = 0;
     }
     if (ImGui::BeginTable("standings", 6, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit |
-                                              ImGuiTableFlags_ScrollY, ImVec2(0, 260))) {
+                                              ImGuiTableFlags_ScrollY, ImVec2(0, 260 * g_scale))) {
         for (int c = 0; c < 2; c++) {
             ImGui::TableSetupColumn("Team");
             ImGui::TableSetupColumn("Now");
@@ -222,12 +223,22 @@ void Ui(double) {
     if (!g_open) return;
     FeedPad();
     ImGuiIO& io = ImGui::GetIO();
+    // sized for the screen: as big on a 4K screen as on a 720p one
+    float s = std::clamp(io.DisplaySize.y / 720.0f, 1.0f, 4.0f);
+    g_scale = s;
+    const ImGuiStyle& st = ImGui::GetStyle();
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(st.WindowPadding.x * s, st.WindowPadding.y * s));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(st.FramePadding.x * s, st.FramePadding.y * s));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(st.ItemSpacing.x * s, st.ItemSpacing.y * s));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(st.ItemInnerSpacing.x * s, st.ItemInnerSpacing.y * s));
+    ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(st.CellPadding.x * s, st.CellPadding.y * s));
     ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Appearing,
                             ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(620, 0), ImGuiCond_Appearing);
+    ImGui::SetNextWindowSize(ImVec2(620 * s, 0), ImGuiCond_Always);
     ImGui::SetNextWindowFocus();
     bool open = true;
     if (ImGui::Begin("MVP05-Plus Tools", &open, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::SetWindowFontScale(s);
         Help("F10 or Esc closes this, or hold Back + Start (Z + Start on a GameCube controller) for a second. The game "
              "gets no controller input while it's open.");
         if (ImGui::BeginTabBar("tools")) {
@@ -243,6 +254,7 @@ void Ui(double) {
         }
     }
     ImGui::End();
+    ImGui::PopStyleVar(5);
     if (!open) Toggle();
 }
 
@@ -252,9 +264,11 @@ void Pad(int port, input::Pad& p) {
     static bool fired[4] = {};
     if (port < 0 || port > 3) return;
     // Back + Start; a GameCube controller has no Back: Z + Start
+    // either controller on this port: an Xbox one's Back + Start, or (a GameCube one has no Back) Z + Start.
+    // Both are checked, since a GameCube adapter can share a port with an Xbox controller
     using G = input::GameCube;
-    bool combo = p.connected && (p.gc.present ? (p.gc.buttons & (G::Start | G::Z)) == (G::Start | G::Z)
-                                              : (p.buttons & (kStart | kBack)) == (kStart | kBack));
+    bool combo = p.connected && ((p.buttons & (kStart | kBack)) == (kStart | kBack) ||
+                                 (p.gc.present && (p.gc.buttons & (G::Start | G::Z)) == (G::Start | G::Z)));
     if (!combo) {
         held[port] = {};
         fired[port] = false;

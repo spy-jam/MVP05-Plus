@@ -27,7 +27,10 @@ constexpr uint32_t kOrgIds[30] = {0xb87d5f5, 0xb87f3f1, 0xb880fe0, 0xb8826fa, 0x
                                   0xb8825b6, 0xb87dddf, 0xb87da69, 0xb87dea3, 0x597433,  0xb87e1a2, 0xb880869,
                                   0xb87db72, 0xb880a85};
 // distances in the PC programs
-constexpr uint32_t kTeamChanger = 0xC5B1C;           // from the name: the controlled organization's id
+constexpr uint32_t kTeamChanger = 0xC5B1C;           // from the name: the controlled organization's id (PC)
+// the database files sit at the PC's distances here too, but past the last of them (careerp.dat) the Xbox game's
+// memory blocks are 16 bytes further on: the controlled organization is at +0xC5B2C, after the dynasty's name
+constexpr uint32_t kXboxShift = 0x10;
 constexpr uint32_t kDataFromName = 60;               // the others: from the data, 60 bytes after the name
 constexpr uint32_t kMoney = 0x11802C;                // ChangeMoney: the balance, a float
 constexpr uint32_t kGame = 0x231420;                 // Stamina Changer, Box Score Extractor: the game in play
@@ -91,23 +94,26 @@ std::string Check() {
         say("#%d at %08X; bytes after the name: %02X %02X %02X %02X %02X %02X %02X %02X", int(i), n, after[0],
             after[1], after[2], after[3], after[4], after[5], after[6], after[7]);
         uint32_t org = 0;
-        if (Read(n + kTeamChanger, org)) {
+        if (Read(n + kTeamChanger + kXboxShift, org)) {
             const char* who = nullptr;
             for (int k = 0; k < 30; k++)
                 if (kOrgIds[k] == org) who = kOrgs[k];
-            say("   Team Changer's spot: %08X%s%s", org, who ? " = " : " (not an organization id)", who ? who : "");
+            say("   Your organization (Team Changer's spot): %08X%s%s", org, who ? " = " : " (not an organization id)",
+                who ? who : "");
         } else {
             say("   Team Changer's spot: past the end of memory");
         }
-        float money = 0;
-        if (Read(data + kMoney, money)) say("   ChangeMoney's balance: %.0f", double(money));
+        float money = 0, money2 = 0;
+        if (Read(data + kMoney, money) && Read(data + kMoney + kXboxShift, money2))
+            say("   ChangeMoney's balance: %.0f (or %.0f)", double(money), double(money2));
+        for (int sh = 0; sh <= int(kXboxShift); sh += int(kXboxShift))
         for (int t = 0; t < 2; t++) {
             std::string row;
             int plausible = 0;
             for (int k = 0; k < 25; k++) {
                 uint8_t r[20] = {};
                 bool ok = true;
-                for (int q = 0; q < 20 && ok; q++) ok = Read(data + kGame + kPitchers[t] + k * 20 + q, r[q]);
+                for (int q = 0; q < 20 && ok; q++) ok = Read(data + kGame + sh + kPitchers[t] + k * 20 + q, r[q]);
                 if (!ok) break;
                 int max = r[0] % 128, cur = (r[16] >> 7) + (r[17] % 64) * 2;
                 if (max > 0 && max <= 99 && cur <= 127) plausible++;
@@ -117,8 +123,8 @@ std::string Check() {
                     row += s;
                 }
             }
-            say("   Stamina Changer, team %d: %d of 25 look like pitchers; first (current/max):%s", t + 1, plausible,
-                row.c_str());
+            say("   Stamina Changer (+%d), team %d: %d of 25 look like pitchers; first (current/max):%s", sh, t + 1,
+                plausible, row.c_str());
         }
     }
     return text;
