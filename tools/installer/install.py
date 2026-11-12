@@ -1017,7 +1017,7 @@ def settings_tab(tabs, root, tk, ttk):
     for i, (label, widget) in enumerate(rows):
         ttk.Label(frm, text=label).grid(row=2 + i, column=0, sticky="w", pady=3)
         widget.grid(row=2 + i, column=1, sticky="w", padx=(12, 0), pady=3)
-    ttk.Label(frm, text="(or type one, like 1366 x 768)", foreground="#666").grid(
+    ttk.Label(frm, text="(or type your own, width x height)", foreground="#666").grid(
         row=4, column=2, sticky="w", padx=8)
     ttk.Checkbutton(frm, text="VSync", variable=vsync).grid(row=8, column=0, columnspan=2, sticky="w", pady=(6, 0))
     x720_box = ttk.Checkbutton(frm, text="Xbox 720p mode (as on an Xbox console with 720p enabled in the dashboard)",
