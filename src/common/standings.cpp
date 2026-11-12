@@ -22,43 +22,61 @@ namespace {
 
 constexpr uint32_t kBytes = kTeams * 4;
 
-// A finished regular season's standings, the season's length read from them: every team has played the same number
-// of games (any schedule the Launcher offers gives every team the same), and the league's wins equal its losses,
-// since every game has one of each. A table that's only near those numbers (a table of other things, or a season
-// still being played) isn't taken: writing the projection over it would damage the dynasty. 0: it isn't one.
-int Finished(const uint8_t* d, char& format, int& games, std::array<Record, kTeams>& recs) {
+// score_block: a 120 byte block scored as the standings of a season of season_games (0: it isn't)
+int Score(const uint8_t* d, int season_games, char& format, std::array<Record, kTeams>& recs) {
+    const int min_gp = std::max(1, int(season_games * 0.50));
+    const int max_gp = std::min(162, int(season_games * 1.25) + 5);
+    const int max_spread = std::max(20, season_games / 3);
     // format A: [W][L][00][00]
-    {
-        bool ok = true;
-        int g = d[0] + d[1], wins = 0, losses = 0;
+    bool ok = true;
+    for (int i = 0; i < kTeams && ok; i++) {
+        int w = d[i * 4], l = d[i * 4 + 1];
+        if (d[i * 4 + 2] || d[i * 4 + 3] || w > 162 || l > 162) ok = false;
+        int gp = w + l;
+        if (gp && (gp < min_gp || gp > max_gp)) ok = false;
+        recs[i] = {w, l};
+    }
+    if (ok) {
+        int active = 0, lo = 1000, hi = 0;
         std::set<std::pair<int, int>> unique;
-        for (int i = 0; i < kTeams && ok; i++) {
-            int w = d[i * 4], l = d[i * 4 + 1];
-            if (d[i * 4 + 2] || d[i * 4 + 3] || w + l != g) ok = false;
-            wins += w, losses += l;
-            recs[i] = {w, l};
-            unique.insert({w, l});
+        for (auto& r : recs) {
+            unique.insert({r.wins, r.losses});
+            int gp = r.wins + r.losses;
+            if (gp) active++, lo = std::min(lo, gp), hi = std::max(hi, gp);
         }
-        if (ok && g >= 1 && g <= kFullSeason && wins == losses && unique.size() >= 4) {
+        if (active >= 25 && hi - lo <= max_spread && unique.size() >= 6) {
             format = 'A';
-            games = g;
-            return int(unique.size()) * 10 + 30;
+            return int(unique.size()) * 10 - (hi - lo) + active;
         }
     }
-    // format B: [W1][L1][W2][L2], the season's two halves, each with as many wins as losses across the league
-    int g = d[0] + d[1] + d[2] + d[3], w1s = 0, l1s = 0, w2s = 0, l2s = 0;
+    // format B: [W1][L1][W2][L2], the season's two halves
+    const double half = season_games / 2.0;
+    const int min_half = std::max(1, int(half * 0.65)), max_half = std::min(100, int(half * 1.35) + 3);
+    int lo = 1000, hi = 0;
     std::set<std::pair<int, int>> unique;
     for (int i = 0; i < kTeams; i++) {
         int w1 = d[i * 4], l1 = d[i * 4 + 1], w2 = d[i * 4 + 2], l2 = d[i * 4 + 3];
-        if (!(w1 + l1) || !(w2 + l2) || w1 + l1 + w2 + l2 != g) return 0;
-        w1s += w1, l1s += l1, w2s += w2, l2s += l2;
+        int g1 = w1 + l1, g2 = w2 + l2;
+        if (!g1 || !g2 || g1 < min_half || g1 > max_half || g2 < min_half || g2 > max_half) return 0;
+        lo = std::min({lo, g1, g2});
+        hi = std::max({hi, g1, g2});
         recs[i] = {w1 + w2, l1 + l2};
         unique.insert({w1 + w2, l1 + l2});
     }
-    if (g < 2 || g > kFullSeason || w1s != l1s || w2s != l2s || unique.size() < 4) return 0;
-    format = 'B';
-    games = g;
-    return int(unique.size()) * 10 + 30;
+    if (hi - lo <= max_spread && unique.size() >= 6) {
+        format = 'B';
+        return int(unique.size()) * 10 - (hi - lo) + 30;
+    }
+    return 0;
+}
+
+// checked_block: real standings always have a win and a loss somewhere
+int Checked(const uint8_t* d, int season_games, char& format, std::array<Record, kTeams>& recs) {
+    int s = Score(d, season_games, format, recs);
+    if (!s) return 0;
+    bool win = false, loss = false;
+    for (auto& r : recs) win |= r.wins > 0, loss |= r.losses > 0;
+    return win && loss ? s : 0;
 }
 
 // the guest memory the game's data can be in: its committed user space and the 64 MB of physical memory
@@ -78,37 +96,29 @@ std::vector<std::pair<uint32_t, uint32_t>> Regions() {
 
 }  // namespace
 
-bool Find(int expected, Table& out) {
-    // first, a table as long as the season the Launcher set (expected, 0 if unknown); then any shorter than 162
-    // games: last season's standings stay in memory too, and once projected they're 162 games long; then 162
-    Table exact, best, full;
+bool Find(int season_games, Table& out) {
+    Table best;
     for (auto [base, size] : Regions()) {
         const uint8_t* p = static_cast<const uint8_t*>(kernel::HostPtr(base));
         for (uint32_t o = 0; o + kBytes <= size; o += 4) {
+            // a quick no: format A's first team needs zero bytes 2 and 3, format B's a played first half
             const uint8_t* d = p + o;
-            // a quick no: the first team has played a game, and every team's numbers fit a season
-            if (!(d[0] + d[1] + d[2] + d[3])) continue;
+            if ((d[2] || d[3]) && !(d[0] + d[1])) continue;
             char f = 0;
-            int g = 0;
             std::array<Record, kTeams> recs;
-            int s = Finished(d, f, g, recs);
-            Table& slot = expected && g == expected ? exact : g < kFullSeason ? best : full;
-            if (s > slot.score) slot = {base + o, f, s, g, recs};
+            int s = Checked(d, season_games, f, recs);
+            if (s > best.score) best = {base + o, f, s, recs};
         }
     }
-    if (exact.score) best = exact;
-    if (!best.score) best = full;
     if (!best.score) return false;
     out = best;
     return true;
 }
 
-bool StillThere(Table& t) {
+bool StillThere(int season_games, Table& t) {
     char f = 0;
-    int g = 0;
     std::array<Record, kTeams> recs;
-    if (!t.va || !Finished(static_cast<const uint8_t*>(kernel::HostPtr(t.va)), f, g, recs) || f != t.format ||
-        g != t.games)
+    if (!t.va || !Checked(static_cast<const uint8_t*>(kernel::HostPtr(t.va)), season_games, f, recs) || f != t.format)
         return false;
     t.records = recs;
     return true;
@@ -123,8 +133,8 @@ Record Project(Record r) {
     return {w, kFullSeason - w};
 }
 
-bool Write(Table& t) {
-    if (!StillThere(t)) return false;
+bool Write(int season_games, Table& t) {
+    if (!StillThere(season_games, t)) return false;
     uint8_t out[kBytes] = {};
     for (int i = 0; i < kTeams; i++) {
         Record p = Project(t.records[i]);

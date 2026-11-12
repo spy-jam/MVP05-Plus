@@ -85,24 +85,36 @@ void Help(const char* text) {
     ImGui::PopTextWrapPos();
 }
 
+// the season's length: the schedule picked on the Launcher's Schedule tab (season_games in mvp05-settings.toml)
+int SeasonGames() {
+    return g_season_games >= 1 && g_season_games <= uint32_t(standings::kFullSeason) ? int(g_season_games)
+                                                                                     : standings::kFullSeason;
+}
+
 void ShortSeason() {
     Help("For seasons shorter than 162 games. After the last regular season game: save the dynasty and stay on "
          "the season screen. Find the standings here, check them, and write them projected to 162 games. Then "
          "advance to the playoffs and save again.");
     ImGui::Spacing();
+    int games = SeasonGames();
+    ImGui::Text("This season: %d games (your Schedule tab's)", games);
+    if (games == standings::kFullSeason) {
+        Help("A 162-game season needs nothing projected. If this season plays a shorter schedule, pick it on the "
+             "Launcher's Schedule tab, then restart the game.");
+        return;
+    }
     int state = g_season.state;
     bool busy = state == 1;
     ImGui::BeginDisabled(busy);
     if (ImGui::Button("Find the standings")) {
         if (g_season.worker.joinable()) g_season.worker.join();
         g_season.state = 1;
-        g_season.worker = std::thread([] {
+        g_season.worker = std::thread([games] {
             standings::Table t;
-            int expected = g_season_games > 0 && g_season_games < uint32_t(standings::kFullSeason) ? int(g_season_games) : 0;
-            bool ok = standings::Find(expected, t);
+            bool ok = standings::Find(games, t);
             if (ok) g_season.table = t;
-            if (ok) LOGR("tools: a %d-game season's standings found at %08X, format %c", t.games, t.va, t.format);
-            else LOGR("tools: no finished season's standings found");
+            if (ok) LOGR("tools: standings for %d games found at %08X, format %c", games, t.va, t.format);
+            else LOGR("tools: standings for %d games not found", games);
             g_season.state = ok ? 2 : 3;
         });
     }
@@ -110,9 +122,8 @@ void ShortSeason() {
     switch (state) {
         case 1: ImGui::Text("Searching the game's memory..."); break;
         case 3:
-            ImGui::TextColored({1, 0.45f, 0.4f, 1}, "No finished season's standings found.");
-            Help("Be on the dynasty's season screen after the last regular season game: every team has to have "
-                 "played all its games.");
+            ImGui::TextColored({1, 0.45f, 0.4f, 1}, "No %d-game standings found.", games);
+            Help("Be on the dynasty's season screen after the last regular season game.");
             break;
         case 4: ImGui::TextColored({0.4f, 0.9f, 0.5f, 1}, "Written. Now advance to the playoffs, then save."); break;
         case 5:
@@ -122,25 +133,9 @@ void ShortSeason() {
     }
     if (state != 2 && state != 4) return;
     ImGui::Spacing();
-    // the schedule the Launcher set: a table at another length is a season stopped part way (or last season's)
-    int expected = g_season_games > 0 && g_season_games < uint32_t(standings::kFullSeason) ? int(g_season_games) : 0;
-    int found = g_season.table.games;
-    bool wrong = expected && found != expected;
-    if (state == 2 || state == 4) {
-        if (found == standings::kFullSeason)
-            ImGui::Text("Standings after 162 games: nothing to project.");
-        else if (wrong)
-            ImGui::TextColored({1, 0.45f, 0.4f, 1}, "Standings after %d games, but this season is %d games.", found,
-                               expected);
-        else
-            ImGui::Text("A %d-game season%s.", found, expected ? "" : " (check it's over: every team at its last game)");
-        if (wrong)
-            Help("Finish the regular season (every team's last game played), then find them again. If this season "
-                 "uses another schedule than the one the Launcher has now, pick that one on its Schedule tab.");
-    }
-    if (state == 2 && found != standings::kFullSeason && !wrong) {
+    if (state == 2) {
         if (ImGui::Button("Write the standings, projected to 162 games")) {
-            g_season.state = standings::Write(g_season.table) ? 4 : 5;
+            g_season.state = standings::Write(games, g_season.table) ? 4 : 5;
             LOGR("tools: projected standings %s", g_season.state == 4 ? "written" : "not written, they moved");
         }
         ImGui::SameLine();

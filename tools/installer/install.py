@@ -1411,7 +1411,7 @@ def short_season_tool(frm, root, tk, ttk):
     row.grid(row=4, column=0, columnspan=3, sticky="w", pady=6)
     ttk.Label(row, text="Games in the season:").pack(side="left")
     games = tk.StringVar(value=str(ST.read(root).get("season_games", 162)))
-    ttk.Spinbox(row, textvariable=games, from_=1, to=162, width=6).pack(side="left", padx=6)
+    ttk.Label(row, textvariable=games, font=("Segoe UI", 9, "bold")).pack(side="left", padx=6)
     ttk.Label(row, foreground="#666", text="(your Schedule tab's; a saved dynasty's is read from it)").pack(side="left")
     tree = ttk.Treeview(frm, columns=("t", "now", "full"), show="headings", height=8)
     for c, t, wd in (("t", "Team", 90), ("now", "Now", 110), ("full", "162 games", 110)):
