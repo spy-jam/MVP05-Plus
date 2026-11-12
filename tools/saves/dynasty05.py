@@ -1,4 +1,4 @@
-"""MVP Baseball 2005 dynasty saves between the GameCube and the Xbox (an owner mode dynasty is a dynasty save too).
+"""MVP Baseball 2005 dynasty saves between the GameCube and the Xbox (dynasty mode; owner mode saves are refused).
 
   read_gc(data)                     a GameCube dynasty .gci (Dolphin) checked: {name, typ, payload}
   gc_to_xbox(gci, xbox_dynasty)     the .gci's dynasty as an Xbox data.dat, built on one of your own Xbox dynasty

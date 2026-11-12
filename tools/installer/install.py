@@ -770,7 +770,7 @@ def import_window(parent, root, tk, ttk, on_close=None):
 def import_tool(frm, root, tk, ttk):
     """Import a save: a save from another MVP 2005 written into one of your saves here (backed up first), so it
     plays in MVP05-Plus. Rosters from the PS2, PC or another Xbox (Mad Dog's conversion, from his MVP Roster
-    Toolkit); dynasties, owner mode ones too, from the GameCube (spy_jam's converter)."""
+    Toolkit); dynasties from the GameCube (spy_jam's converter)."""
     import dynasty05 as DY
     import rosters05 as RO
     import saves05 as S
@@ -780,7 +780,7 @@ def import_tool(frm, root, tk, ttk):
     ttk.Label(frm, foreground="#666", wraplength=540, justify="left", text=(
         "Brings a save from another version of MVP 2005 into this one. It works with:\n"
         "\u2022  rosters from the PS2 (a .psu, or the Ps2.sav inside one), the PC (.sav) or another Xbox\n"
-        "\u2022  a dynasty, owner mode too, from the GameCube (the .gci file Dolphin exports)\n"
+        "\u2022  a dynasty from the GameCube (the .gci file Dolphin exports)\n"
         "The save goes into one of your own saves of the same kind, which is backed up first.")).grid(
         row=1, column=0, columnspan=2, sticky="w", pady=(0, 12))
 
