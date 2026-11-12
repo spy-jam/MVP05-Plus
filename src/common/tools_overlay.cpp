@@ -7,10 +7,12 @@
 #include <chrono>
 #include <cstdio>
 #include <mutex>
+#include <string>
 #include <thread>
 
 #include "core/log.h"
 #include "imgui.h"
+#include "dbtools.h"
 #include "standings.h"
 
 namespace tools {
@@ -161,6 +163,45 @@ void ShortSeason() {
     }
 }
 
+// the dynasty tools test: whether tywiggins' PC tools' distances hold in this game
+struct DbTest {
+    std::atomic<int> state{0};  // 0 idle, 1 working, 2 done
+    std::mutex lock;
+    std::string text;
+    std::thread worker;
+} g_db;
+
+void DbTools() {
+    Help("A test for the next tools (Team Changer, ChangeMoney, Stamina Changer, Playoffs Creator, by tywiggins): "
+         "load a dynasty, stay on its season screen, then Check. It only reads, and writes what it finds to the log. "
+         "Send the log, or a memory capture if asked for one.");
+    ImGui::Spacing();
+    bool busy = g_db.state == 1;
+    ImGui::BeginDisabled(busy);
+    auto run = [](bool capture) {
+        if (g_db.worker.joinable()) g_db.worker.join();
+        g_db.state = 1;
+        g_db.worker = std::thread([capture] {
+            std::string t = capture ? dbtools::Capture() : dbtools::Check();
+            if (capture) t = t.empty() ? "The capture couldn't be written." : "Saved: " + t;
+            std::lock_guard l(g_db.lock);
+            g_db.text = t;
+            g_db.state = 2;
+        });
+    };
+    if (ImGui::Button("Check")) run(false);
+    ImGui::SameLine();
+    if (ImGui::Button("Save a memory capture")) run(true);
+    ImGui::EndDisabled();
+    if (busy) ImGui::Text("Working...");
+    if (g_db.state == 2) {
+        std::lock_guard l(g_db.lock);
+        ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + ImGui::GetCursorPosX());
+        ImGui::TextUnformatted(g_db.text.c_str());
+        ImGui::PopTextWrapPos();
+    }
+}
+
 }  // namespace
 
 bool Open() { return g_open; }
@@ -192,6 +233,10 @@ void Ui(double) {
         if (ImGui::BeginTabBar("tools")) {
             if (ImGui::BeginTabItem("Short Season Advancer")) {
                 ShortSeason();
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Dynasty tools (test)")) {
+                DbTools();
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();
