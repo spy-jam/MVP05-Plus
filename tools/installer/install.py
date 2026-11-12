@@ -1412,7 +1412,7 @@ def short_season_tool(frm, root, tk, ttk):
     ttk.Label(row, text="Games in the season:").pack(side="left")
     games = tk.StringVar(value=str(ST.read(root).get("season_games", 162)))
     ttk.Spinbox(row, textvariable=games, from_=1, to=162, width=6).pack(side="left", padx=6)
-    ttk.Label(row, foreground="#666", text="(a saved dynasty's is read from it)").pack(side="left")
+    ttk.Label(row, foreground="#666", text="(your Schedule tab's; a saved dynasty's is read from it)").pack(side="left")
     tree = ttk.Treeview(frm, columns=("t", "now", "full"), show="headings", height=8)
     for c, t, wd in (("t", "Team", 90), ("now", "Now", 110), ("full", "162 games", 110)):
         tree.heading(c, text=t)
@@ -1535,7 +1535,10 @@ def short_season_tool(frm, root, tk, ttk):
     find_b.configure(command=find)
     write_b.configure(command=write)
     how.trace_add("write", lambda *_: (forget(), show([]), say("")))
-    return load_saves  # the dynasty list again each time the tool is opened
+    def opened():  # each time the tool is opened: the dynasty list, and the schedule's length as it is now
+        games.set(str(ST.read(root).get("season_games", 162)))
+        load_saves()
+    return opened
 
 
 def updates_section(frm, root, tk, ttk, row):

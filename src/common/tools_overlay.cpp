@@ -40,7 +40,6 @@ Seen g_ports[4];
 
 // the short season tool's state, kept between frames
 struct Season {
-    int games = standings::kFullSeason;
     std::atomic<int> state{0};  // 0 idle, 1 searching, 2 found, 3 not found, 4 written, 5 gone
     standings::Table table;
     std::thread worker;
@@ -51,10 +50,7 @@ void Toggle() {
     g_open = open;
     ImGuiIO& io = ImGui::GetIO();
     io.MouseDrawCursor = open;  // the game hides the system cursor in fullscreen
-    if (open && g_season.state != 1) {
-        g_season.games = int(g_season_games ? g_season_games : standings::kFullSeason);
-        if (g_season.state != 2) g_season.state = 0;
-    }
+    if (open && g_season.state != 1 && g_season.state != 2) g_season.state = 0;
     LOGR("tools: menu %s", open ? "opened" : "closed");
 }
 
@@ -90,28 +86,23 @@ void Help(const char* text) {
 }
 
 void ShortSeason() {
-    Help("For seasons shorter than 162 games. At the end of the regular season: save the dynasty and stay on the "
-         "season screen. Find the standings here, check them, and write them projected to 162 games. Then advance "
-         "to the playoffs and save again.");
+    Help("For seasons shorter than 162 games. After the last regular season game: save the dynasty and stay on "
+         "the season screen. Find the standings here, check them, and write them projected to 162 games. Then "
+         "advance to the playoffs and save again.");
     ImGui::Spacing();
     int state = g_season.state;
     bool busy = state == 1;
     ImGui::BeginDisabled(busy);
-    ImGui::SetNextItemWidth(160 * g_scale);
-    if (ImGui::InputInt("games in this season", &g_season.games, 1, 10)) {
-        g_season.games = std::clamp(g_season.games, 1, standings::kFullSeason);
-        g_season.state = 0;
-    }
     if (ImGui::Button("Find the standings")) {
         if (g_season.worker.joinable()) g_season.worker.join();
         g_season.state = 1;
-        int games = g_season.games;
-        g_season.worker = std::thread([games] {
+        g_season.worker = std::thread([] {
             standings::Table t;
-            bool ok = standings::Find(games, t);
+            int expected = g_season_games > 0 && g_season_games < uint32_t(standings::kFullSeason) ? int(g_season_games) : 0;
+            bool ok = standings::Find(expected, t);
             if (ok) g_season.table = t;
-            if (ok) LOGR("tools: standings for %d games found at %08X, format %c", games, t.va, t.format);
-            else LOGR("tools: standings for %d games not found", games);
+            if (ok) LOGR("tools: a %d-game season's standings found at %08X, format %c", t.games, t.va, t.format);
+            else LOGR("tools: no finished season's standings found");
             g_season.state = ok ? 2 : 3;
         });
     }
@@ -119,9 +110,9 @@ void ShortSeason() {
     switch (state) {
         case 1: ImGui::Text("Searching the game's memory..."); break;
         case 3:
-            ImGui::TextColored({1, 0.45f, 0.4f, 1}, "No %d-game standings found.", g_season.games);
-            Help("Be on the dynasty's season screen after the last regular season game, with the season length "
-                 "right.");
+            ImGui::TextColored({1, 0.45f, 0.4f, 1}, "No finished season's standings found.");
+            Help("Be on the dynasty's season screen after the last regular season game: every team has to have "
+                 "played all its games.");
             break;
         case 4: ImGui::TextColored({0.4f, 0.9f, 0.5f, 1}, "Written. Now advance to the playoffs, then save."); break;
         case 5:
@@ -131,16 +122,36 @@ void ShortSeason() {
     }
     if (state != 2 && state != 4) return;
     ImGui::Spacing();
-    if (state == 2) {
+    // the schedule the Launcher set: a table at another length is a season stopped part way (or last season's)
+    int expected = g_season_games > 0 && g_season_games < uint32_t(standings::kFullSeason) ? int(g_season_games) : 0;
+    int found = g_season.table.games;
+    bool wrong = expected && found != expected;
+    if (state == 2 || state == 4) {
+        if (found == standings::kFullSeason)
+            ImGui::Text("Standings after 162 games: nothing to project.");
+        else if (wrong)
+            ImGui::TextColored({1, 0.45f, 0.4f, 1}, "Standings after %d games, but this season is %d games.", found,
+                               expected);
+        else
+            ImGui::Text("A %d-game season%s.", found, expected ? "" : " (check it's over: every team at its last game)");
+        if (wrong)
+            Help("Finish the regular season (every team's last game played), then find them again. If this season "
+                 "uses another schedule than the one the Launcher has now, pick that one on its Schedule tab.");
+    }
+    if (state == 2 && found != standings::kFullSeason && !wrong) {
         if (ImGui::Button("Write the standings, projected to 162 games")) {
-            g_season.state = standings::Write(g_season.games, g_season.table) ? 4 : 5;
+            g_season.state = standings::Write(g_season.table) ? 4 : 5;
             LOGR("tools: projected standings %s", g_season.state == 4 ? "written" : "not written, they moved");
         }
         ImGui::SameLine();
         if (ImGui::Button("Cancel")) g_season.state = 0;
     }
+    // the table scrolls, in what's left of 90% of the screen's height
+    float top = ImGui::GetCursorScreenPos().y - ImGui::GetWindowPos().y;
+    float room = ImGui::GetIO().DisplaySize.y * 0.9f - top - ImGui::GetStyle().WindowPadding.y * 2;
+    float height = std::clamp(room, 120.0f, 400.0f * g_scale);
     if (ImGui::BeginTable("standings", 6, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit |
-                                              ImGuiTableFlags_ScrollY, ImVec2(0, 260 * g_scale))) {
+                                              ImGuiTableFlags_ScrollY, ImVec2(0, height))) {
         for (int c = 0; c < 2; c++) {
             ImGui::TableSetupColumn("Team");
             ImGui::TableSetupColumn("Now");
@@ -224,7 +235,7 @@ void Ui(double) {
     FeedPad();
     ImGuiIO& io = ImGui::GetIO();
     // sized for the screen: as big on a 4K screen as on a 720p one
-    float s = std::clamp(io.DisplaySize.y / 720.0f, 1.0f, 4.0f);
+    float s = std::clamp(io.DisplaySize.y / 900.0f, 1.0f, 4.0f);
     g_scale = s;
     const ImGuiStyle& st = ImGui::GetStyle();
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(st.WindowPadding.x * s, st.WindowPadding.y * s));
@@ -232,8 +243,8 @@ void Ui(double) {
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(st.ItemSpacing.x * s, st.ItemSpacing.y * s));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(st.ItemInnerSpacing.x * s, st.ItemInnerSpacing.y * s));
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(st.CellPadding.x * s, st.CellPadding.y * s));
-    ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Appearing,
-                            ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always,
+                            ImVec2(0.5f, 0.5f));  // centred as it grows, so it stays on the screen
     ImGui::SetNextWindowSize(ImVec2(620 * s, 0), ImGuiCond_Always);
     ImGui::SetNextWindowFocus();
     bool open = true;
@@ -269,10 +280,21 @@ void Pad(int port, input::Pad& p) {
     using G = input::GameCube;
     bool combo = p.connected && ((p.buttons & (kStart | kBack)) == (kStart | kBack) ||
                                  (p.gc.present && (p.gc.buttons & (G::Start | G::Z)) == (G::Start | G::Z)));
+    // what reaches here, for the log: Start or Back pressed (the first few times), and the shortcut held
+    static int noted = 0;
+    static uint16_t last[4] = {};
+    uint16_t sb = p.connected ? uint16_t(p.buttons & (kStart | kBack)) : 0;
+    if (sb != last[port] && sb && noted < 12) {
+        noted++;
+        LOGR("tools: port %d: %s%s pressed (buttons %04X%s)", port, sb & kStart ? "Start " : "", sb & kBack ? "Back" : "",
+             p.buttons, p.gc.present ? ", a GameCube controller" : "");
+    }
+    last[port] = sb;
     if (!combo) {
         held[port] = {};
         fired[port] = false;
     } else if (held[port] == clock::time_point{}) {
+        LOGR("tools: port %d: the shortcut held", port);
         held[port] = clock::now();
     } else if (!fired[port] && clock::now() - held[port] >= kHold) {
         fired[port] = true;
