@@ -767,11 +767,38 @@ def import_window(parent, root, tk, ttk, on_close=None):
     win.geometry(f"+{max(x, 0)}+{max(y, 0)}")
 
 
+def choose_card_save(parent, tk, ttk, found):
+    """One of a memory card's roster saves [(folder, file, save)], picked in a small window; None if closed."""
+    win = tk.Toplevel(parent)
+    win.title("Which roster save?")
+    win.transient(parent.winfo_toplevel())
+    win.grab_set()
+    f = ttk.Frame(win, padding=12)
+    f.grid()
+    ttk.Label(f, text="The memory card has more than one MVP 2005 roster save. Which one?").grid(sticky="w")
+    lb = tk.Listbox(f, height=min(8, len(found)), width=48, exportselection=False)
+    for folder, name, _ in found:
+        lb.insert("end", f"{name}   ({folder})")
+    lb.selection_set(0)
+    lb.grid(sticky="we", pady=8)
+    out = {}
+
+    def ok(*_):
+        if lb.curselection():
+            out["v"] = found[lb.curselection()[0]]
+        win.destroy()
+    ttk.Button(f, text="Use this one", command=ok).grid(sticky="e")
+    lb.bind("<Double-Button-1>", ok)
+    win.wait_window()
+    return out.get("v")
+
+
 def import_tool(frm, root, tk, ttk):
     """Import a save: a save from another MVP 2005 written into one of your saves here (backed up first), so it
     plays in MVP05-Plus. Rosters from the PS2, PC or another Xbox (Mad Dog's conversion, from his MVP Roster
     Toolkit); dynasties from the GameCube (spy_jam's converter)."""
     import dynasty05 as DY
+    import ps2card as PC
     import rosters05 as RO
     import saves05 as S
     from tkinter import filedialog, messagebox
@@ -779,7 +806,8 @@ def import_tool(frm, root, tk, ttk):
     frm.columnconfigure(1, weight=1)
     ttk.Label(frm, foreground="#666", wraplength=540, justify="left", text=(
         "Brings a save from another version of MVP 2005 into this one. It works with:\n"
-        "\u2022  rosters from the PS2 (a .psu, or the Ps2.sav inside one), the PC (.sav) or another Xbox\n"
+        "\u2022  rosters from the PS2 (a .psu, a PCSX2 memory card .ps2, or the roster file from a save), the PC "
+        "(.sav) or another Xbox\n"
         "\u2022  a dynasty from the GameCube (the .gci file Dolphin exports)\n"
         "The save goes into one of your own saves of the same kind, which is backed up first.")).grid(
         row=1, column=0, columnspan=2, sticky="w", pady=(0, 12))
@@ -852,7 +880,7 @@ def import_tool(frm, root, tk, ttk):
 
     def pick():
         p = filedialog.askopenfilename(parent=frm, title="A save from another MVP 2005", filetypes=[
-            ("MVP 2005 saves", "*.gci *.psu *.sav *.dat"), ("All files", "*.*")])
+            ("MVP 2005 saves", "*.gci *.psu *.ps2 *.sav *.dat"), ("All files", "*.*")])
         if not p:
             return
         picked.clear()
@@ -863,10 +891,25 @@ def import_tool(frm, root, tk, ttk):
             if data[:4] == b"GV4E":
                 meta = DY.read_gc(data)
                 picked.update(kind="dynasty", data=data, what=f"GameCube dynasty \"{meta['name']}\"")
+            elif data[:28] == PC.MAGIC:  # a PS2 memory card: its MVP 2005 roster saves
+                found = []
+                for folder, files in PC.Card(data).saves().items():
+                    for name, b in files.items():
+                        if len(b) == RO.SIZE + RO.PC_HEAD:
+                            try:
+                                found.append((folder, name, RO.read(b)))
+                            except RO.RosterError:
+                                pass
+                if not found:
+                    raise RO.RosterError("that memory card has no MVP 2005 roster save on it")
+                which = found[0] if len(found) == 1 else choose_card_save(frm, tk, ttk, found)
+                if not which:
+                    return
+                picked.update(kind="roster", save=which[2], what=f"PS2 rosters ({which[1]} on the card)")
             else:
                 save = RO.read(data)
                 picked.update(kind="roster", save=save, what=f"{save.platform} rosters")
-        except (OSError, RO.RosterError, DY.DynastyError) as e:
+        except (OSError, RO.RosterError, DY.DynastyError, PC.CardError) as e:
             src_text.configure(text=f"{os.path.basename(p)}: can't be used ({e})", foreground="#a33")
             return refresh()
         picked["path"] = p
