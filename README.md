@@ -14,7 +14,7 @@ MVP Baseball 2005 on Windows, and on SteamOS (Linux) through Proton, built on [M
 * **MVP05-Plus Launcher**: install from your discs, launch the game, import and restore saves, pick the season schedule, run the tools, adjust display settings, and update MVP05-Plus.
 * **Fixes**: a shader cache to prevent mid-game stutter, SteamOS support through Proton, and a fix for a crash during stolen bases, found while testing the original recomp.
 * **Save backups**: a full save backup menu in the Launcher. Your saves are backed up automatically when the game starts, keeping the latest 30 backups by default, and you can view and restore them in the Launcher.
-* **Tools**: extra tools for your seasons and saves, in the Launcher's Tools tab and in the game (F10, or hold Back + Start / Z + Start). Beta 2 has the Short Season Advancer, the Team Changer and the Playoffs Editor.
+* **Tools**: extra tools for your seasons and saves, in the Launcher's Tools tab and in the game (F10, or hold Back + Start / Z + Start). Beta 2 has a Short Season Advancer, a Team Changer and a Playoffs Editor.
 
 ## Compatible controllers
 
