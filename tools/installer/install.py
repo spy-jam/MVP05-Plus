@@ -1167,9 +1167,9 @@ def settings_tab(tabs, root, tk, ttk):
     frm = ttk.Frame(tabs, padding=12)
     tabs.add(frm, text="Settings")
     ttk.Label(frm, text="Display", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=3, sticky="w")
-    ttk.Label(frm, foreground="#666", wraplength=520, justify="left", text=(
+    ttk.Label(frm, foreground="#666", wraplength=600, justify="left", text=(
         "Saved in mvp05-settings.toml beside the game. Changes take effect the next time the game starts.")).grid(
-        row=1, column=0, columnspan=3, sticky="w", pady=(0, 10))
+        row=1, column=0, columnspan=3, sticky="w", pady=(0, 6))
     mode = tk.StringVar()
     aspect = tk.StringVar()
     res = tk.StringVar()
@@ -1202,8 +1202,8 @@ def settings_tab(tabs, root, tk, ttk):
                                            width=34)),
     ]
     for i, (label, widget) in enumerate(rows):
-        ttk.Label(frm, text=label).grid(row=2 + i, column=0, sticky="w", pady=3)
-        widget.grid(row=2 + i, column=1, sticky="w", padx=(12, 0), pady=3)
+        ttk.Label(frm, text=label).grid(row=2 + i, column=0, sticky="w", pady=2)
+        widget.grid(row=2 + i, column=1, sticky="w", padx=(12, 0), pady=2)
     ttk.Label(frm, text="(or type your own, width x height)", foreground="#666").grid(
         row=4, column=2, sticky="w", padx=8)
     ttk.Checkbutton(frm, text="VSync", variable=vsync).grid(row=8, column=0, columnspan=2, sticky="w", pady=(6, 0))
@@ -1315,7 +1315,7 @@ def settings_tab(tabs, root, tk, ttk):
     import shortcuts as SC
     # shortcuts and updates side by side under the display settings
     lower = ttk.Frame(frm)
-    lower.grid(row=13, column=0, columnspan=3, sticky="nwe", pady=(14, 0))
+    lower.grid(row=13, column=0, columnspan=3, sticky="nwe", pady=(8, 0))
     lower.columnconfigure(0, weight=1)
     lower.columnconfigure(2, weight=1)
     scf = ttk.Frame(lower)
@@ -1366,7 +1366,7 @@ def settings_tab(tabs, root, tk, ttk):
     updates_section(upf, root, tk, ttk, 0)
 
     bar = ttk.Frame(frm)
-    bar.grid(row=11, column=0, columnspan=3, sticky="we", pady=(10, 0))
+    bar.grid(row=11, column=0, columnspan=3, sticky="we", pady=(8, 0))
     ttk.Button(bar, text="Save", command=save).pack(side="right")
     ttk.Button(bar, text="Defaults", command=defaults).pack(side="right", padx=6)
     ttk.Button(bar, text="Open the settings file", command=lambda: os.startfile(os.path.join(root, ST.FILE))
