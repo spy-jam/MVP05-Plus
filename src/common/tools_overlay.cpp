@@ -26,6 +26,7 @@ constexpr uint16_t kStart = 1u << 4, kBack = 1u << 5;
 constexpr auto kHold = std::chrono::milliseconds(1000);
 
 std::atomic<bool> g_open{false};
+std::atomic<bool> g_focus{false};  // the menu just opened: focus it
 float g_scale = 1.0f;  // the menu's size for this screen, set each frame
 std::atomic<bool> g_toggle{false};  // asked for from the pad thread, done in Ui
 
@@ -59,6 +60,7 @@ void Toggle() {
     io.MouseDrawCursor = open;  // the game hides the system cursor in fullscreen
     if (open && g_season.state != 1 && g_season.state != 2) g_season.state = 0;
     if (open) g_team = {};  // the Team Changer looks again
+    g_focus = open;
     LOGR("tools: menu %s", open ? "opened" : "closed");
 }
 
@@ -192,7 +194,8 @@ void TeamChanger() {
     }
     ImGui::Text("You control: the %s", dbtools::kOrgNames[g_team.current]);
     ImGui::SetNextItemWidth(260 * g_scale);
-    if (ImGui::BeginCombo("##org", dbtools::kOrgNames[g_team.pick])) {
+    if (ImGui::BeginCombo("##org", dbtools::kOrgNames[g_team.pick], ImGuiComboFlags_HeightLarge)) {
+        ImGui::SetWindowFontScale(g_scale);  // the list is a window of its own: scaled like the menu
         for (int k = 0; k < dbtools::kOrgCount; k++)
             if (ImGui::Selectable(dbtools::kOrgNames[k], k == g_team.pick)) g_team.pick = k;
         ImGui::EndCombo();
@@ -284,7 +287,9 @@ void Ui(double) {
     ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always,
                             ImVec2(0.5f, 0.5f));  // centred as it grows, so it stays on the screen
     ImGui::SetNextWindowSize(ImVec2(620 * s, 0), ImGuiCond_Always);
-    ImGui::SetNextWindowFocus();
+    // kept in front (for the controller), but not while one of its dropdowns is open: focusing it closes them
+    if (g_focus.exchange(false) || !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel))
+        ImGui::SetNextWindowFocus();
     bool open = true;
     if (ImGui::Begin("MVP05-Plus Tools", &open, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::SetWindowFontScale(s);
