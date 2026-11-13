@@ -130,11 +130,18 @@ def convert_body(gc_body, xb_body):
 def to_xbox(gci, xbox_save):
     """A GameCube roster .gci as an Xbox data.dat, with xbox_save's header (one of your Xbox roster saves)."""
     gc_body, _ = read_gc(gci)
-    target = RO.read(xbox_save)
+    try:
+        target = RO.read(xbox_save)
+    except RO.RosterError as e:
+        raise GcRosterError(f"your roster save it goes into can't be read ({e})")
     if target.platform != RO.XBOX:
         raise GcRosterError("the save to write into isn't an Xbox roster save")
     body = convert_body(gc_body, target.body)
     save = RO.Save(RO.XBOX, None, body)
+    try:
+        RO.locate(body, RO.XBOX)
+    except RO.RosterError as e:
+        raise GcRosterError(f"the converted roster didn't come out right, built on that save ({e})")
     try:
         return RO.to_xbox(save, xbox_save)
     except RO.RosterError as e:
