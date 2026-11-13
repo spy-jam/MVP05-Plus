@@ -1,3 +1,8 @@
+# MVP05-Plus Beta 2.1
+
+- **Player of the Day** on the *Play* tab: an MLB player from the game's 2005 rosters, with his picture and 2004 season, the same for everyone each day. It's read from your own installed game.
+- Updating from Beta 2: *Settings → Updates*.
+
 # MVP05-Plus Beta 2
 
 Bring your saves over from the other versions of MVP 2005, pick the season you play, run tools inside the game, and update from the Launcher.

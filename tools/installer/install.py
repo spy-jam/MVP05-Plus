@@ -33,7 +33,7 @@ for sub in ("gc_layout", "ps2_layout", "saves", os.path.join("saves", "mvp05", "
 
 import discs  # noqa: E402
 
-VERSION = "Beta 2"
+VERSION = "Beta 2.1"
 VERSION = os.environ.get("MVP05_TEST_VERSION") or VERSION  # Test-Updater.cmd: pretend to be older
 GAME = "MVP05-Plus"
 
@@ -513,6 +513,51 @@ def gui(root):
     ttk.Label(ready, foreground="#777", wraplength=520, justify="left", text=(
         "Button art follows the controller connected when the game starts.")).grid(
         row=11, column=0, columnspan=2, sticky="w", pady=(4, 0))
+    # Player of the Day (potd.py): one MLB player from the disc's rosters, the same for everyone on the same date,
+    # with his picture from your own installed game
+    potd_card = ttk.Frame(ready)
+    potd_pic = ttk.Label(potd_card)
+    potd_pic.grid(row=0, column=0, rowspan=4, sticky="nw", padx=(0, 10))
+    ttk.Label(potd_card, text="PLAYER OF THE DAY", foreground="#777", font=("Segoe UI", 8, "bold")).grid(
+        row=0, column=1, sticky="w")
+    potd_name = ttk.Label(potd_card, font=("Segoe UI", 11, "bold"))
+    potd_name.grid(row=1, column=1, sticky="w")
+    potd_team = ttk.Label(potd_card, foreground="#444")
+    potd_team.grid(row=2, column=1, sticky="w")
+    potd_line = ttk.Label(potd_card, foreground="#666")
+    potd_line.grid(row=3, column=1, sticky="nw")
+
+    def show_potd():
+        if getattr(potd_card, "day", None) == datetime.date.today():
+            return
+
+        def work():
+            import potd
+            day = datetime.date.today()
+            try:
+                p, im = potd.today(root, day)
+            except Exception:  # no card is fine: the tab is as it was
+                return
+            data = None
+            if im is not None:
+                import base64
+                from PIL import Image
+                buf = io.BytesIO()
+                im.resize((76, 76), Image.LANCZOS).save(buf, format="PNG")
+                data = base64.b64encode(buf.getvalue())
+            w.after(0, lambda: shown(day, p, data))
+
+        def shown(day, p, data):
+            potd_card.day = day
+            if data:
+                potd_pic.picture = tk.PhotoImage(data=data)
+                potd_pic.configure(image=potd_pic.picture)
+            potd_name.configure(text=p["name"])
+            potd_team.configure(text="  \u00b7  ".join(x for x in (
+                f"#{p['number']}" if p["number"] else "", p["pos"], p["team"]) if x))
+            potd_line.configure(text=p["line"])
+            potd_card.grid(row=12, column=0, columnspan=2, sticky="w", pady=(12, 0))
+        threading.Thread(target=work, daemon=True).start()
     colours = {"ok": "#1a7f37", "warn": "#b35900", "none": "#777"}
 
     def watch_pads():
@@ -608,6 +653,7 @@ def gui(root):
             ready.grid(row=0, column=0, sticky="nwe")
             tab.columnconfigure(0, weight=1)
             show_art()
+            show_potd()
             back.pack(side="left")
             labels["xbox"].configure(text="Xbox disc (installed: leave empty, or choose one to install again)")
         else:

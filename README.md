@@ -67,7 +67,7 @@ sh -c 'B="/home/deck/Games/MVP05-Plus/gcbridge"; chmod +x "$B"; "$B" & exec "$@"
 
 ## MVP05-Plus Launcher
 
-* **Install**, which becomes **Play** once the game's installed (coming from an older MVP05-Plus or Mad Dog's MVP05? The Launcher offers to bring its game, saves and settings over the first time it opens; **Ctrl+Shift+B** offers it again): your discs in, then what's installed (checked each start), **Launch MVP 05**, and which controllers Windows sees right now, including whether the GameCube adapter has the WinUSB driver it needs.
+* **Install**, which becomes **Play** once the game's installed (coming from an older MVP05-Plus or Mad Dog's MVP05? The Launcher offers to bring its game, saves and settings over the first time it opens; **Ctrl+Shift+B** offers it again): your discs in, then what's installed (checked each start), **Launch MVP 05**, and which controllers Windows sees right now, including whether the GameCube adapter has the WinUSB driver it needs. At the bottom, the **Player of the Day**: an MLB player from the game's 2005 rosters, with his picture and 2004 season, the same for everyone each day.
 * **Saves**: *Your saves*, with *Import a save…* for saves from the PS2, GameCube, PC or another Xbox; and *Backups* by date. Restore single saves or a whole date; your saves become a backup first, so a restore can be undone.
 * **Schedule**: the season schedule new seasons play, and *Import a schedule…*.
 * **Tools**: the Short Season Advancer, Team Changer and Playoffs Editor, in the running game or (Short Season Advancer, Playoffs Editor) on a saved dynasty.
