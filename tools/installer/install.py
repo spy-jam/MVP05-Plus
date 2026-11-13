@@ -798,6 +798,7 @@ def import_tool(frm, root, tk, ttk):
     plays in MVP05-Plus. Rosters from the PS2, PC or another Xbox (Mad Dog's conversion, from his MVP Roster
     Toolkit); dynasties from the GameCube (spy_jam's converter)."""
     import dynasty05 as DY
+    import gcroster05 as GR
     import ps2card as PC
     import rosters05 as RO
     import saves05 as S
@@ -808,7 +809,7 @@ def import_tool(frm, root, tk, ttk):
         "Brings a save from another version of MVP 2005 into this one. It works with:\n"
         "\u2022  rosters from the PS2 (a .psu, a PCSX2 memory card .ps2, or the roster file from a save), the PC "
         "(.sav) or another Xbox\n"
-        "\u2022  a dynasty from the GameCube (the .gci file Dolphin exports)\n"
+        "\u2022  rosters or a dynasty from the GameCube (the .gci file Dolphin exports)\n"
         "The save goes into one of your own saves of the same kind, which is backed up first.")).grid(
         row=1, column=0, columnspan=2, sticky="w", pady=(0, 12))
 
@@ -838,7 +839,7 @@ def import_tool(frm, root, tk, ttk):
     note = ttk.Label(frm, wraplength=520, justify="left")
     note.grid(row=9, column=1, sticky="w", pady=(8, 0))
     ttk.Label(frm, foreground="#888", wraplength=540, justify="left", text=(
-        "Roster conversion by Mad Dog (MVP Roster Toolkit). GameCube dynasty conversion by spy_jam.")).grid(
+        "Roster conversion by Mad Dog (MVP Roster Toolkit). GameCube conversion (rosters and dynasties) by spy_jam.")).grid(
         row=10, column=0, columnspan=2, sticky="w", pady=(16, 0))
     picked, targets = {}, []
     kinds = {"roster": ("roster save", "rosters"), "dynasty": ("dynasty save", "dynasty")}
@@ -888,7 +889,10 @@ def import_tool(frm, root, tk, ttk):
         try:
             with open(p, "rb") as f:
                 data = f.read()
-            if data[:4] == b"GV4E":
+            if data[:4] == b"GV4E" and b"Rosters" in data[:0x40]:
+                GR.read_gc(data)
+                picked.update(kind="roster", gc_roster=data, what="GameCube rosters")
+            elif data[:4] == b"GV4E":
                 meta = DY.read_gc(data)
                 picked.update(kind="dynasty", data=data, what=f"GameCube dynasty \"{meta['name']}\"")
             elif data[:28] == PC.MAGIC:  # a PS2 memory card: its MVP 2005 roster saves
@@ -909,7 +913,7 @@ def import_tool(frm, root, tk, ttk):
             else:
                 save = RO.read(data)
                 picked.update(kind="roster", save=save, what=f"{save.platform} rosters")
-        except (OSError, RO.RosterError, DY.DynastyError, PC.CardError) as e:
+        except (OSError, RO.RosterError, DY.DynastyError, PC.CardError, GR.GcRosterError) as e:
             src_text.configure(text=f"{os.path.basename(p)}: can't be used ({e})", foreground="#a33")
             return refresh()
         picked["path"] = p
@@ -935,14 +939,19 @@ def import_tool(frm, root, tk, ttk):
                     raise RO.RosterError("close MVP05.exe first: the game keeps its saves open while it runs")
                 with open(dat, "rb") as f:
                     mine = f.read()
-                out = RO.to_xbox(picked["save"], mine) if kind == "roster" else DY.gc_to_xbox(picked["data"], mine)
+                if kind == "dynasty":
+                    out = DY.gc_to_xbox(picked["data"], mine)
+                elif picked.get("gc_roster"):
+                    out = GR.to_xbox(picked["gc_roster"], mine)
+                else:
+                    out = RO.to_xbox(picked["save"], mine)
                 S.backup_folder(root, s["folder"], f"importing {kinds[kind][1]}")
                 with open(dat + ".new", "wb") as f:
                     f.write(out)
                 os.replace(dat + ".new", dat)
                 msg = (f"Done. Load \"{s['name']}\" in the game. The save it replaced is in Saves > Backups.",
                        "#1a7f37")
-            except (OSError, RO.RosterError, DY.DynastyError) as e:
+            except (OSError, RO.RosterError, DY.DynastyError, GR.GcRosterError) as e:
                 msg = (f"Nothing was changed: {e}.", "#a33")
             frm.after(0, lambda: (say(*msg), refresh()))
         threading.Thread(target=work, daemon=True).start()
