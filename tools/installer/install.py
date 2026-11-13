@@ -664,10 +664,9 @@ def gui(root):
         from tkinter import messagebox
         set_launcher_option(root, "offered_bring_over", True)
         if not messagebox.askyesno("Already have MVP05-Plus?", (
-                "Coming from MVP05-Plus Beta 1, or Mad Dog's MVP05?\n\n"
-                "Bring its installed game, saves, backups, button art and settings into this folder, instead of "
-                "installing from your discs.\n\n"
-                "(Ctrl+Shift+B in the Launcher asks again.)"), parent=w):
+                "Coming from MVP05-Plus Beta 1 or Mad Dog's MVP05?\n\n"
+                "Bring over its game, saves and settings, instead of installing from your discs.\n\n"
+                "(Ctrl+Shift+B asks again later.)"), parent=w):
             return
         bring_over()
 
@@ -690,16 +689,18 @@ def gui(root):
         win.grab_set()
         f = ttk.Frame(win, padding=14)
         f.grid()
+        gb = f"{size / 2**30:.1f} GB"
         ttk.Label(f, wraplength=420, justify="left", text=(
-            f"From {old} ({size / 2**30:.1f} GB): the installed game, saves, backups, button art, shader cache, "
-            "schedules and settings.\n\n"
-            "Copy: the old folder keeps working; needs that much free space.\n"
-            "Move: no extra space, and quick on the same drive; the old folder won't run any more (delete it "
-            "afterwards).")).grid(row=0, column=0, columnspan=3, sticky="w", pady=(0, 12))
+            f"Bring over your game, saves and settings from:\n{old} ({gb})")).grid(
+            row=0, column=0, columnspan=3, sticky="w", pady=(0, 10))
+        ttk.Label(f, wraplength=420, justify="left", text=(
+            f"Copy: keeps the old folder. Needs {gb} free.\n"
+            "Move: needs no extra space. The old folder won't work afterwards.")).grid(
+            row=2, column=0, columnspan=3, sticky="w", pady=(0, 12))
         for i, (text, v) in enumerate((("Copy", False), ("Move", True))):
             ttk.Button(f, text=text, command=lambda v=v: (how.update(move=v), win.destroy())).grid(
-                row=1, column=i, padx=(0, 6), sticky="w")
-        ttk.Button(f, text="Cancel", command=win.destroy).grid(row=1, column=2, sticky="e")
+                row=3, column=i, padx=(0, 6), sticky="w")
+        ttk.Button(f, text="Cancel", command=win.destroy).grid(row=3, column=2, sticky="e")
         win.wait_window()
         if "move" not in how:
             return
