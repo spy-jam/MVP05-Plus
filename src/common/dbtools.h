@@ -21,6 +21,19 @@ extern const char* const kOrgNames[kOrgCount];  // Angels ... Yankees, alphabeti
 int ControlledOrg(uint32_t* va = nullptr);
 // control given to that organization; false if the spot wasn't found or isn't an organization any more
 bool SetControlledOrg(int org);
+// Playoffs Creator (tywiggins): when a playoff round starts, the game puts its games in the MLB schedule (28-byte
+// entries: day, a bitfield with the series' slot and a played count, the home id at +4, the visitors' at +16); the
+// next round is made from their results. A team swapped in every game of its series changes who's in the playoffs.
+struct Series {
+    int slot = 0;            // the game's number for the series
+    int home = -1, away = -1;  // places in kOrgNames; home: at home in the series' first game
+    int games = 0;
+};
+// the round's series, before its first game; empty, with the reason in why, if there isn't one
+std::vector<Series> Playoffs(std::string& why);
+// to[k]: the organization in place of organization k in this round (k itself to keep it); false, with why, if the
+// round isn't there any more, has started, or a team would be in it twice
+bool SetPlayoffTeams(const int (&to)[kOrgCount], std::string& why);
 // what the ported tools would read, written to the log and returned as text for the Tools menu; changes nothing
 std::string Check();
 // a copy of the game's memory (committed user space and the 64 MB of physical memory) into logs/, for the tools

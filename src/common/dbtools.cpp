@@ -1,5 +1,6 @@
 #include "dbtools.h"
 
+#include <array>
 #include <chrono>
 #include <cstdio>
 #include <cstring>
@@ -91,6 +92,113 @@ bool SetControlledOrg(int org) {
     if (org < 0 || org >= kOrgCount || ControlledOrg(&va) < 0) return false;
     std::memcpy(kernel::HostPtr(va), &kOrgIds[org], 4);
     LOGR("dbtools: Team Changer: control given to the %s", kOrgNames[org]);
+    return true;
+}
+
+namespace {
+constexpr uint32_t kSchedule = 0xC78B0;  // from the data: the MLB schedule (PC; the Xbox's is kXboxShift on)
+constexpr uint32_t kEntry = 28;
+constexpr int kRoundMax = 7 * 4;          // a round's games: up to four best-of-7 series
+
+int OrgOf(uint32_t id) {
+    for (int k = 0; k < kOrgCount; k++)
+        if (kOrgIds[k] == id) return k;
+    return -1;
+}
+
+// the round's games (va: the first), read up to the first empty entry
+std::vector<std::array<uint8_t, kEntry>> RoundGames(uint32_t& va) {
+    std::vector<std::array<uint8_t, kEntry>> out;
+    uint32_t n = AttribName();
+    if (!n) return out;
+    va = n + kDataFromName + kSchedule + kXboxShift;
+    for (int i = 0; i <= kRoundMax; i++) {
+        std::array<uint8_t, kEntry> e{};
+        if (!Read(va + i * kEntry, e)) break;
+        uint16_t day = 0;
+        std::memcpy(&day, e.data(), 2);
+        if (!day) break;
+        out.push_back(e);
+    }
+    return out;
+}
+
+std::vector<Series> Parse(const std::vector<std::array<uint8_t, kEntry>>& games, std::string& why) {
+    std::vector<Series> out;
+    auto fail = [&](const char* t) {
+        why = t;
+        out.clear();
+        return out;
+    };
+    if (games.empty()) return fail("No playoffs found: load your dynasty and advance to the playoffs.");
+    if (int(games.size()) > kRoundMax)
+        return fail("That's the regular season's schedule: advance to the playoffs first.");
+    for (const auto& e : games) {
+        uint16_t bits = 0;
+        uint32_t h = 0, a = 0;
+        std::memcpy(&bits, e.data() + 2, 2);
+        std::memcpy(&h, e.data() + 4, 4);
+        std::memcpy(&a, e.data() + 16, 4);
+        int home = OrgOf(h), away = OrgOf(a);
+        if (home < 0 || away < 0 || home == away) return fail("The schedule doesn't look like a playoff round.");
+        if ((bits >> 11) & 31)
+            return fail("A game of this round has been played: teams can only be changed before its first game.");
+        Series* s = nullptr;
+        for (Series& x : out)
+            if (x.slot == (bits & 0x3FF)) s = &x;
+        if (!s) {
+            out.push_back({bits & 0x3FF, home, away, 0});
+            s = &out.back();
+        } else if (!((s->home == home && s->away == away) || (s->home == away && s->away == home))) {
+            return fail("The schedule doesn't look like a playoff round.");
+        }
+        s->games++;
+    }
+    for (size_t i = 0; i < out.size(); i++)
+        for (size_t j = 0; j < out.size(); j++)
+            for (int t : {out[i].home, out[i].away})
+                if ((i != j && (t == out[j].home || t == out[j].away)))
+                    return fail("The schedule doesn't look like a playoff round.");
+    return out;
+}
+}  // namespace
+
+std::vector<Series> Playoffs(std::string& why) {
+    uint32_t va = 0;
+    why.clear();
+    return Parse(RoundGames(va), why);
+}
+
+bool SetPlayoffTeams(const int (&to)[kOrgCount], std::string& why) {
+    uint32_t va = 0;
+    auto games = RoundGames(va);
+    auto round = Parse(games, why);
+    if (round.empty()) return false;
+    int count[kOrgCount] = {};
+    for (const Series& s : round)
+        for (int t : {s.home, s.away}) {
+            int n = to[t];
+            if (n < 0 || n >= kOrgCount) {
+                why = "Pick organizations from the list.";
+                return false;
+            }
+            if (++count[n] > 1) {
+                why = std::string("The ") + kOrgNames[n] + " would be in the playoffs twice.";
+                return false;
+            }
+        }
+    for (size_t i = 0; i < games.size(); i++)
+        for (uint32_t at : {4u, 16u}) {
+            uint32_t id = 0;
+            std::memcpy(&id, games[i].data() + at, 4);
+            int k = OrgOf(id);
+            if (k >= 0 && to[k] != k) {
+                std::memcpy(kernel::HostPtr(va + uint32_t(i) * kEntry + at), &kOrgIds[to[k]], 4);
+            }
+        }
+    for (int k = 0; k < kOrgCount; k++)
+        if (to[k] != k && count[to[k]]) LOGR("dbtools: Playoffs Creator: the %s in place of the %s", kOrgNames[to[k]],
+                                             kOrgNames[k]);
     return true;
 }
 

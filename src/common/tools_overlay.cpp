@@ -53,6 +53,15 @@ struct TeamChange {
     int done = -1;     // the organization just given control, for the message
 } g_team;
 
+// Playoffs Creator (tywiggins' MVP2005PlayoffsCreator, ported): the teams of a playoff round, before its first game
+struct PlayoffsState {
+    bool looked = false;
+    std::vector<dbtools::Series> round;
+    std::vector<int> pick;  // per team of the round (home, away, home, away, ...): the organization picked
+    std::string why;        // why there's no round, or why a change was refused
+    std::string done;       // what was changed, for the message
+} g_po;
+
 void Toggle() {
     bool open = !g_open.load();
     g_open = open;
@@ -60,6 +69,7 @@ void Toggle() {
     io.MouseDrawCursor = open;  // the game hides the system cursor in fullscreen
     if (open && g_season.state != 1 && g_season.state != 2) g_season.state = 0;
     if (open) g_team = {};  // the Team Changer looks again
+    if (open) g_po = {};    // and the Playoffs Creator
     g_focus = open;
     LOGR("tools: menu %s", open ? "opened" : "closed");
 }
@@ -216,6 +226,88 @@ void TeamChanger() {
                            dbtools::kOrgNames[g_team.done]);
 }
 
+void PlayoffsLook() {
+    g_po.round = dbtools::Playoffs(g_po.why);
+    g_po.pick.clear();
+    for (const auto& x : g_po.round) {
+        g_po.pick.push_back(x.home);
+        g_po.pick.push_back(x.away);
+    }
+    g_po.looked = true;
+}
+
+void PlayoffsCreator() {
+    Help("Choose who plays in the playoffs. When a playoff round has started (before its first game), pick a new "
+         "organization for any team and change them. Each series keeps its dates and home field. Then save the "
+         "dynasty. Based on tywiggins' Playoffs Creator.");
+    ImGui::Spacing();
+    if (ImGui::Button("Look again") || !g_po.looked) {
+        if (g_po.looked) g_po.done.clear();
+        PlayoffsLook();
+    }
+    if (g_po.round.empty()) {
+        ImGui::TextColored({1, 0.45f, 0.4f, 1}, "%s", g_po.why.c_str());
+        return;
+    }
+    bool changed = false;
+    for (size_t i = 0; i < g_po.round.size(); i++) {
+        ImGui::Text("Series %d:", int(i + 1));
+        for (int side = 0; side < 2; side++) {
+            int& v = g_po.pick[2 * i + side];
+            ImGui::SameLine();
+            if (side) {
+                ImGui::TextUnformatted("vs");
+                ImGui::SameLine();
+            }
+            ImGui::SetNextItemWidth(200 * g_scale);
+            ImGui::PushID(int(2 * i + side));
+            if (ImGui::BeginCombo("##t", dbtools::kOrgNames[v], ImGuiComboFlags_HeightLarge)) {
+                ImGui::SetWindowFontScale(g_scale);
+                for (int k = 0; k < dbtools::kOrgCount; k++)
+                    if (ImGui::Selectable(dbtools::kOrgNames[k], k == v)) v = k;
+                ImGui::EndCombo();
+            }
+            ImGui::PopID();
+            int was = side ? g_po.round[i].away : g_po.round[i].home;
+            changed |= v != was;
+        }
+        if (i == 0) {
+            ImGui::SameLine();
+            ImGui::TextDisabled("(home first)");
+        }
+    }
+    ImGui::BeginDisabled(!changed);
+    if (ImGui::Button("Change the teams")) {
+        int to[dbtools::kOrgCount];
+        for (int k = 0; k < dbtools::kOrgCount; k++) to[k] = k;
+        std::string what;
+        for (size_t i = 0; i < g_po.round.size(); i++)
+            for (int side = 0; side < 2; side++) {
+                int was = side ? g_po.round[i].away : g_po.round[i].home, now = g_po.pick[2 * i + side];
+                to[was] = now;
+                if (now != was)
+                    what += std::string(what.empty() ? "" : ", ") + "the " + dbtools::kOrgNames[now] +
+                            " in place of the " + dbtools::kOrgNames[was];
+            }
+        std::string why;
+        if (dbtools::SetPlayoffTeams(to, why)) {
+            g_po.done = "Done: the playoffs have " + what + ". Save the dynasty to keep it.";
+            PlayoffsLook();
+        } else {
+            g_po.done.clear();
+            g_po.why = why;
+        }
+    }
+    ImGui::EndDisabled();
+    if (!g_po.done.empty()) {
+        ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + ImGui::GetCursorPosX());
+        ImGui::TextColored({0.4f, 0.9f, 0.5f, 1}, "%s", g_po.done.c_str());
+        ImGui::PopTextWrapPos();
+    } else if (!g_po.why.empty()) {
+        ImGui::TextColored({1, 0.45f, 0.4f, 1}, "%s", g_po.why.c_str());
+    }
+}
+
 // the dynasty tools test: whether tywiggins' PC tools' distances hold in this game
 struct DbTest {
     std::atomic<int> state{0};  // 0 idle, 1 working, 2 done
@@ -302,6 +394,10 @@ void Ui(double) {
             }
             if (ImGui::BeginTabItem("Team Changer")) {
                 TeamChanger();
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Playoffs Creator")) {
+                PlayoffsCreator();
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Dynasty tools (test)")) {

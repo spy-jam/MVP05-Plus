@@ -1425,6 +1425,9 @@ def tools_tab(tabs, root, tk, ttk):
          short_season_tool),
         ("Team Changer", "Take over another organization in your dynasty or owner mode, in the running game. Based on tywiggins' "
          "Team Changer.", team_changer_tool),
+        ("Playoffs Creator", "Choose who plays in the playoffs: when a playoff round starts, swap any team in it for "
+         "another organization, in the running game or a saved dynasty. Based on tywiggins' Playoffs Creator.",
+         playoffs_tool),
     ]
     pages = {}
 
@@ -1529,6 +1532,126 @@ def team_changer_tool(frm, root, tk, ttk):
     take.configure(command=go)
     box.bind("<<ComboboxSelected>>", pick)
     return None
+
+
+def playoffs_tool(frm, root, tk, ttk):
+    """Playoffs Creator (tywiggins'): the teams of a playoff round, swapped before its first game, in the running game
+    or a dynasty save."""
+    import playoffs05 as PO
+    import saves05 as S
+    from tkinter import messagebox
+
+    ttk.Label(frm, text="Playoffs Creator", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=4,
+                                                                                sticky="w")
+    ttk.Label(frm, foreground="#666", wraplength=560, justify="left", text=(
+        "Choose who plays in the playoffs. When a playoff round has started (before its first game), find it here, "
+        "pick a new organization for any team, and change them. Each series keeps its dates and home field. Then save "
+        "the dynasty in the game. The same tool is in the game's Tools menu (F10).")).grid(
+        row=1, column=0, columnspan=4, sticky="w", pady=(0, 8))
+    how = tk.StringVar(value="game")
+    ttk.Radiobutton(frm, variable=how, value="game", text="In the running game").grid(row=2, column=0, columnspan=4,
+                                                                                       sticky="w")
+    ttk.Radiobutton(frm, variable=how, value="save", text="In a saved dynasty, with the game closed:").grid(
+        row=3, column=0, columnspan=2, sticky="w")
+    save_box = ttk.Combobox(frm, state="readonly", width=34)
+    save_box.grid(row=3, column=2, columnspan=2, sticky="w", padx=(6, 0))
+    find_b = ttk.Button(frm, text="Find the playoffs")
+    find_b.grid(row=4, column=0, sticky="w", pady=(8, 4))
+    grid = ttk.Frame(frm)
+    grid.grid(row=5, column=0, columnspan=4, sticky="w")
+    note = ttk.Label(frm, wraplength=560, justify="left")
+    note.grid(row=6, column=0, columnspan=4, sticky="w", pady=4)
+    change_b = ttk.Button(frm, text="Change the teams", state="disabled")
+    change_b.grid(row=7, column=0, sticky="w")
+    ttk.Label(frm, foreground="#888", text="Based on tywiggins' MVP 2005 Playoffs Creator.").grid(
+        row=8, column=0, columnspan=4, sticky="w", pady=(16, 0))
+    state, saves, boxes = {}, [], []
+
+    def say(text, colour="#555"):
+        note.configure(text=text, foreground=colour)
+
+    def load_saves(*_):
+        saves[:] = [x for x in S.list_saves(root) if x["type"] == "Dynasty"]
+        save_box.configure(values=[f"{x['name']} ({when_text(x['when'])})" for x in saves])
+        if saves and save_box.current() < 0:
+            save_box.current(0)
+        if not saves:
+            save_box.set("(no dynasty saves yet)")
+
+    def show(ss):
+        for w in grid.winfo_children():
+            w.destroy()
+        boxes.clear()
+        for i, srs in enumerate(ss):
+            ttk.Label(grid, text=f"Series {i + 1}:").grid(row=i, column=0, sticky="w", pady=2)
+            for j, t in enumerate((srs["home"], srs["away"])):
+                b = ttk.Combobox(grid, state="readonly", width=16, values=list(PO.ORGS))
+                b.current(PO.IDS.index(t))
+                b.grid(row=i, column=1 + 2 * j, padx=(8, 0), pady=2)
+                b.bind("<<ComboboxSelected>>", ready)
+                boxes.append((t, b))
+            ttk.Label(grid, text="(home first)" if i == 0 else "", foreground="#888").grid(row=i, column=4, padx=8)
+            ttk.Label(grid, text="vs").grid(row=i, column=2, padx=(8, 0))
+
+    def changes():
+        return {t: PO.IDS[b.current()] for t, b in boxes if PO.IDS[b.current()] != t}
+
+    def ready(*_):
+        change_b.configure(state="normal" if state and changes() else "disabled")
+
+    def find():
+        state.clear()
+        show([])
+        ready()
+        try:
+            if how.get() == "save":
+                if not saves or save_box.current() < 0:
+                    return say("No dynasty save to choose: save one in the game first.", "#a33")
+                x = saves[save_box.current()]
+                with open(os.path.join(x["folder"], "data.dat"), "rb") as f:
+                    ss = PO.read_save(f.read())
+                state.update(kind="save", save=x)
+            else:
+                h, addr, ss = PO.find()
+                import ctypes
+                ctypes.windll.kernel32.CloseHandle(h)
+                state.update(kind="game")
+        except (OSError, PO.PlayoffsError) as e:
+            return say(f"{e}.", "#a33")
+        show(ss)
+        say(f"This round: {len(ss)} series, {sum(x['games'] for x in ss)} games. Pick new teams, then change them.")
+
+    def go():
+        ch = changes()
+        try:
+            if state.get("kind") == "save":
+                x = state["save"]
+                if S.game_running():
+                    raise PO.PlayoffsError("close MVP05.exe first: the game keeps its saves open while it runs")
+                dat = os.path.join(x["folder"], "data.dat")
+                with open(dat, "rb") as f:
+                    out = PO.write_save(f.read(), ch)
+                S.backup_folder(root, x["folder"], "changing the playoff teams")
+                with open(dat + ".new", "wb") as f:
+                    f.write(out)
+                os.replace(dat + ".new", dat)
+                load_saves()
+                done = f"Done: load \"{x['name']}\" in the game. The save before is in Saves > Backups."
+            else:
+                h, addr, _ = PO.find()
+                PO.change(h, addr, ch)
+                done = "Done. Save the dynasty in the game to keep it."
+        except (OSError, PO.PlayoffsError) as e:
+            return say(f"Not changed: {e}.", "#a33")
+        names = ", ".join(f"the {PO.name(new)} in place of the {PO.name(old)}" for old, new in ch.items())
+        say(f"The playoffs have {names}. {done}", "#1a7f37")
+        state.clear()
+        ready()
+
+    find_b.configure(command=find)
+    change_b.configure(command=go)
+    how.trace_add("write", lambda *_: (state.clear(), show([]), ready(), say("")))
+    return load_saves
 
 
 def short_season_tool(frm, root, tk, ttk):
