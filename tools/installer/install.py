@@ -972,7 +972,7 @@ def import_tool(frm, root, tk, ttk):
                 with open(dat + ".new", "wb") as f:
                     f.write(out)
                 os.replace(dat + ".new", dat)
-                msg = (f"Done. Load \"{s['name']}\" in the game. The save it replaced is in Saves > Backups.",
+                msg = (f"Done. Load \"{s['name']}\" in the game. The old save is in Saves > Backups.",
                        "#1a7f37")
             except (OSError, RO.RosterError, DY.DynastyError, GR.GcRosterError, PD.Ps2DynastyError,
                     PCD.PcDynastyError) as e:
@@ -1636,7 +1636,7 @@ def playoffs_tool(frm, root, tk, ttk):
                     f.write(out)
                 os.replace(dat + ".new", dat)
                 load_saves()
-                done = f"Done: load \"{x['name']}\" in the game. The save before is in Saves > Backups."
+                done = f"Done: load \"{x['name']}\" in the game. The old save is in Saves > Backups."
             else:
                 h, addr, _ = PO.find()
                 PO.change(h, addr, ch)
