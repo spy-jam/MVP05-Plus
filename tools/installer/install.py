@@ -1527,18 +1527,16 @@ def tools_tab(tabs, root, tk, ttk):
     home.columnconfigure(0, weight=1)
     ttk.Label(home, text="Tools", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=2, sticky="w")
     ttk.Label(home, foreground="#666", wraplength=560, justify="left", text=(
-        "Pick a tool to open it. In the game, F10 (or hold Back + Start, Z + Start on a GameCube controller) opens "
-        "the game's own Tools menu, with the Short Season Advancer, the Team Changer and the Playoffs Editor too.")).grid(
+        "Pick a tool to open it. They're in the game too: F10, or hold Back + Start (Z + Start on a GameCube "
+        "controller).")).grid(
         row=1, column=0, columnspan=2, sticky="w", pady=(0, 10))
     tools = [
-        ("Short Season Advancer", "For seasons shorter than 162 games: at the end of the regular season, the standings "
-         "are made 162 games long so the season can go on to the playoffs. Every team keeps its winning percentage.",
-         short_season_tool),
-        ("Team Changer", "Take over another organization in your dynasty or owner mode, in the running game. Based on tywiggins' "
-         "Team Changer.", team_changer_tool),
-        ("Playoffs Editor", "Choose who plays in the playoffs: when a playoff round starts, swap any team in it for "
-         "another organization, in the running game or a saved dynasty. Based on tywiggins' Playoffs Creator.",
-         playoffs_tool),
+        ("Short Season Advancer", "Seasons under 162 games: at the end of the regular season, the standings made 162 "
+         "games long (same winning percentages), so the season goes on to the playoffs.", short_season_tool),
+        ("Team Changer", "Take over another organization in your dynasty or owner mode. Based on tywiggins' Team "
+         "Changer.", team_changer_tool),
+        ("Playoffs Editor", "Swap teams in a playoff round before its first game. Based on tywiggins' Playoffs "
+         "Creator.", playoffs_tool),
     ]
     pages = {}
 
@@ -1569,10 +1567,10 @@ def tools_tab(tabs, root, tk, ttk):
     for i, (name, about, _) in enumerate(tools):
         r = 2 + i * 2
         ttk.Separator(home).grid(row=r, column=0, columnspan=2, sticky="we")
-        box = ttk.Frame(home, padding=(0, 8))
+        box = ttk.Frame(home, padding=(0, 5))
         box.grid(row=r + 1, column=0, sticky="we")
         ttk.Label(box, text=name, font=("Segoe UI", 9, "bold")).grid(row=0, column=0, sticky="w")
-        ttk.Label(box, text=about, foreground="#555", wraplength=440, justify="left").grid(row=1, column=0,
+        ttk.Label(box, text=about, foreground="#555", wraplength=470, justify="left").grid(row=1, column=0,
                                                                                          sticky="w")
         ttk.Button(home, text="Open", command=lambda i=i: open_tool(i)).grid(row=r + 1, column=1, sticky="e",
                                                                            padx=(12, 0))
