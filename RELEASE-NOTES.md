@@ -1,6 +1,6 @@
 # MVP05-Plus Beta 2
 
-Bring your saves over from the other versions of MVP 2005, pick the season you play, run tywiggins' dynasty tools from inside the game, and update from the Launcher.
+Bring your saves over from the other versions of MVP 2005, pick the season you play, run tools inside the game, and update from the Launcher.
 
 ## Highlights
 - **Import saves from the PS2, GameCube, PC and Xbox** (*Saves → Import a save…*): rosters and dynasties, converted into one of your MVP05-Plus saves so they play here. Your save is backed up first.

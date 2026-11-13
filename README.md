@@ -1,6 +1,6 @@
 # MVP05-Plus
 
-MVP Baseball 2005 on Windows, and on SteamOS (Linux) through Proton, built on [Mad Dog's](#credits) PC port of the Original Xbox game. spy_jam's MVP05-Plus keeps Xbox controller support and adds GameCube and PlayStation controller support with full control layouts and button labels. Includes a launcher for easy installation, save imports from the other versions of the game, season schedules, dynasty tools, save backups, display settings and updates.
+MVP Baseball 2005 on Windows, and on SteamOS (Linux) through Proton, built on [Mad Dog's](#credits) PC port of the Original Xbox game. spy_jam's MVP05-Plus keeps Xbox controller support and adds GameCube and PlayStation controller support with full control layouts and button labels. Includes a launcher for easy installation, save imports from the other versions of the game, season schedules, tools, save backups, display settings and updates.
 
 > **You need your own copy of the Xbox game.** No game files or game art are included. The Launcher builds what's needed from your own discs.
 
@@ -14,7 +14,7 @@ MVP Baseball 2005 on Windows, and on SteamOS (Linux) through Proton, built on [M
 * **MVP05-Plus Launcher**: install from your discs, launch the game, import and restore saves, pick the season schedule, run the tools, adjust display settings, and update MVP05-Plus.
 * **Fixes**: a shader cache to prevent mid-game stutter, SteamOS support through Proton, and a fix for a crash during stolen bases, found while testing the original recomp.
 * **Save backups**: a full save backup menu in the Launcher. Your saves are backed up automatically when the game starts, keeping the latest 30 backups by default, and you can view and restore them in the Launcher.
-* **Dynasty tools**, in the game (F10, or hold Back + Start / Z + Start) and the Launcher: the Short Season Advancer, the Team Changer and the Playoffs Editor.
+* **Tools**: extra tools for your seasons and saves, in the Launcher's Tools tab and in the game (F10, or hold Back + Start / Z + Start). Beta 2 has the Short Season Advancer, the Team Changer and the Playoffs Editor.
 
 ## Compatible controllers
 

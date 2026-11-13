@@ -3,7 +3,7 @@ MVP05-Plus by spy_jam - built on Mad Dog's MVP05 Title-ID update below
 Plus adds GameCube controllers (Wii U / Switch adapter) and PlayStation controllers,
 played with their own releases' control layouts and button art, SteamOS / Proton fixes, a
 shader cache, save backups, save imports from the other versions of the game, season
-schedules, dynasty tools (F10 in the game) and the MVP05-Plus Launcher, which updates
+schedules, tools (F10 in the game) and the MVP05-Plus Launcher, which updates
 itself. Start with MVP05-Plus-Launcher.exe: it installs the game from your discs. See
 README.md, and docs/MVP05-HANDOFF.md for how it all works. Mad Dog's original notes
 follow unchanged.
