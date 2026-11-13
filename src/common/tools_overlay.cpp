@@ -181,7 +181,7 @@ void ShortSeason() {
 }
 
 void TeamChanger() {
-    Help("Take over another organization in your dynasty. Load the dynasty first. After changing, save the dynasty "
+    Help("Take over another organization in your dynasty or owner mode. Load the save first. After changing, save it "
          "to keep it. Based on tywiggins' Team Changer.");
     ImGui::Spacing();
     if (g_team.current == -2 || ImGui::Button("Look again")) {
@@ -189,7 +189,7 @@ void TeamChanger() {
         if (g_team.current >= 0 && g_team.done < 0) g_team.pick = g_team.current;
     }
     if (g_team.current < 0) {
-        ImGui::TextColored({1, 0.45f, 0.4f, 1}, "No dynasty found: load one, then Look again.");
+        ImGui::TextColored({1, 0.45f, 0.4f, 1}, "No dynasty or owner mode save found: load one, then Look again.");
         return;
     }
     ImGui::Text("You control: the %s", dbtools::kOrgNames[g_team.current]);

@@ -48,7 +48,7 @@ def find():
     P._rpm_types(k)
     pid = P.find_dolphin_pid()
     if not pid:
-        raise TeamError("MVP05.exe isn't running: start it and load the dynasty first")
+        raise TeamError("MVP05.exe isn't running: start it and load your dynasty or owner mode save first")
     h = k.OpenProcess(0x0030 | 0x0400, False, pid)
     if not h:
         raise TeamError("can't open MVP05.exe's memory (try running the Launcher as administrator)")
@@ -57,7 +57,7 @@ def find():
         if got:
             return h, base + got[0], got[1]
     k.CloseHandle(h)
-    raise TeamError("no dynasty found in the game: load one first")
+    raise TeamError("no dynasty or owner mode save found in the game: load one first")
 
 
 def change(h, addr, org):

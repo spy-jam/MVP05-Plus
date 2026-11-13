@@ -1414,7 +1414,7 @@ def tools_tab(tabs, root, tk, ttk):
         ("Short Season Advancer", "For seasons shorter than 162 games: at the end of the regular season, the standings "
          "are made 162 games long so the season can go on to the playoffs. Every team keeps its winning percentage.",
          short_season_tool),
-        ("Team Changer", "Take over another organization in your dynasty, in the running game. Based on tywiggins' "
+        ("Team Changer", "Take over another organization in your dynasty or owner mode, in the running game. Based on tywiggins' "
          "Team Changer.", team_changer_tool),
     ]
     pages = {}
@@ -1463,10 +1463,10 @@ def team_changer_tool(frm, root, tk, ttk):
 
     ttk.Label(frm, text="Team Changer", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=3, sticky="w")
     ttk.Label(frm, foreground="#666", wraplength=540, justify="left", text=(
-        "Take over another organization in your dynasty. With the game running and the dynasty loaded: find it here, "
-        "pick the organization, and take control. Then save the dynasty in the game to keep it. The same tool is in "
+        "Take over another organization in your dynasty or owner mode. With the game running and the save loaded: find "
+        "it here, pick the organization, and take control. Then save in the game to keep it. The same tool is in "
         "the game's Tools menu (F10).")).grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 10))
-    find_b = ttk.Button(frm, text="Find the dynasty")
+    find_b = ttk.Button(frm, text="Find the save")
     find_b.grid(row=2, column=0, sticky="w")
     now = ttk.Label(frm, text="")
     now.grid(row=2, column=1, columnspan=2, sticky="w", padx=10)
