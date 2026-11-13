@@ -586,18 +586,6 @@ def gui(root):
     go = ttk.Button(fb, text="Install")
     go.pack(side="right")
     back = ttk.Button(fb, text="← Back")
-    # an older MVP05-Plus (Beta 1 has no updater) or Mad Dog's MVP05: its game, saves and settings brought in, no discs
-    older = ttk.Frame(frm)
-    ttk.Separator(older).pack(fill="x", pady=(12, 8))
-    ttk.Label(older, text="Already have MVP05-Plus Beta 1 (or Mad Dog's MVP05)?", font=("Segoe UI", 10, "bold")).pack(
-        anchor="w")
-    oline = ttk.Frame(older)
-    oline.pack(fill="x", pady=(2, 0))
-    ttk.Label(oline, foreground="#555", wraplength=380, justify="left", text=(
-        "Bring its installed game, saves, backups, button art and settings into this folder instead of installing "
-        "from the discs.")).pack(side="left")
-    bring = ttk.Button(oline, text="Bring it over\u2026")
-    bring.pack(side="right")
 
     def say(t):
         def f():
@@ -617,7 +605,6 @@ def gui(root):
                 good = r[k].startswith("installed")
                 text.configure(text=f"{label}: {r[k]}", foreground="#1a7f37" if good else "#777")
             frm.grid_remove()
-            older.grid_remove()
             ready.grid(row=0, column=0, sticky="nwe")
             tab.columnconfigure(0, weight=1)
             show_art()
@@ -626,7 +613,6 @@ def gui(root):
         else:
             ready.grid_remove()
             frm.grid(row=0, column=0, sticky="nw")
-            older.grid(row=12, column=0, columnspan=3, sticky="we")
             if not r["exe"]:
                 say("Note: MVP05.exe isn't in this folder. Put MVP05-Plus Launcher in the game's folder.")
             elif r["xbox"] != "not installed":
@@ -672,6 +658,19 @@ def gui(root):
         bar.configure(value=0)
         threading.Thread(target=work, daemon=True).start()
 
+    def offer_bring_over(*_):
+        """The first time the Launcher opens in a folder without the game, and on Ctrl+Shift+B: an older MVP05-Plus
+        (Beta 1 has no updater) or Mad Dog's MVP05, its game, saves and settings brought in instead of the discs."""
+        from tkinter import messagebox
+        set_launcher_option(root, "offered_bring_over", True)
+        if not messagebox.askyesno("Already have MVP05-Plus?", (
+                "Coming from MVP05-Plus Beta 1, or Mad Dog's MVP05?\n\n"
+                "Bring its installed game, saves, backups, button art and settings into this folder, instead of "
+                "installing from your discs.\n\n"
+                "(Ctrl+Shift+B in the Launcher asks again.)"), parent=w):
+            return
+        bring_over()
+
     def bring_over():
         """An older install's game, saves and settings, copied or moved in."""
         import carryover
@@ -707,7 +706,6 @@ def gui(root):
         if updater_running():
             return messagebox.showinfo("Bring it over", "Close MVP05.exe first.", parent=w)
         go.configure(state="disabled")
-        bring.configure(state="disabled")
         bar.configure(value=0)
         status("Bringing it over...")
 
@@ -728,7 +726,7 @@ def gui(root):
                 status("")
                 say(f"Stopped: {e}")
             finally:
-                w.after(0, lambda: (go.configure(state="normal"), bring.configure(state="normal")))
+                w.after(0, lambda: go.configure(state="normal"))
         threading.Thread(target=job, daemon=True).start()
 
     def updater_running():
@@ -764,11 +762,13 @@ def gui(root):
         frm.grid(row=0, column=0, sticky="nw")
 
     go.configure(command=start)
-    bring.configure(command=bring_over)
+    w.bind_all("<Control-Shift-B>", offer_bring_over)
+    w.bind_all("<Control-Shift-b>", offer_bring_over)
     launch.configure(command=do_launch)
     change.configure(command=do_change)
     back.configure(command=lambda: show())
-    show()
+    if not show() and not launcher_option(root, "offered_bring_over", False):
+        w.after(600, offer_bring_over)  # the first time, in a folder without the game
     watch_pads()
     import gamepad_nav  # a controller moves around the Launcher too
     gamepad_nav.attach(w, tabs, on_start=lambda: do_launch() if ready.winfo_ismapped() and
