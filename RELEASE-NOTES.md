@@ -4,8 +4,8 @@ Bring your saves over from the other versions of MVP 2005, pick the season you p
 
 ## Highlights
 - **Import saves from the PS2, GameCube, PC and Xbox** (*Saves → Import a save…*): rosters and dynasties, converted into one of your MVP05-Plus saves so they play here. Your save is backed up first.
-- **Season Schedule** (*Schedule* tab): the MVP 2005 disc's 162 games, a 162-game schedule shuffled anew every time you launch, MVP 2004's 60, 30 and 15-game schedules, a 64-game schedule made for MVP05-Plus, or one you import.
-- **Tools menu in the game** (F10, or hold Back + Start / Z + Start): the Short Season Advancer, the Team Changer and the Playoffs Editor, without leaving the game.
+- **Custom season schedules** (*Schedule* tab): the real 2005 season, or its 162 games shuffled each time you play. A 64-game season made for MVP05-Plus balances division, league and interleague games. Basic 60, 30 and 15-game schedules are included, or you can import your own.
+- **Tools** (the Launcher's *Tools* tab, and in the game: F10, or hold Back + Start / Z + Start): a Short Season Advancer, a Team Changer and a Playoffs Editor.
 - **Updates from the Launcher** (*Settings → Updates*): check, install and undo, from this version on.
 
 ## Import saves
@@ -18,12 +18,12 @@ Bring your saves over from the other versions of MVP 2005, pick the season you p
 
 Roster conversion is **Mad Dog**'s, from his MVP Roster Toolkit (the same file it makes). GameCube conversion, rosters and dynasties, is **spy_jam**'s. PS2 and PC dynasties use both.
 
-## Season Schedule
+## Custom season schedules
 The *Schedule* tab sets the schedule new seasons play. Only the three MLB schedules in your game's `schedule.big` change (the minor leagues and spring training stay the game's own), and your original is kept.
 - **162 games:** the MVP 2005 disc's, the real 2005 season.
 - **162 games, shuffled:** the 2005 schedule with the teams in each division dealt one another's seasons. Every team keeps 81 home games and the same division, league and interleague games, against opponents in a new order; dates and the All-Star break stay put. A new shuffle every time the Launcher starts the game; a season already under way keeps its own.
 - **64 games,** made for MVP05-Plus: 6 games against each division rival, 2 or 3 against the rest of the league, every interleague team once (the natural rival twice), even home and away, the All-Star Game in July and a real trade deadline.
-- **60, 30 and 15 games:** MVP Baseball 2004's short schedules, brought over to 2005.
+- **60, 30 and 15 games:** basic short seasons.
 - **Import a schedule:** a `schedule.big`, or its `mlb162_1/2/3.dat` files, from any version of MVP 2005 (they're the same on every platform). It's checked (all 30 teams, the same number of games each), joins the list, can be removed again, and updates never touch it.
 
 ## Tools
@@ -50,8 +50,8 @@ tywiggins' tools were made for the PC game; the Xbox game keeps its database in 
 ## Fixed
 - The Launcher's *Settings* no longer drops the note after a text setting (such as `display_mode`) in `mvp05-settings.toml`.
 
-## Coming from Beta 1
-Beta 1 has no updater, so this once: unzip Beta 2 into a new folder and open its Launcher. The first time, it asks whether you're coming from MVP05-Plus Beta 1 or Mad Dog's MVP05: say yes and pick your old folder, and its installed game, saves, backups, button art, shader cache and settings come over, with no discs needed. *Copy* leaves the old folder working; *Move* needs no extra space and is quick on the same drive, but the old folder won't run afterwards. Said no, or want it again? **Ctrl+Shift+B** in the Launcher asks again. From Beta 2 on, *Settings → Updates* updates MVP05-Plus for you.
+## Coming from Beta 1 or Mad Dog's MVP05
+Unzip MVP05-Plus into a new folder and open the Launcher. It asks to bring over your game, saves and settings, so you don't need your discs again. Said no? Press **Ctrl+Shift+B** in the Launcher to be asked again. From Beta 2 on, *Settings → Updates* updates MVP05-Plus for you.
 
 ## Thanks
 **Mad Dog** for MVP05 and his MVP Roster Toolkit, **tywiggins** for his MVP 2005 tools, and **TGP482** for XboxXBERecomp.
