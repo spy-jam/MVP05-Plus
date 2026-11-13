@@ -768,17 +768,18 @@ def import_window(parent, root, tk, ttk, on_close=None):
 
 
 def choose_card_save(parent, tk, ttk, found):
-    """One of a memory card's roster saves [(folder, file, save)], picked in a small window; None if closed."""
+    """One of a memory card's MVP 2005 saves [(folder, file, what, save)], picked in a small window; None if
+    closed."""
     win = tk.Toplevel(parent)
-    win.title("Which roster save?")
+    win.title("Which save?")
     win.transient(parent.winfo_toplevel())
     win.grab_set()
     f = ttk.Frame(win, padding=12)
     f.grid()
-    ttk.Label(f, text="The memory card has more than one MVP 2005 roster save. Which one?").grid(sticky="w")
-    lb = tk.Listbox(f, height=min(8, len(found)), width=48, exportselection=False)
-    for folder, name, _ in found:
-        lb.insert("end", f"{name}   ({folder})")
+    ttk.Label(f, text="The memory card has more than one MVP 2005 save. Which one?").grid(sticky="w")
+    lb = tk.Listbox(f, height=min(8, len(found)), width=56, exportselection=False)
+    for folder, name, what, _ in found:
+        lb.insert("end", f"{name}: {what}   ({folder})")
     lb.selection_set(0)
     lb.grid(sticky="we", pady=8)
     out = {}
@@ -796,10 +797,11 @@ def choose_card_save(parent, tk, ttk, found):
 def import_tool(frm, root, tk, ttk):
     """Import a save: a save from another MVP 2005 written into one of your saves here (backed up first), so it
     plays in MVP05-Plus. Rosters from the PS2, PC or another Xbox (Mad Dog's conversion, from his MVP Roster
-    Toolkit); dynasties from the GameCube (spy_jam's converter)."""
+    Toolkit); dynasties from the GameCube (spy_jam's converter) and the PS2 (both of theirs)."""
     import dynasty05 as DY
     import gcroster05 as GR
     import ps2card as PC
+    import ps2dynasty05 as PD
     import rosters05 as RO
     import saves05 as S
     from tkinter import filedialog, messagebox
@@ -807,9 +809,9 @@ def import_tool(frm, root, tk, ttk):
     frm.columnconfigure(1, weight=1)
     ttk.Label(frm, foreground="#666", wraplength=540, justify="left", text=(
         "Brings a save from another version of MVP 2005 into this one. It works with:\n"
-        "\u2022  rosters from the PS2 (a .psu, a PCSX2 memory card .ps2, or the roster file from a save), the PC "
-        "(.sav) or another Xbox\n"
+        "\u2022  rosters or a dynasty from the PS2 (a .psu, a PCSX2 memory card .ps2, or the .sav file from a save)\n"
         "\u2022  rosters or a dynasty from the GameCube (the .gci file Dolphin exports)\n"
+        "\u2022  rosters from the PC (.sav) or another Xbox\n"
         "The save goes into one of your own saves of the same kind, which is backed up first.")).grid(
         row=1, column=0, columnspan=2, sticky="w", pady=(0, 12))
 
@@ -839,7 +841,8 @@ def import_tool(frm, root, tk, ttk):
     note = ttk.Label(frm, wraplength=520, justify="left")
     note.grid(row=9, column=1, sticky="w", pady=(8, 0))
     ttk.Label(frm, foreground="#888", wraplength=540, justify="left", text=(
-        "Roster conversion by Mad Dog (MVP Roster Toolkit). GameCube conversion (rosters and dynasties) by spy_jam.")).grid(
+        "Roster conversion by Mad Dog (MVP Roster Toolkit). GameCube conversion (rosters and dynasties) by spy_jam. "
+        "PS2 dynasties use both.")).grid(
         row=10, column=0, columnspan=2, sticky="w", pady=(16, 0))
     picked, targets = {}, []
     kinds = {"roster": ("roster save", "rosters"), "dynasty": ("dynasty save", "dynasty")}
@@ -895,25 +898,35 @@ def import_tool(frm, root, tk, ttk):
             elif data[:4] == b"GV4E":
                 meta = DY.read_gc(data)
                 picked.update(kind="dynasty", data=data, what=f"GameCube dynasty \"{meta['name']}\"")
-            elif data[:28] == PC.MAGIC:  # a PS2 memory card: its MVP 2005 roster saves
-                found = []
+            elif data[:28] == PC.MAGIC:  # a PS2 memory card: its MVP 2005 roster and dynasty saves
+                found, refused = [], []
                 for folder, files in PC.Card(data).saves().items():
                     for name, b in files.items():
-                        if len(b) == RO.SIZE + RO.PC_HEAD:
-                            try:
-                                found.append((folder, name, RO.read(b)))
-                            except RO.RosterError:
-                                pass
+                        try:
+                            if len(b) == RO.SIZE + RO.PC_HEAD:
+                                found.append((folder, name, "rosters", RO.read(b)))
+                            elif len(b) == PD.HEAD + PD.SIZE:
+                                found.append((folder, name, "dynasty", PD.read(b)))
+                        except (RO.RosterError, PD.Ps2DynastyError) as e:
+                            refused.append(str(e))
                 if not found:
-                    raise RO.RosterError("that memory card has no MVP 2005 roster save on it")
+                    raise RO.RosterError(refused[0] if refused else "that memory card has no MVP 2005 roster or "
+                                                                    "dynasty save on it")
                 which = found[0] if len(found) == 1 else choose_card_save(frm, tk, ttk, found)
                 if not which:
                     return
-                picked.update(kind="roster", save=which[2], what=f"PS2 rosters ({which[1]} on the card)")
+                if which[2] == "dynasty":
+                    picked.update(kind="dynasty", ps2_dynasty=which[3],
+                                  what=f"PS2 dynasty \"{which[3]['name']}\" ({which[1]} on the card)")
+                else:
+                    picked.update(kind="roster", save=which[3], what=f"PS2 rosters ({which[1]} on the card)")
+            elif PD.is_dynasty(data):
+                d = PD.read(data)
+                picked.update(kind="dynasty", ps2_dynasty=d, what=f"PS2 dynasty \"{d['name']}\"")
             else:
                 save = RO.read(data)
                 picked.update(kind="roster", save=save, what=f"{save.platform} rosters")
-        except (OSError, RO.RosterError, DY.DynastyError, PC.CardError, GR.GcRosterError) as e:
+        except (OSError, RO.RosterError, DY.DynastyError, PC.CardError, GR.GcRosterError, PD.Ps2DynastyError) as e:
             src_text.configure(text=f"{os.path.basename(p)}: can't be used ({e})", foreground="#a33")
             return refresh()
         picked["path"] = p
@@ -939,7 +952,9 @@ def import_tool(frm, root, tk, ttk):
                     raise RO.RosterError("close MVP05.exe first: the game keeps its saves open while it runs")
                 with open(dat, "rb") as f:
                     mine = f.read()
-                if kind == "dynasty":
+                if picked.get("ps2_dynasty"):
+                    out = PD.to_xbox(picked["ps2_dynasty"], mine)
+                elif kind == "dynasty":
                     out = DY.gc_to_xbox(picked["data"], mine)
                 elif picked.get("gc_roster"):
                     out = GR.to_xbox(picked["gc_roster"], mine)
@@ -951,7 +966,7 @@ def import_tool(frm, root, tk, ttk):
                 os.replace(dat + ".new", dat)
                 msg = (f"Done. Load \"{s['name']}\" in the game. The save it replaced is in Saves > Backups.",
                        "#1a7f37")
-            except (OSError, RO.RosterError, DY.DynastyError, GR.GcRosterError) as e:
+            except (OSError, RO.RosterError, DY.DynastyError, GR.GcRosterError, PD.Ps2DynastyError) as e:
                 msg = (f"Nothing was changed: {e}.", "#a33")
             frm.after(0, lambda: (say(*msg), refresh()))
         threading.Thread(target=work, daemon=True).start()

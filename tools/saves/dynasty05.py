@@ -41,6 +41,12 @@ def _in_lib():
             os.chdir(old)
 
 
+def _containers():
+    """Just the save containers (headers, names, signatures): no converter, no numpy."""
+    import containers
+    return containers
+
+
 def _libs():
     import containers
     import gc2xb_v0
@@ -71,7 +77,7 @@ def read_gc(data):
 
 def read_xbox(data):
     with _in_lib():
-        C = _libs()[0]
+        C = _containers()
         try:
             meta = C.parse_xbox(data)
         except Exception as e:
