@@ -10,11 +10,11 @@ MVP Baseball 2005 on Windows, and on SteamOS (Linux) through Proton, built on [M
 * **PlayStation controllers** with the PS2 release's full control layout and stick handling, analog button pressure and rumble.
 * **Button art to match your controller**: GameCube or PS2 buttons in menus and in-game, made from your own discs (optional).
 * **Import saves** from the other versions of MVP 2005: rosters and dynasties from the PS2, GameCube and PC, and rosters from another Xbox, converted into your MVP05-Plus saves.
-* **Season schedules**: the real 2005 season, a 162-game schedule shuffled anew each time you play, MVP 2004's 60, 30 and 15-game schedules, a 64-game schedule made for MVP05-Plus, or one you import from any version of the game.
-* **Dynasty tools**, in the game (F10, or hold Back + Start / Z + Start) and in the Launcher: the Short Season Advancer (short seasons go on to the playoffs), and tywiggins' Team Changer and Playoffs Creator (here the Playoffs Editor).
+* **Custom season schedules**: 162 games (the real 2005 season, or shuffled each time you play), 64, 60, 30 or 15 games, or one you import.
 * **MVP05-Plus Launcher**: install from your discs, launch the game, import and restore saves, pick the season schedule, run the tools, adjust display settings, and update MVP05-Plus.
 * **Fixes**: a shader cache to prevent mid-game stutter, SteamOS support through Proton, and a fix for a crash during stolen bases, found while testing the original recomp.
 * **Save backups**: a full save backup menu in the Launcher. Your saves are backed up automatically when the game starts, keeping the latest 30 backups by default, and you can view and restore them in the Launcher.
+* **Dynasty tools**, in the game (F10, or hold Back + Start / Z + Start) and the Launcher: the Short Season Advancer, the Team Changer and the Playoffs Editor.
 
 ## Compatible controllers
 
