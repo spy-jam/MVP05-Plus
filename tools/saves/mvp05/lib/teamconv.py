@@ -2,6 +2,7 @@
 Bits constant across all teams (gap fields) cannot be learned and are written as 0 (they are 0 in day-1 saves)."""
 import struct,json,os
 MAPFILE=os.path.join(os.path.dirname(os.path.abspath(__file__)),'team_bitmap.json')
+if not os.path.exists(MAPFILE): MAPFILE='team_bitmap.json'   # in the Launcher exe: beside the other tables, the folder it runs in
 def learn(gc_recs,xb_recs):
     maps=[]
     for w in range(4):
