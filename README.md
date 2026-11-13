@@ -9,8 +9,8 @@ MVP Baseball 2005 on Windows, and on SteamOS (Linux) through Proton, built on [M
 * **GameCube controllers** through a Wii U / Switch adapter: all 4 ports and rumble, with the GameCube release's full control layout, stick deadzones, C-stick and analog trigger handling.
 * **PlayStation controllers** with the PS2 release's full control layout and stick handling, analog button pressure and rumble.
 * **Button art to match your controller**: GameCube or PS2 buttons in menus and in-game, made from your own discs (optional).
-* **Import saves** from the other versions of MVP 2005: rosters and dynasties from the PS2, GameCube and PC, and rosters from another Xbox, converted into your MVP05-Plus saves.
-* **Custom season schedules**: 162 games (the real 2005 season, or shuffled each time you play), 64, 60, 30 or 15 games, or one you import.
+* **Import saves** from the other versions of MVP 2005: rosters from any version, and dynasties from the PS2, GameCube and PC, converted into your MVP05-Plus saves.
+* **Custom season schedules**: switch to 162 games (the real 2005 season, or shuffled each time you play), 60, 30 or 15 games, or import your own. There's also a 64-game schedule made for MVP05-Plus.
 * **MVP05-Plus Launcher**: install from your discs, launch the game, import and restore saves, pick the season schedule, run the tools, adjust display settings, and update MVP05-Plus.
 * **Fixes**: a shader cache to prevent mid-game stutter, SteamOS support through Proton, and a fix for a crash during stolen bases, found while testing the original recomp.
 * **Save backups**: a full save backup menu in the Launcher. Your saves are backed up automatically when the game starts, keeping the latest 30 backups by default, and you can view and restore them in the Launcher.
@@ -25,6 +25,10 @@ MVP Baseball 2005 on Windows, and on SteamOS (Linux) through Proton, built on [M
 * **Other controllers** (Switch Pro and most others SDL supports) — Xbox button art and controls
 
 Button art follows the controller connected when the game starts. Without the art sets, PlayStation and GameCube controllers still use their own control layouts, with Xbox buttons shown.
+
+## Coming from Beta 1 or Mad Dog's MVP05
+
+Unzip MVP05-Plus into a new folder and open the Launcher. It asks to bring over your game, saves and settings, so you don't need your discs again. Said no? Press **Ctrl+Shift+B** in the Launcher to be asked again.
 
 ## Install
 
