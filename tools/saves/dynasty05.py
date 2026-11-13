@@ -105,6 +105,27 @@ def gc_to_xbox(gci, xbox_dynasty, name=None):
     return out
 
 
+def xbox_to_xbox(data, xbox_dynasty, name=None):
+    """An Xbox dynasty from another Xbox (or MVP05 install) into one of yours: the same format, so its dynasty goes in
+    unchanged, under your save's name and signed for it."""
+    src = read_xbox(data)
+    t = read_xbox(xbox_dynasty)
+    if len(src["payload"]) != XB_LEN:
+        raise DynastyError("that Xbox dynasty isn't the size MVP 2005's are")
+    import ps2dynasty05 as PD
+    try:
+        PD._layout(bytes(src["payload"]), False)
+    except PD.Ps2DynastyError as e:
+        raise DynastyError(str(e))
+    with _in_lib():
+        C = _containers()
+        out = C.build_xbox(xbox_dynasty, dict(name=name or t["name"], typ="Dynasty", flags=t["flags"],
+                                              payload=bytes(src["payload"])))
+        if not C.verify_xbox(out):
+            raise DynastyError("the save failed its signature check")
+    return out
+
+
 def xbox_to_gc(data, gc_dynasty, name=None):
     """An Xbox dynasty as a GameCube .gci, built on gc_dynasty: (file name, bytes). Names are up to 10 letters."""
     meta = read_xbox(data)

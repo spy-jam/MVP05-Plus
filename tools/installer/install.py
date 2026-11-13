@@ -925,7 +925,7 @@ def import_tool(frm, root, tk, ttk):
         "\u2022  rosters or a dynasty from the PS2 (a .psu, a PCSX2 memory card .ps2, or the .sav file from a save)\n"
         "\u2022  rosters or a dynasty from the GameCube (the .gci file Dolphin exports)\n"
         "\u2022  rosters or a dynasty from the PC (.sav)\n"
-        "\u2022  rosters from another Xbox\n"
+        "\u2022  rosters or a dynasty from another Xbox (its data.dat)\n"
         "The save goes into one of your own saves of the same kind, which is backed up first.")).grid(
         row=1, column=0, columnspan=2, sticky="w", pady=(0, 12))
 
@@ -1034,6 +1034,9 @@ def import_tool(frm, root, tk, ttk):
                                   what=f"PS2 dynasty \"{which[3]['name']}\" ({which[1]} on the card)")
                 else:
                     picked.update(kind="roster", save=which[3], what=f"PS2 rosters ({which[1]} on the card)")
+            elif len(data) == DY.XB_DYNASTY_SIZE:
+                m = DY.read_xbox(data)
+                picked.update(kind="dynasty", xbox_dynasty=True, data=data, what=f"Xbox dynasty \"{m['name']}\"")
             elif PCD.is_dynasty(data):
                 d = PCD.read(data)
                 picked.update(kind="dynasty", pc_dynasty=d, what=f"PC dynasty \"{d['name']}\"")
@@ -1070,7 +1073,9 @@ def import_tool(frm, root, tk, ttk):
                     raise RO.RosterError("close MVP05.exe first: the game keeps its saves open while it runs")
                 with open(dat, "rb") as f:
                     mine = f.read()
-                if picked.get("pc_dynasty"):
+                if picked.get("xbox_dynasty"):
+                    out = DY.xbox_to_xbox(picked["data"], mine)
+                elif picked.get("pc_dynasty"):
                     out = PCD.to_xbox(picked["pc_dynasty"], mine)
                 elif picked.get("ps2_dynasty"):
                     out = PD.to_xbox(picked["ps2_dynasty"], mine)
