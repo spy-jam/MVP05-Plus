@@ -398,6 +398,20 @@ void Pad(int port, input::Pad& p) {
             std::memcpy(s.analog, p.analog, sizeof s.analog);
             s.lx = p.lx;
             s.ly = p.ly;
+            // a GameCube controller on the adapter: its own report, as an Xbox controller's for the menu (d-pad and
+            // stick move, A presses, B goes back, L / R switch tabs)
+            if (p.gc.present) {
+                const auto& g = p.gc;
+                s.buttons |= (g.buttons & G::Up ? 1 : 0) | (g.buttons & G::Down ? 2 : 0) |
+                             (g.buttons & G::Left ? 4 : 0) | (g.buttons & G::Right ? 8 : 0);
+                auto press = [](uint8_t& v, bool on) { v = std::max<uint8_t>(v, on ? 255 : 0); };
+                press(s.analog[0], g.buttons & G::A);
+                press(s.analog[1], g.buttons & G::B);
+                press(s.analog[6], (g.buttons & G::LClick) || g.l > 200);
+                press(s.analog[7], (g.buttons & G::RClick) || g.r > 200);
+                if (std::abs(g.lx) > std::abs(s.lx)) s.lx = g.lx;
+                if (std::abs(g.ly) > std::abs(s.ly)) s.ly = g.ly;
+            }
         }
     }
     // the game sees an idle controller while the menu is open, and while the combo is held (no pause menu)
