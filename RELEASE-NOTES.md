@@ -39,6 +39,7 @@ tywiggins' tools were made for the PC game; the Xbox game keeps its database in 
 - **A tidier layout:** *Play*, *Saves* (your saves and backups), *Schedule*, *Tools* (a list: open the one you want) and *Settings* (desktop shortcuts and updates side by side).
 - **Your game's title art** on the *Play* tab, from your own Xbox disc.
 - **Controllers:** an Xbox-style controller, or a GameCube controller on the adapter (with its WinUSB driver), moves around the Launcher: d-pad or stick, A presses, B goes back, LB / RB (L / R) switch tabs, Start launches the game from *Play*.
+- **Bring over an older install** (*Install* tab): MVP05-Plus Beta 1 or Mad Dog's MVP05, with its game, saves and settings, copied or moved into the new folder.
 - **Install progress:** one bar across the whole install ("Step 2 of 3: making the PS2 button art") with the time so far.
 - *Launch MVP 05* minimizes the Launcher instead of closing it, so it's an alt-tab away while you play; it closes when the game does, unless you've brought it back up.
 
@@ -49,8 +50,8 @@ tywiggins' tools were made for the PC game; the Xbox game keeps its database in 
 ## Fixed
 - The Launcher's *Settings* no longer drops the note after a text setting (such as `display_mode`) in `mvp05-settings.toml`.
 
-## Updating from Beta 1
-Beta 1 has no updater, so this once it's by hand: unzip Beta 2 into your Beta 1 folder and let it replace the files. Your game files (`assets`), saves (`hdd`), backups and button art stay. To keep your settings, don't replace `mvp05-settings.toml`. From Beta 2 on, *Settings → Updates* does it for you.
+## Coming from Beta 1
+Beta 1 has no updater, so this once: unzip Beta 2 into a new folder and open its Launcher. On the *Install* tab, under **Already have MVP05-Plus Beta 1 (or Mad Dog's MVP05)?**, choose *Bring it over…* and pick your old folder. Its installed game, saves, backups, button art, shader cache and settings come over, with no discs needed. *Copy* leaves the old folder working; *Move* needs no extra space and is quick on the same drive, but the old folder won't run afterwards. From Beta 2 on, *Settings → Updates* updates MVP05-Plus for you.
 
 ## Thanks
 **Mad Dog** for MVP05 and his MVP Roster Toolkit, **tywiggins** for his MVP 2005 tools, and **TGP482** for XboxXBERecomp.

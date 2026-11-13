@@ -586,6 +586,18 @@ def gui(root):
     go = ttk.Button(fb, text="Install")
     go.pack(side="right")
     back = ttk.Button(fb, text="← Back")
+    # an older MVP05-Plus (Beta 1 has no updater) or Mad Dog's MVP05: its game, saves and settings brought in, no discs
+    older = ttk.Frame(frm)
+    ttk.Separator(older).pack(fill="x", pady=(12, 8))
+    ttk.Label(older, text="Already have MVP05-Plus Beta 1 (or Mad Dog's MVP05)?", font=("Segoe UI", 10, "bold")).pack(
+        anchor="w")
+    oline = ttk.Frame(older)
+    oline.pack(fill="x", pady=(2, 0))
+    ttk.Label(oline, foreground="#555", wraplength=380, justify="left", text=(
+        "Bring its installed game, saves, backups, button art and settings into this folder instead of installing "
+        "from the discs.")).pack(side="left")
+    bring = ttk.Button(oline, text="Bring it over\u2026")
+    bring.pack(side="right")
 
     def say(t):
         def f():
@@ -605,6 +617,7 @@ def gui(root):
                 good = r[k].startswith("installed")
                 text.configure(text=f"{label}: {r[k]}", foreground="#1a7f37" if good else "#777")
             frm.grid_remove()
+            older.grid_remove()
             ready.grid(row=0, column=0, sticky="nwe")
             tab.columnconfigure(0, weight=1)
             show_art()
@@ -613,6 +626,7 @@ def gui(root):
         else:
             ready.grid_remove()
             frm.grid(row=0, column=0, sticky="nw")
+            older.grid(row=12, column=0, columnspan=3, sticky="we")
             if not r["exe"]:
                 say("Note: MVP05.exe isn't in this folder. Put MVP05-Plus Launcher in the game's folder.")
             elif r["xbox"] != "not installed":
@@ -658,6 +672,69 @@ def gui(root):
         bar.configure(value=0)
         threading.Thread(target=work, daemon=True).start()
 
+    def bring_over():
+        """An older install's game, saves and settings, copied or moved in."""
+        import carryover
+        from tkinter import messagebox
+        old = filedialog.askdirectory(title="Your older MVP05-Plus folder (the one with MVP05.exe)")
+        if not old:
+            return
+        old = os.path.normpath(old)
+        try:
+            size = carryover.check(old, root)
+        except carryover.CarryError as e:
+            return messagebox.showinfo("Bring it over", f"That folder can't be used: {e}.", parent=w)
+        how = {}
+        win = tk.Toplevel(w)
+        win.title("Bring it over")
+        win.transient(w)
+        win.grab_set()
+        f = ttk.Frame(win, padding=14)
+        f.grid()
+        ttk.Label(f, wraplength=420, justify="left", text=(
+            f"From {old} ({size / 2**30:.1f} GB): the installed game, saves, backups, button art, shader cache, "
+            "schedules and settings.\n\n"
+            "Copy: the old folder keeps working; needs that much free space.\n"
+            "Move: no extra space, and quick on the same drive; the old folder won't run any more (delete it "
+            "afterwards).")).grid(row=0, column=0, columnspan=3, sticky="w", pady=(0, 12))
+        for i, (text, v) in enumerate((("Copy", False), ("Move", True))):
+            ttk.Button(f, text=text, command=lambda v=v: (how.update(move=v), win.destroy())).grid(
+                row=1, column=i, padx=(0, 6), sticky="w")
+        ttk.Button(f, text="Cancel", command=win.destroy).grid(row=1, column=2, sticky="e")
+        win.wait_window()
+        if "move" not in how:
+            return
+        if updater_running():
+            return messagebox.showinfo("Bring it over", "Close MVP05.exe first.", parent=w)
+        go.configure(state="disabled")
+        bring.configure(state="disabled")
+        bar.configure(value=0)
+        status("Bringing it over...")
+
+        def job():
+            try:
+                carryover.bring_over(old, root, how["move"], say, progress)
+                import title_icon
+                if title_icon.ensure(root, say):
+                    w.after(0, set_icon)
+                r = check_install(root)
+                status("")
+                if r["xbox_ok"] and r["exe"]:
+                    say("Done: everything's here. The old folder can be deleted once you've checked it all.")
+                    w.after(1500, lambda: show(r))
+                else:
+                    say(f"Brought over, but the game isn't ready: {r['xbox']}")
+            except (OSError, carryover.CarryError) as e:
+                status("")
+                say(f"Stopped: {e}")
+            finally:
+                w.after(0, lambda: (go.configure(state="normal"), bring.configure(state="normal")))
+        threading.Thread(target=job, daemon=True).start()
+
+    def updater_running():
+        import updater
+        return updater.game_running()
+
     def do_launch():
         exe = os.path.join(root, "MVP05.exe")
         import gamepad_nav
@@ -687,6 +764,7 @@ def gui(root):
         frm.grid(row=0, column=0, sticky="nw")
 
     go.configure(command=start)
+    bring.configure(command=bring_over)
     launch.configure(command=do_launch)
     change.configure(command=do_change)
     back.configure(command=lambda: show())
