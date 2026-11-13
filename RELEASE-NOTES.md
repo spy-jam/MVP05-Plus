@@ -1,28 +1,59 @@
 # MVP05-Plus Beta 2
 
-Work in progress: more is coming before this is released.
+Bring your saves over from the other versions of MVP 2005, pick the season you play, run tywiggins' dynasty tools from inside the game, and update from the Launcher.
 
-## New
-- **Updates from the Launcher:** *Settings → Updates* shows your version, checks GitHub for a newer release (also when the Launcher opens, unless you turn that off), shows what's new, and installs it: the program files only, checked against the release's manifest. Your game files, saves, backups, button art and shader cache are never touched; your settings are kept, with any new options added. *Back to* undoes the last update. From Beta 2 on: going from Beta 1 to Beta 2 is still by hand.
-- **Tools menu in the game:** F10, or hold Back + Start (Z + Start on a GameCube controller) for a second. Any controller or the mouse moves around it, and the game gets no controller input while it's open. Esc closes it.
-  - *Short Season Advancer:* at the end of a season shorter than 162 games, it finds the standings in the game and writes them projected to 162 games, as the standings patcher does, so the season can go on to the playoffs. The season's length is taken from the schedule picked on the Schedule tab (in the Launcher it starts there and can be changed).
-- **Team Changer** (*Tools* tab, and the Tools menu in the game): take over another organization in your dynasty or owner mode, in the running game; save to keep it. A port of **tywiggins'** MVP 2005 Team Changer (2006, for the PC game): the Xbox game keeps its database in memory the way the PC game does, so his tools' places carry over.
-- **Playoffs Editor** (*Tools* tab, and the Tools menu in the game): choose who plays in the playoffs. When a playoff round has started, before its first game, swap any team in it for another organization, in the running game or in a saved dynasty; each series keeps its dates and home field. Based on **tywiggins'** MVP 2005 Playoffs Creator (2006, for the PC game), which finds the round in the same place.
-- **Schedule tab:** the season schedule new seasons play, picked from: the game's own 162 games; MVP Baseball 2004's 60, 30 and 15-game schedules brought over to 2005; and a 64-game one made for MVP05-Plus. Only the three MLB schedules in your game's `schedule.big` change (the minor leagues and spring training stay the game's own); your original is kept and goes back with *162 games*. It also sets the season length the Short Season Advancer uses.
-- **Tools tab in the Launcher**, with the same *Short Season Advancer*: in the running game (alt-tab to the Launcher), or in a saved dynasty with the game closed (it reads the season's length from the save, backs the save up, then writes it).
-- **Import a schedule** (*Schedule* tab): a `schedule.big`, or its `mlb162_1/2/3.dat` files, from any version of MVP 2005 (Xbox, PS2, GameCube or PC: the schedules are the same everywhere). It's checked (all 30 teams, the same number of games each) and joins the list, where it can be removed again; updates never touch it.
-- **162 games, shuffled** (*Schedule* tab): the MVP 2005 disc's schedule with the teams in each division dealt one another's seasons at random. Dates, start times and the All-Star break stay put; every team keeps 81 home games and the same division, league and interleague games, against opponents in a new order. The Launcher deals a new shuffle every time it starts the game, so each new season is different; a season already under way keeps its own.
-- **Import saves** (*Saves → Import a save…*), so saves from other versions of MVP 2005 play in MVP05-Plus: rosters and dynasties from the PS2 (a `.psu`, a PCSX2 memory card `.ps2`, or the `.sav` from a save), the GameCube (the `.gci` Dolphin exports) and the PC (`.sav`), and rosters from another Xbox. Each goes into one of your saves of the same kind, backed up first: save your rosters, or start a dynasty and save it, in the game once to have one. Roster conversion by Mad Dog (from his MVP Roster Toolkit, giving the same file it does); GameCube conversion, rosters and dynasties, by spy_jam (a GameCube roster goes to Xbox and back unchanged, byte for byte). PS2 and PC dynasties use both: Mad Dog's record layouts with spy_jam's dynasty sections (a new PS2 dynasty comes out the same as the Xbox's, apart from what each game picks at random when it starts one; the PC keeps a dynasty the Xbox way, apart from its settings).
-- **The Launcher by controller:** an Xbox-style controller, or a GameCube controller on the adapter (with its WinUSB driver), moves around it (d-pad or stick), A presses, B goes back, LB / RB (L / R) switch tabs, Start launches the game from *Play*.
-- **Low latency** (off by default; *Settings* or `low_latency` in `mvp05-settings.toml`): at most one finished frame waits for the screen instead of up to three, for up to about two frames (~33 ms at 60 Hz) less delay between a button and the screen. It can stutter on a slower PC, so it starts off.
-- **Install progress:** one bar across the whole install, with "Step 2 of 3: making the PS2 button art" and the time so far.
+## Highlights
+- **Import saves from the PS2, GameCube, PC and Xbox** (*Saves → Import a save…*): rosters and dynasties, converted into one of your MVP05-Plus saves so they play here. Your save is backed up first.
+- **Season Schedule** (*Schedule* tab): the MVP 2005 disc's 162 games, a 162-game schedule shuffled anew every time you launch, MVP 2004's 60, 30 and 15-game schedules, a 64-game schedule made for MVP05-Plus, or one you import.
+- **Tools menu in the game** (F10, or hold Back + Start / Z + Start): the Short Season Advancer, the Team Changer and the Playoffs Editor, without leaving the game.
+- **Updates from the Launcher** (*Settings → Updates*): check, install and undo, from this version on.
 
-## Changed
-- Esc asks "Quit MVP05-Plus?".
-- *Launch MVP 05* minimizes the Launcher instead of closing it, so it's an alt-tab away while you play. It closes when the game does, unless you've brought it back up.
+## Import saves
+*Saves → Your saves → Import a save…*: choose the save, pick which of your saves it goes into (it's backed up first, in *Saves → Backups*), and import. Save your rosters, or start a dynasty and save it, in the game once so you have a save of that kind to import into.
+- **PS2:** rosters and dynasties, from a `.psu`, a PCSX2 memory card (`.ps2`: you pick the save on it), or the `.sav` from a save.
+- **GameCube:** rosters and dynasties, from the `.gci` Dolphin exports.
+- **PC:** rosters and dynasties (`.sav`).
+- **Xbox:** rosters from another Xbox.
+- Owner mode saves aren't imported yet (planned for Beta 3).
+
+Roster conversion is **Mad Dog**'s, from his MVP Roster Toolkit (the same file it makes). GameCube conversion, rosters and dynasties, is **spy_jam**'s. PS2 and PC dynasties use both.
+
+## Season Schedule
+The *Schedule* tab sets the schedule new seasons play. Only the three MLB schedules in your game's `schedule.big` change (the minor leagues and spring training stay the game's own), and your original is kept.
+- **162 games:** the MVP 2005 disc's, the real 2005 season.
+- **162 games, shuffled:** the 2005 schedule with the teams in each division dealt one another's seasons. Every team keeps 81 home games and the same division, league and interleague games, against opponents in a new order; dates and the All-Star break stay put. A new shuffle every time the Launcher starts the game; a season already under way keeps its own.
+- **64 games,** made for MVP05-Plus: 6 games against each division rival, 2 or 3 against the rest of the league, every interleague team once (the natural rival twice), even home and away, the All-Star Game in July and a real trade deadline.
+- **60, 30 and 15 games:** MVP Baseball 2004's short schedules, brought over to 2005.
+- **Import a schedule:** a `schedule.big`, or its `mlb162_1/2/3.dat` files, from any version of MVP 2005 (they're the same on every platform). It's checked (all 30 teams, the same number of games each), joins the list, can be removed again, and updates never touch it.
+
+## Tools
+In the game's Tools menu (F10, or hold Back + Start for a second, Z + Start on a GameCube controller; any controller or the mouse moves around it, and the game gets no input while it's open) and in the Launcher's *Tools* tab:
+- **Short Season Advancer:** a season shorter than 162 games stops at the end of the regular season until the standings are 162 games long. At its end, it finds the standings and writes them projected to 162 games, every team keeping its winning percentage, so the season goes on to the playoffs. The season's length comes from the *Schedule* tab. In the Launcher it also works on a saved dynasty with the game closed.
+- **Team Changer:** take over another organization in your dynasty or owner mode; save to keep it. A port of **tywiggins'** MVP 2005 Team Changer (2006, for the PC game).
+- **Playoffs Editor:** choose who plays in the playoffs. When a playoff round has started, before its first game, swap any team in it for another organization; each series keeps its dates and home field. In the running game or on a saved dynasty. Based on **tywiggins'** MVP 2005 Playoffs Creator (2006, for the PC game).
+
+tywiggins' tools were made for the PC game; the Xbox game keeps its database in memory the same way, so they carry over.
+
+## Launcher
+- **Updates** (*Settings → Updates*): shows your version, checks GitHub for a newer release (also when the Launcher opens, unless you turn that off), shows what's new and installs it: the program files only, checked against the release's manifest. Your game files, saves, backups, button art, shader cache and imported schedules are never touched, and your settings are kept, with new options added. *Back to …* undoes the last update.
+- **A tidier layout:** *Play*, *Saves* (your saves and backups), *Schedule*, *Tools* (a list: open the one you want) and *Settings* (desktop shortcuts and updates side by side).
+- **Your game's title art** on the *Play* tab, from your own Xbox disc.
+- **Controllers:** an Xbox-style controller, or a GameCube controller on the adapter (with its WinUSB driver), moves around the Launcher: d-pad or stick, A presses, B goes back, LB / RB (L / R) switch tabs, Start launches the game from *Play*.
+- **Install progress:** one bar across the whole install ("Step 2 of 3: making the PS2 button art") with the time so far.
+- *Launch MVP 05* minimizes the Launcher instead of closing it, so it's an alt-tab away while you play; it closes when the game does, unless you've brought it back up.
+
+## Game
+- **Low latency** (*Settings*, off by default): one finished frame waits for the screen instead of up to three, for up to about two frames (~33 ms at 60 Hz) less delay between a button and the screen. It can stutter on a slower PC, so it starts off.
+- **Esc** asks "Quit MVP05-Plus?".
 
 ## Fixed
 - The Launcher's *Settings* no longer drops the note after a text setting (such as `display_mode`) in `mvp05-settings.toml`.
+
+## Updating from Beta 1
+Beta 1 has no updater, so this once it's by hand: unzip Beta 2 into your Beta 1 folder and let it replace the files. Your game files (`assets`), saves (`hdd`), backups and button art stay. To keep your settings, don't replace `mvp05-settings.toml`. From Beta 2 on, *Settings → Updates* does it for you.
+
+## Thanks
+**Mad Dog** for MVP05 and his MVP Roster Toolkit, **tywiggins** for his MVP 2005 tools, and **TGP482** for XboxXBERecomp.
 
 # MVP05-Plus Beta 1
 

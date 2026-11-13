@@ -1,6 +1,6 @@
 # MVP05-Plus
 
-MVP Baseball 2005 on Windows, and on SteamOS (Linux) through Proton, built on [Mad Dog's](#credits) PC port of the Original Xbox game. spy_jam's MVP05-Plus keeps Xbox controller support and adds GameCube and PlayStation controller support with full control layouts and button labels. Includes a launcher for easy installation, also providing a save backup menu and display settings.
+MVP Baseball 2005 on Windows, and on SteamOS (Linux) through Proton, built on [Mad Dog's](#credits) PC port of the Original Xbox game. spy_jam's MVP05-Plus keeps Xbox controller support and adds GameCube and PlayStation controller support with full control layouts and button labels. Includes a launcher for easy installation, save imports from the other versions of the game, season schedules, dynasty tools, save backups, display settings and updates.
 
 > **You need your own copy of the Xbox game.** No game files or game art are included. The Launcher builds what's needed from your own discs.
 
@@ -9,7 +9,10 @@ MVP Baseball 2005 on Windows, and on SteamOS (Linux) through Proton, built on [M
 * **GameCube controllers** through a Wii U / Switch adapter: all 4 ports and rumble, with the GameCube release's full control layout, stick deadzones, C-stick and analog trigger handling.
 * **PlayStation controllers** with the PS2 release's full control layout and stick handling, analog button pressure and rumble.
 * **Button art to match your controller**: GameCube or PS2 buttons in menus and in-game, made from your own discs (optional).
-* **MVP05-Plus Launcher**: install from your discs, launch the game, restore save backups, adjust display settings.
+* **Import saves** from the other versions of MVP 2005: rosters and dynasties from the PS2, GameCube and PC, and rosters from another Xbox, converted into your MVP05-Plus saves.
+* **Season schedules**: the real 2005 season, a 162-game schedule shuffled anew each time you play, MVP 2004's 60, 30 and 15-game schedules, a 64-game schedule made for MVP05-Plus, or one you import from any version of the game.
+* **Dynasty tools**, in the game (F10, or hold Back + Start / Z + Start) and in the Launcher: the Short Season Advancer (short seasons go on to the playoffs), and tywiggins' Team Changer and Playoffs Creator (here the Playoffs Editor).
+* **MVP05-Plus Launcher**: install from your discs, launch the game, import and restore saves, pick the season schedule, run the tools, adjust display settings, and update MVP05-Plus.
 * **Fixes**: a shader cache to prevent mid-game stutter, SteamOS support through Proton, and a fix for a crash during stolen bases, found while testing the original recomp.
 * **Save backups**: a full save backup menu in the Launcher. Your saves are backed up automatically when the game starts, keeping the latest 30 backups by default, and you can view and restore them in the Launcher.
 
@@ -61,8 +64,10 @@ sh -c 'B="/home/deck/Games/MVP05-Plus/gcbridge"; chmod +x "$B"; "$B" & exec "$@"
 ## MVP05-Plus Launcher
 
 * **Install**, which becomes **Play** once the game's installed: your discs in, then what's installed (checked each start), **Launch MVP 05**, and which controllers Windows sees right now, including whether the GameCube adapter has the WinUSB driver it needs.
-* **Saves**: *Current saves*, and *Backups* by date. Restore single saves or a whole date; your saves become a backup first, so a restore can be undone.
-* **Settings**: display mode, aspect ratio (16:9, or 4:3 with black bars at the sides), resolution (default: fullscreen at your desktop's resolution), render scale, frame rate cap, texture filtering, VSync, low latency, Xbox 720p mode; and desktop shortcuts for the game ("MVP 05 Plus") and the Launcher, if you want them.
+* **Saves**: *Your saves*, with *Import a save…* for saves from the PS2, GameCube, PC or another Xbox; and *Backups* by date. Restore single saves or a whole date; your saves become a backup first, so a restore can be undone.
+* **Schedule**: the season schedule new seasons play, and *Import a schedule…*.
+* **Tools**: the Short Season Advancer, Team Changer and Playoffs Editor, in the running game or (Short Season Advancer, Playoffs Editor) on a saved dynasty.
+* **Settings**: display mode, aspect ratio (16:9, or 4:3 with black bars at the sides), resolution (default: fullscreen at your desktop's resolution), render scale, frame rate cap, texture filtering, VSync, low latency, Xbox 720p mode; desktop shortcuts for the game ("MVP 05 Plus") and the Launcher, if you want them; and *Updates*: check for a new release, install it, or go back to the version before.
 
 For the least delay between a button and the screen, as on a console: turn on *Low latency* in Settings (turn it back off if the game stutters), and use your monitor's G-Sync / FreeSync or your TV's game mode if it has one.
 
@@ -83,7 +88,9 @@ python tools/ps2_layout/make_ps2_icons.py assets/data <PS2 disc's DATA folder> p
 
 * [**Mad Dog**](https://github.com/maddog847): the MVP Baseball 2005 PC port this is built on.
 * [**TGP482**](https://github.com/TGP482): [XboxXBERecomp](https://github.com/TGP482/XboxXBERecomp), the static recompiler for original Xbox games that the port is made with.
-* **MVP05-Plus**: spy_jam.
+* [**Mad Dog**](https://github.com/maddog847): the MVP Roster Toolkit, whose roster conversion the save import uses.
+* **tywiggins**: the MVP 2005 Team Changer and Playoffs Creator (2006, for the PC game), ported here.
+* **MVP05-Plus**: spy_jam, including the GameCube save conversion.
 * Third-party libraries: see `THIRD_PARTY.txt`.
 
 ## Special Thanks
