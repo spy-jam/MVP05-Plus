@@ -90,9 +90,8 @@ python tools/ps2_layout/make_ps2_icons.py assets/data <PS2 disc's DATA folder> p
 
 ## Credits
 
-* [**Mad Dog**](https://github.com/maddog847): the MVP Baseball 2005 PC port this is built on.
+* [**Mad Dog**](https://github.com/maddog847): the MVP Baseball 2005 PC port this is built on, and the MVP Roster Toolkit, whose roster conversion the save import uses.
 * [**TGP482**](https://github.com/TGP482): [XboxXBERecomp](https://github.com/TGP482/XboxXBERecomp), the static recompiler for original Xbox games that the port is made with.
-* [**Mad Dog**](https://github.com/maddog847): the MVP Roster Toolkit, whose roster conversion the save import uses.
 * **tywiggins**: the MVP 2005 Team Changer and Playoffs Creator (2006, for the PC game), ported here.
 * **MVP05-Plus**: spy_jam, including the GameCube save conversion.
 * Third-party libraries: see `THIRD_PARTY.txt`.
