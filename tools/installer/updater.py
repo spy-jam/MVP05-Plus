@@ -324,8 +324,9 @@ def tidy(root):
                 pass
 
 
-def restart():
-    """The (new) Launcher started again; the caller then closes."""
+def restart(pretend=None):
+    """The (new) Launcher started again; the caller then closes. pretend: after an undo in Test-Updater.cmd's test
+    (its files are the same build before and after), the version it went back to, so the test shows it."""
     me = own_exe()
     args = [me] if me else [sys.executable, os.path.abspath(sys.argv[0])]
     env = dict(os.environ)
@@ -337,4 +338,6 @@ def restart():
         if k.startswith("_PYI_") or k in ("_MEIPASS2", "_PYI_SPLASH_IPC"):
             env.pop(k)
     env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
+    if pretend and env.get("MVP05_UPDATE_REPO"):
+        env["MVP05_TEST_VERSION"] = pretend
     subprocess.Popen(args, close_fds=True, env=env)

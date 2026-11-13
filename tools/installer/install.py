@@ -1872,7 +1872,7 @@ def updates_section(frm, root, tk, ttk, row):
                 status.configure(text=f"Couldn't undo it: {e}", foreground="#a33")
                 return
             messagebox.showinfo("Undo the update", f"Back to {GAME} {back}. The Launcher restarts now.", parent=frm)
-            updater.restart()
+            updater.restart(pretend=back)
             frm.winfo_toplevel().destroy()
         ttk.Button(line, text=f"Back to {last['from']}", command=do_undo).pack(side="left", padx=(6, 0))
 
