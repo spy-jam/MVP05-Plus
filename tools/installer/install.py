@@ -556,7 +556,7 @@ def gui(root):
             potd_team.configure(text="  \u00b7  ".join(x for x in (
                 f"#{p['number']}" if p["number"] else "", p["pos"], p["team"]) if x))
             potd_line.configure(text=p["line"])
-            potd_card.grid(row=12, column=0, columnspan=2, sticky="w", pady=(12, 0))
+            potd_card.grid(row=12, column=0, columnspan=2, sticky="w", pady=(28, 0))
         threading.Thread(target=work, daemon=True).start()
     colours = {"ok": "#1a7f37", "warn": "#b35900", "none": "#777"}
 
