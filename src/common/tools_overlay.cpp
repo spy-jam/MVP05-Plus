@@ -89,6 +89,15 @@ void FeedPad() {
         }
     }
     io.BackendFlags |= ImGuiBackendFlags_HasGamepad;
+    {  // (test) what the menu gets, every 2 s at most
+        using clock = std::chrono::steady_clock;
+        static clock::time_point said;
+        if (clock::now() - said >= std::chrono::seconds(2)) {
+            said = clock::now();
+            LOGR("tools: (test) menu gets buttons %04X A %u B %u stick %d,%d nav %d", b, an[0], an[1], lx, ly,
+                 (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0);
+        }
+    }
     io.AddKeyEvent(ImGuiKey_GamepadDpadUp, (b & 1) || ly > 16000);
     io.AddKeyEvent(ImGuiKey_GamepadDpadDown, (b & 2) || ly < -16000);
     io.AddKeyEvent(ImGuiKey_GamepadDpadLeft, (b & 4) || lx < -16000);
@@ -389,6 +398,16 @@ void Pad(int port, input::Pad& p) {
         g_toggle = true;
     }
     if (!g_open && !combo) return;
+    // (test) what each port sends while the menu is open, every 2 s at most, for the GameCube controller's menu input
+    if (g_open) {
+        static clock::time_point said[4];
+        if (clock::now() - said[port] >= std::chrono::seconds(2)) {
+            said[port] = clock::now();
+            LOGR("tools: (test) port %d: connected %d gc %d gc buttons %04X buttons %04X A %u B %u stick %d,%d combo %d",
+                 port, p.connected, p.gc.present, p.gc.buttons, p.buttons, p.analog[0], p.analog[1], p.lx, p.ly,
+                 combo);
+        }
+    }
     {
         std::lock_guard lock(g_pad_lock);
         Seen& s = g_ports[port];
