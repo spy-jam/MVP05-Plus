@@ -9,7 +9,9 @@ MVP05-Plus: a test release, made the way a real one is, in your Downloads folder
      (MVP05-Plus-Launcher.exe, gcbridge), then downloads them
   5. packs MVP05-Plus-Beta-1.zip as a release is packed, with Mad Dog's three runtime DLLs from his Beta 3 zip
   6. makes a DRAFT release on GitHub with it (only you can see a draft)
-  7. unzips that zip into Downloads\MVP05-Plus-Beta-1, as a player would, and opens it
+  7. unzips that zip into Downloads\MVP05-Plus-Beta-2, as a player would, and opens it; if a test install with the
+     game installed is already there, it replaces only its program files instead (game files, saves and settings
+     stay)
 
 Needs: Git and the GitHub CLI (https://cli.github.com), signed in once with "gh auth login"; Visual Studio (or its
 Build Tools) with the C++ tools, Windows SDK and the "C++ Clang tools" component (or LLVM on PATH).
@@ -324,12 +326,39 @@ try {
         }
     } finally { Pop-Location }
 
-    Step "Unzipping it as a player would"
     $player = Join-Path $Downloads ("MVP05-Plus-" + ($Version -replace '\s', '-'))
-    if (Test-Path $player) {
-        $player = $player + "-" + (Get-Date -Format "yyyyMMdd-HHmm")
+    if (Test-Path (Join-Path $player "assets\default.xbe")) {
+        # a test install already there, with the game installed: its program files replaced in place, as the
+        # Launcher's updater does. Everything that's the player's stays: game files, saves, backups, button art,
+        # shader cache, logs, settings, imported schedules
+        Step "Updating the test install in $player"
+        if (Get-Process -Name "MVP05", "MVP05-Plus-Launcher" -ErrorAction SilentlyContinue) {
+            Fail "close MVP05 and the MVP05-Plus Launcher first: Windows won't let their files be replaced while they run"
+        }
+        $keep = @("assets", "hdd", "save backups", "gc_icons", "ps2_icons", "shader_cache", "logs", ".update",
+                  "schedules/original", "schedules/imported", "schedules/current.json", "mvp05-settings.toml")
+        $fresh = Join-Path $env:TEMP ("mvp05-plus-update-" + [guid]::NewGuid())
+        Expand-Archive $zip -DestinationPath $fresh
+        $n = 0
+        Get-ChildItem $fresh -Recurse -File | ForEach-Object {
+            $rel = $_.FullName.Substring($fresh.Length + 1).Replace('\', '/')
+            $mine = $keep | Where-Object { $rel -eq $_ -or $rel.StartsWith($_ + "/") }
+            if (-not $mine) {
+                $dest = Join-Path $player $rel
+                New-Item -ItemType Directory -Force (Split-Path $dest) | Out-Null
+                Copy-Item $_.FullName $dest -Force
+                $n++
+            }
+        }
+        Remove-Item $fresh -Recurse -Force
+        Write-Host "Replaced $n program files; your game files, saves and settings are as they were"
+    } else {
+        Step "Unzipping it as a player would"
+        if (Test-Path $player) {
+            $player = $player + "-" + (Get-Date -Format "yyyyMMdd-HHmm")
+        }
+        Expand-Archive $zip -DestinationPath $player
     }
-    Expand-Archive $zip -DestinationPath $player
     Write-Host ""
     Write-Host "Done." -ForegroundColor Green
     Write-Host "  Player's folder: $player   (run MVP05-Plus-Launcher.exe there, then MVP05.exe)"
