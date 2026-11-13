@@ -797,10 +797,11 @@ def choose_card_save(parent, tk, ttk, found):
 def import_tool(frm, root, tk, ttk):
     """Import a save: a save from another MVP 2005 written into one of your saves here (backed up first), so it
     plays in MVP05-Plus. Rosters from the PS2, PC or another Xbox (Mad Dog's conversion, from his MVP Roster
-    Toolkit); dynasties from the GameCube (spy_jam's converter) and the PS2 (both of theirs)."""
+    Toolkit); dynasties from the GameCube (spy_jam's converter), the PS2 and the PC (both of theirs)."""
     import dynasty05 as DY
     import gcroster05 as GR
     import ps2card as PC
+    import pcdynasty05 as PCD
     import ps2dynasty05 as PD
     import rosters05 as RO
     import saves05 as S
@@ -811,7 +812,8 @@ def import_tool(frm, root, tk, ttk):
         "Brings a save from another version of MVP 2005 into this one. It works with:\n"
         "\u2022  rosters or a dynasty from the PS2 (a .psu, a PCSX2 memory card .ps2, or the .sav file from a save)\n"
         "\u2022  rosters or a dynasty from the GameCube (the .gci file Dolphin exports)\n"
-        "\u2022  rosters from the PC (.sav) or another Xbox\n"
+        "\u2022  rosters or a dynasty from the PC (.sav)\n"
+        "\u2022  rosters from another Xbox\n"
         "The save goes into one of your own saves of the same kind, which is backed up first.")).grid(
         row=1, column=0, columnspan=2, sticky="w", pady=(0, 12))
 
@@ -842,7 +844,7 @@ def import_tool(frm, root, tk, ttk):
     note.grid(row=9, column=1, sticky="w", pady=(8, 0))
     ttk.Label(frm, foreground="#888", wraplength=540, justify="left", text=(
         "Roster conversion by Mad Dog (MVP Roster Toolkit). GameCube conversion (rosters and dynasties) by spy_jam. "
-        "PS2 dynasties use both.")).grid(
+        "PS2 and PC dynasties use both.")).grid(
         row=10, column=0, columnspan=2, sticky="w", pady=(16, 0))
     picked, targets = {}, []
     kinds = {"roster": ("roster save", "rosters"), "dynasty": ("dynasty save", "dynasty")}
@@ -920,13 +922,17 @@ def import_tool(frm, root, tk, ttk):
                                   what=f"PS2 dynasty \"{which[3]['name']}\" ({which[1]} on the card)")
                 else:
                     picked.update(kind="roster", save=which[3], what=f"PS2 rosters ({which[1]} on the card)")
+            elif PCD.is_dynasty(data):
+                d = PCD.read(data)
+                picked.update(kind="dynasty", pc_dynasty=d, what=f"PC dynasty \"{d['name']}\"")
             elif PD.is_dynasty(data):
                 d = PD.read(data)
                 picked.update(kind="dynasty", ps2_dynasty=d, what=f"PS2 dynasty \"{d['name']}\"")
             else:
                 save = RO.read(data)
                 picked.update(kind="roster", save=save, what=f"{save.platform} rosters")
-        except (OSError, RO.RosterError, DY.DynastyError, PC.CardError, GR.GcRosterError, PD.Ps2DynastyError) as e:
+        except (OSError, RO.RosterError, DY.DynastyError, PC.CardError, GR.GcRosterError, PD.Ps2DynastyError,
+                PCD.PcDynastyError) as e:
             src_text.configure(text=f"{os.path.basename(p)}: can't be used ({e})", foreground="#a33")
             return refresh()
         picked["path"] = p
@@ -952,7 +958,9 @@ def import_tool(frm, root, tk, ttk):
                     raise RO.RosterError("close MVP05.exe first: the game keeps its saves open while it runs")
                 with open(dat, "rb") as f:
                     mine = f.read()
-                if picked.get("ps2_dynasty"):
+                if picked.get("pc_dynasty"):
+                    out = PCD.to_xbox(picked["pc_dynasty"], mine)
+                elif picked.get("ps2_dynasty"):
                     out = PD.to_xbox(picked["ps2_dynasty"], mine)
                 elif kind == "dynasty":
                     out = DY.gc_to_xbox(picked["data"], mine)
@@ -966,7 +974,8 @@ def import_tool(frm, root, tk, ttk):
                 os.replace(dat + ".new", dat)
                 msg = (f"Done. Load \"{s['name']}\" in the game. The save it replaced is in Saves > Backups.",
                        "#1a7f37")
-            except (OSError, RO.RosterError, DY.DynastyError, GR.GcRosterError, PD.Ps2DynastyError) as e:
+            except (OSError, RO.RosterError, DY.DynastyError, GR.GcRosterError, PD.Ps2DynastyError,
+                    PCD.PcDynastyError) as e:
                 msg = (f"Nothing was changed: {e}.", "#a33")
             frm.after(0, lambda: (say(*msg), refresh()))
         threading.Thread(target=work, daemon=True).start()
