@@ -330,4 +330,11 @@ def restart():
     args = [me] if me else [sys.executable, os.path.abspath(sys.argv[0])]
     env = dict(os.environ)
     env.pop("MVP05_TEST_VERSION", None)  # a test: the new Launcher is the version it says it is
+    # the Launcher exe unpacks itself to a temporary folder; started with this one's PyInstaller settings, the new
+    # one would take itself for a helper of this one and use its folder, which is deleted when this one closes
+    # ("Failed to start embedded python interpreter"). It starts as a program of its own
+    for k in list(env):
+        if k.startswith("_PYI_") or k in ("_MEIPASS2", "_PYI_SPLASH_IPC"):
+            env.pop(k)
+    env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
     subprocess.Popen(args, close_fds=True, env=env)
