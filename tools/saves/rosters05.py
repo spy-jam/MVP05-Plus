@@ -119,8 +119,9 @@ def _anchored(body, p, d):
 
 
 def _filled(body, start):
-    n = len(body) - start
-    want = (b"\xbb\x55" * (n // 2 + 1))[:n]
+    """Whether the roster's free space is the game's filler: the 16-bit value 0xBB55 at every even offset of the
+    roster (55 at even offsets, BB at odd ones), wherever the stream ends (its end is usually, not always, odd)."""
+    want = (b"\x55\xbb" * (len(body) // 2 + 1))[start:len(body)]
     return bytes(body[start:]) == want
 
 
