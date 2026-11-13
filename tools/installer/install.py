@@ -448,6 +448,39 @@ def gui(root):
     art = ttk.Label(ready)
     art.grid(row=0, column=2, rowspan=6, sticky="ne", padx=(12, 0))
     ready.columnconfigure(1, weight=1)
+    # double-click the title art: one of spy_jam's dogs, in the empty corner under it (click it to put it away)
+    # (laid over the corner, so nothing else on the tab moves; the controller lines wrap short of it meanwhile)
+    dog = ttk.Label(ready.master, cursor="hand2")
+
+    def show_dog(*_):
+        import random
+        folder = os.path.join(getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__))), "easter")
+        try:
+            files = sorted(f for f in os.listdir(folder) if f.endswith(".png"))
+        except OSError:
+            return
+        if not files:
+            return
+        last = getattr(dog, "file", None)
+        pick = random.choice([f for f in files if f != last] or files)
+        try:
+            dog.picture = tk.PhotoImage(file=os.path.join(folder, pick))
+        except tk.TclError:
+            return
+        dog.file = pick
+        dog.configure(image=dog.picture)
+        dog.place(relx=1.0, rely=1.0, x=-12, y=-12, anchor="se")
+        dog.lift()
+        for x in (pad_adapter, pad_others):
+            x.configure(wraplength=380)
+
+    def hide_dog(*_):
+        dog.place_forget()
+        for x in (pad_adapter, pad_others):
+            x.configure(wraplength=520)
+
+    art.bind("<Double-Button-1>", show_dog)
+    dog.bind("<Button-1>", hide_dog)
 
     def show_art():
         if getattr(art, "picture", None):
@@ -1417,7 +1450,7 @@ def tools_tab(tabs, root, tk, ttk):
     ttk.Label(home, text="Tools", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=2, sticky="w")
     ttk.Label(home, foreground="#666", wraplength=560, justify="left", text=(
         "Pick a tool to open it. In the game, F10 (or hold Back + Start, Z + Start on a GameCube controller) opens "
-        "the game's own Tools menu, which has the Short Season Advancer too.")).grid(
+        "the game's own Tools menu, with the Short Season Advancer, the Team Changer and the Playoffs Editor too.")).grid(
         row=1, column=0, columnspan=2, sticky="w", pady=(0, 10))
     tools = [
         ("Short Season Advancer", "For seasons shorter than 162 games: at the end of the regular season, the standings "

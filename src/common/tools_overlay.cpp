@@ -308,45 +308,6 @@ void PlayoffsCreator() {
     }
 }
 
-// the dynasty tools test: whether tywiggins' PC tools' distances hold in this game
-struct DbTest {
-    std::atomic<int> state{0};  // 0 idle, 1 working, 2 done
-    std::mutex lock;
-    std::string text;
-    std::thread worker;
-} g_db;
-
-void DbTools() {
-    Help("A test for the next tools (Team Changer, ChangeMoney, Stamina Changer, Playoffs Creator, by tywiggins): "
-         "load a dynasty, stay on its season screen, then Check. It only reads, and writes what it finds to the log. "
-         "Send the log, or a memory capture if asked for one.");
-    ImGui::Spacing();
-    bool busy = g_db.state == 1;
-    ImGui::BeginDisabled(busy);
-    auto run = [](bool capture) {
-        if (g_db.worker.joinable()) g_db.worker.join();
-        g_db.state = 1;
-        g_db.worker = std::thread([capture] {
-            std::string t = capture ? dbtools::Capture() : dbtools::Check();
-            if (capture) t = t.empty() ? "The capture couldn't be written." : "Saved: " + t;
-            std::lock_guard l(g_db.lock);
-            g_db.text = t;
-            g_db.state = 2;
-        });
-    };
-    if (ImGui::Button("Check")) run(false);
-    ImGui::SameLine();
-    if (ImGui::Button("Save a memory capture")) run(true);
-    ImGui::EndDisabled();
-    if (busy) ImGui::Text("Working...");
-    if (g_db.state == 2) {
-        std::lock_guard l(g_db.lock);
-        ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + ImGui::GetCursorPosX());
-        ImGui::TextUnformatted(g_db.text.c_str());
-        ImGui::PopTextWrapPos();
-    }
-}
-
 }  // namespace
 
 bool Open() { return g_open; }
@@ -400,10 +361,6 @@ void Ui(double) {
                 PlayoffsCreator();
                 ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem("Dynasty tools (test)")) {
-                DbTools();
-                ImGui::EndTabItem();
-            }
             ImGui::EndTabBar();
         }
     }
@@ -417,27 +374,15 @@ void Pad(int port, input::Pad& p) {
     static clock::time_point held[4];
     static bool fired[4] = {};
     if (port < 0 || port > 3) return;
-    // Back + Start; a GameCube controller has no Back: Z + Start
     // either controller on this port: an Xbox one's Back + Start, or (a GameCube one has no Back) Z + Start.
     // Both are checked, since a GameCube adapter can share a port with an Xbox controller
     using G = input::GameCube;
     bool combo = p.connected && ((p.buttons & (kStart | kBack)) == (kStart | kBack) ||
                                  (p.gc.present && (p.gc.buttons & (G::Start | G::Z)) == (G::Start | G::Z)));
-    // what reaches here, for the log: Start or Back pressed (the first few times), and the shortcut held
-    static int noted = 0;
-    static uint16_t last[4] = {};
-    uint16_t sb = p.connected ? uint16_t(p.buttons & (kStart | kBack)) : 0;
-    if (sb != last[port] && sb && noted < 12) {
-        noted++;
-        LOGR("tools: port %d: %s%s pressed (buttons %04X%s)", port, sb & kStart ? "Start " : "", sb & kBack ? "Back" : "",
-             p.buttons, p.gc.present ? ", a GameCube controller" : "");
-    }
-    last[port] = sb;
     if (!combo) {
         held[port] = {};
         fired[port] = false;
     } else if (held[port] == clock::time_point{}) {
-        LOGR("tools: port %d: the shortcut held", port);
         held[port] = clock::now();
     } else if (!fired[port] && clock::now() - held[port] >= kHold) {
         fired[port] = true;
