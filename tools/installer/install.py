@@ -502,10 +502,10 @@ def gui(root):
     change = ttk.Button(rb, text="Add or change button art, or reinstall…")
     change.pack(side="left", padx=10)
     launch_note = ttk.Label(ready, text="", foreground="#a33", wraplength=520, justify="left")
-    launch_note.grid(row=7, column=0, columnspan=2, sticky="w", pady=(8, 0))
+    # gridded only when there's something to say, so its empty line doesn't push the rest down
     # what Windows sees right now (controllers.py): the adapter and its driver, and the other controllers
     ttk.Label(ready, text="Controllers", font=("Segoe UI", 10, "bold")).grid(row=8, column=0, columnspan=2,
-                                                                            sticky="w", pady=(14, 2))
+                                                                            sticky="w", pady=(18, 2))
     pad_adapter = ttk.Label(ready, text="Looking…", wraplength=520, justify="left")
     pad_adapter.grid(row=9, column=0, columnspan=2, sticky="w")
     pad_others = ttk.Label(ready, text="", wraplength=520, justify="left")
@@ -789,6 +789,7 @@ def gui(root):
             game = subprocess.Popen([exe], cwd=root, close_fds=True)
         except OSError as e:
             launch_note.configure(text=f"MVP05.exe wouldn't start: {e}")
+            launch_note.grid(row=7, column=0, columnspan=2, sticky="w", pady=(8, 0))
             return
         # the Launcher stays, minimized: alt-tab to it for the Tools while the game runs. It closes with the game,
         # unless it was brought back up (to patch a save after quitting, say): then it stays until it's closed.
