@@ -8,8 +8,9 @@ read from the player's own installed game (nothing of EA's is shipped).
                                       playerattrib_audioid as 4 digits
 
 The players are the 30 MLB franchises' default 25-man rosters (org.dat's org_is_franchise; the All-Star, Legends and
-Heroes teams aren't franchises), only those with a picture, sorted by player id. The day picks one by SHA-256 of
-the local date (YYYY-MM-DD), so everyone sees the same player on the same date, whatever their saves hold.
+Heroes teams aren't franchises), only those with a picture. The days count from EPOCH (local date) through a shuffle
+of all of them (SHA-256 of the round and player id), so everyone sees the same player on the same date, whatever
+their saves hold, and nobody comes up twice until everyone has had a day.
 """
 import datetime
 import hashlib
@@ -133,11 +134,20 @@ def _line(pid, a, t):
     return f"2004: {avg} AVG, {hr} HR, {rbi} RBI"
 
 
+EPOCH = datetime.date(2026, 11, 13)  # the first day of the first round
+
+
+def _order(players, rnd):
+    """Round rnd's shuffle of the players: by SHA-256 of the round and each player's id."""
+    return sorted(players, key=lambda p: hashlib.sha256(f"{rnd}:{p['id']}".encode()).digest())
+
+
 def pick(players, day=None):
-    """The day's player: the same for everyone on the same (local) date."""
+    """The day's player: the same for everyone on the same (local) date. The days go through every player once, in
+    a shuffled order, before anyone comes up again; each round is shuffled anew."""
     day = day or datetime.date.today()
-    h = int.from_bytes(hashlib.sha256(day.isoformat().encode()).digest()[:8], "big")
-    return players[h % len(players)]
+    rnd, i = divmod((day - EPOCH).days, len(players))
+    return _order(players, rnd)[i]
 
 
 def _morton(w, h):

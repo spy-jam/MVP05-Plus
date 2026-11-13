@@ -3,7 +3,7 @@
 What's planned for Beta 3, with what's already known. Beta 2 was released on 2026-11-13.
 
 ## Player of the day
-Done in Beta 2.1 (tools/installer/potd.py): local date, SHA-256 of YYYY-MM-DD; the 30 franchises' default rosters in database/database.big with a picture in frontend/portrait.big (named by playerattrib_audioid), 731 players. The notes below were the plan.
+Done in Beta 2.1 (tools/installer/potd.py): local date, counted from 2026-11-13 through a SHA-256 shuffle of all the players (each once per round of 731 days); the 30 franchises' default rosters in database/database.big with a picture in frontend/portrait.big (named by playerattrib_audioid), 731 players. The notes below were the plan.
 
 A card across the empty bottom of the *Play* tab: a player's picture, name, team and position (maybe a line of ratings or 2004 stats), a different player each day and the same one for everyone.
 - **Pick:** take a fixed hash of the date (for example SHA-256 of `2027-03-14`), modulo the number of eligible players. Don't use a random generator, whose output can change between Python versions. Decide whether the date is local (changes at each player's midnight) or UTC (changes for everyone at the same moment).
