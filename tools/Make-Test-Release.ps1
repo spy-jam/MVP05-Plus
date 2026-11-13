@@ -321,7 +321,14 @@ try {
         } else {
             & gh release view $tag *> $null
             if ($LASTEXITCODE -eq 0) { & gh release delete $tag --yes | Out-Null }
-            & gh release create $tag $zip --draft --prerelease --target main --title $title --notes-file RELEASE-NOTES.md
+            # the release page (and the Launcher's "what's new") gets this version's notes only, without its heading:
+            # the release's title says it
+            $all = [IO.File]::ReadAllText((Join-Path $repo "RELEASE-NOTES.md"))
+            $sec = [regex]::Match($all, "(?ms)^# MVP05-Plus $([regex]::Escape($Version))[ \t]*\r?\n(.*?)(?=^# MVP05-Plus |\z)")
+            $notes = Join-Path $env:TEMP "mvp05-plus-release-notes.md"
+            $text = if ($sec.Success) { $sec.Groups[1].Value.Trim() } else { $all }
+            [IO.File]::WriteAllText($notes, $text, (New-Object Text.UTF8Encoding $false))
+            & gh release create $tag $zip --draft --prerelease --target main --title $title --notes-file $notes
             if ($LASTEXITCODE -ne 0) { Fail "couldn't make the draft release" }
         }
     } finally { Pop-Location }
