@@ -197,7 +197,7 @@ bool SetPlayoffTeams(const int (&to)[kOrgCount], std::string& why) {
             }
         }
     for (int k = 0; k < kOrgCount; k++)
-        if (to[k] != k && count[to[k]]) LOGR("dbtools: Playoffs Creator: the %s in place of the %s", kOrgNames[to[k]],
+        if (to[k] != k && count[to[k]]) LOGR("dbtools: Playoffs Editor: the %s in place of the %s", kOrgNames[to[k]],
                                              kOrgNames[k]);
     return true;
 }

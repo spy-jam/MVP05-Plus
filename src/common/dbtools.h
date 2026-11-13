@@ -21,7 +21,7 @@ extern const char* const kOrgNames[kOrgCount];  // Angels ... Yankees, alphabeti
 int ControlledOrg(uint32_t* va = nullptr);
 // control given to that organization; false if the spot wasn't found or isn't an organization any more
 bool SetControlledOrg(int org);
-// Playoffs Creator (tywiggins): when a playoff round starts, the game puts its games in the MLB schedule (28-byte
+// Playoffs Editor (from tywiggins' Playoffs Creator): when a playoff round starts, the game puts its games in the MLB schedule (28-byte
 // entries: day, a bitfield with the series' slot and a played count, the home id at +4, the visitors' at +16); the
 // next round is made from their results. A team swapped in every game of its series changes who's in the playoffs.
 struct Series {

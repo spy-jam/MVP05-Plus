@@ -1425,7 +1425,7 @@ def tools_tab(tabs, root, tk, ttk):
          short_season_tool),
         ("Team Changer", "Take over another organization in your dynasty or owner mode, in the running game. Based on tywiggins' "
          "Team Changer.", team_changer_tool),
-        ("Playoffs Creator", "Choose who plays in the playoffs: when a playoff round starts, swap any team in it for "
+        ("Playoffs Editor", "Choose who plays in the playoffs: when a playoff round starts, swap any team in it for "
          "another organization, in the running game or a saved dynasty. Based on tywiggins' Playoffs Creator.",
          playoffs_tool),
     ]
@@ -1535,13 +1535,13 @@ def team_changer_tool(frm, root, tk, ttk):
 
 
 def playoffs_tool(frm, root, tk, ttk):
-    """Playoffs Creator (tywiggins'): the teams of a playoff round, swapped before its first game, in the running game
+    """Playoffs Editor (from tywiggins' Playoffs Creator): the teams of a playoff round, swapped before its first game, in the running game
     or a dynasty save."""
     import playoffs05 as PO
     import saves05 as S
     from tkinter import messagebox
 
-    ttk.Label(frm, text="Playoffs Creator", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=4,
+    ttk.Label(frm, text="Playoffs Editor", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=4,
                                                                                 sticky="w")
     ttk.Label(frm, foreground="#666", wraplength=560, justify="left", text=(
         "Choose who plays in the playoffs. When a playoff round has started (before its first game), find it here, "

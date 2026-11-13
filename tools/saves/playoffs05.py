@@ -1,4 +1,4 @@
-"""Playoffs Creator: who plays in a playoff round, changed before its first game, in the running MVP05.exe or in a
+"""Playoffs Editor: who plays in a playoff round, changed before its first game, in the running MVP05.exe or in a
 dynasty save. Based on tywiggins' MVP2005PlayoffsCreator (2006, for the PC game).
 
 When a playoff round starts, the game replaces the MLB schedule with that round's games (the first round: 20, four

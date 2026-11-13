@@ -53,7 +53,7 @@ struct TeamChange {
     int done = -1;     // the organization just given control, for the message
 } g_team;
 
-// Playoffs Creator (tywiggins' MVP2005PlayoffsCreator, ported): the teams of a playoff round, before its first game
+// Playoffs Editor (from tywiggins' MVP2005PlayoffsCreator): the teams of a playoff round, before its first game
 struct PlayoffsState {
     bool looked = false;
     std::vector<dbtools::Series> round;
@@ -69,7 +69,7 @@ void Toggle() {
     io.MouseDrawCursor = open;  // the game hides the system cursor in fullscreen
     if (open && g_season.state != 1 && g_season.state != 2) g_season.state = 0;
     if (open) g_team = {};  // the Team Changer looks again
-    if (open) g_po = {};    // and the Playoffs Creator
+    if (open) g_po = {};    // and the Playoffs Editor
     g_focus = open;
     LOGR("tools: menu %s", open ? "opened" : "closed");
 }
@@ -396,7 +396,7 @@ void Ui(double) {
                 TeamChanger();
                 ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem("Playoffs Creator")) {
+            if (ImGui::BeginTabItem("Playoffs Editor")) {
                 PlayoffsCreator();
                 ImGui::EndTabItem();
             }
